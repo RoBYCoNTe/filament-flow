@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'view' => 'View',
+    'edit' => 'Edit',
+    'transition' => 'Transition',
+    'no_users_assigned' => 'No users assigned.',
+    'access_by_role' => 'Access by role',
+    'no_history_yet' => 'No history yet.',
+    'count_more_entries' => ':count more entries',
+    'access_overrides' => 'Access overrides',
+    'override' => 'Override',
+    'override_active' => 'Override active',
+    'add_assignment' => 'Add assignment',
+    'remove' => 'Remove',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'manage_assignments' => 'Manage assignments',
+    'select_user' => 'Select user...',
+    'assignment_saved' => 'Assignment saved.',
+    'assignment_removed' => 'Assignment removed.',
+    'confirm_remove_assignment' => 'Are you sure you want to remove this assignment?',
+    'user_already_assigned' => 'This user is already assigned.',
+    'view_override_required' => 'View access must be granted.',
+];

@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'view' => 'Visualizza',
+    'edit' => 'Modifica',
+    'transition' => 'Transizione',
+    'no_users_assigned' => 'Nessun utente assegnato.',
+    'access_by_role' => 'Accesso per ruolo',
+    'no_history_yet' => 'Nessuna cronologia.',
+    'count_more_entries' => 'Altre :count voci',
+    'access_overrides' => 'Override accesso',
+    'override' => 'Override',
+    'override_active' => 'Override attivo',
+    'add_assignment' => 'Aggiungi assegnazione',
+    'remove' => 'Rimuovi',
+    'save' => 'Salva',
+    'cancel' => 'Annulla',
+    'manage_assignments' => 'Gestisci assegnazioni',
+    'select_user' => 'Seleziona utente...',
+    'assignment_saved' => 'Assegnazione salvata.',
+    'assignment_removed' => 'Assegnazione rimossa.',
+    'confirm_remove_assignment' => 'Sei sicuro di voler rimuovere questa assegnazione?',
+    'user_already_assigned' => 'Questo utente è già assegnato.',
+    'view_override_required' => 'L\'accesso in visualizzazione è obbligatorio.',
+];
