@@ -2,9 +2,22 @@
 
 namespace RoBYCoNTe\FilamentFlow\Tests;
 
+use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
+use BladeUI\Icons\BladeIconsServiceProvider;
+use Filament\Actions\ActionsServiceProvider;
+use Filament\FilamentServiceProvider;
+use Filament\Forms\FormsServiceProvider;
+use Filament\Infolists\InfolistsServiceProvider;
+use Filament\Notifications\NotificationsServiceProvider;
+use Filament\Schemas\SchemasServiceProvider;
+use Filament\Support\SupportServiceProvider;
+use Filament\Tables\TablesServiceProvider;
+use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+use Livewire\LivewireServiceProvider;
+use Livewire\Mechanisms\DataStore;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use RoBYCoNTe\FilamentFlow\FilamentFlowServiceProvider;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
@@ -29,26 +42,26 @@ abstract class TestCase extends BaseTestCase
         // that Livewire uses to store per-component state (like the error bag).
         // Re-registering the instance after boot ensures a stable singleton for tests.
         $this->app->instance(
-            \Livewire\Mechanisms\DataStore::class,
-            $this->app->make(\Livewire\Mechanisms\DataStore::class)
+            DataStore::class,
+            $this->app->make(DataStore::class)
         );
     }
 
     protected function getPackageProviders($app): array
     {
         return [
-            \Livewire\LivewireServiceProvider::class,
-            \BladeUI\Icons\BladeIconsServiceProvider::class,
-            \BladeUI\Heroicons\BladeHeroiconsServiceProvider::class,
-            \Filament\Support\SupportServiceProvider::class,
-            \Filament\Actions\ActionsServiceProvider::class,
-            \Filament\Forms\FormsServiceProvider::class,
-            \Filament\Tables\TablesServiceProvider::class,
-            \Filament\Infolists\InfolistsServiceProvider::class,
-            \Filament\Schemas\SchemasServiceProvider::class,
-            \Filament\Notifications\NotificationsServiceProvider::class,
-            \Filament\Widgets\WidgetsServiceProvider::class,
-            \Filament\FilamentServiceProvider::class,
+            LivewireServiceProvider::class,
+            BladeIconsServiceProvider::class,
+            BladeHeroiconsServiceProvider::class,
+            SupportServiceProvider::class,
+            ActionsServiceProvider::class,
+            FormsServiceProvider::class,
+            TablesServiceProvider::class,
+            InfolistsServiceProvider::class,
+            SchemasServiceProvider::class,
+            NotificationsServiceProvider::class,
+            WidgetsServiceProvider::class,
+            FilamentServiceProvider::class,
             FilamentFlowServiceProvider::class,
         ];
     }
