@@ -23,6 +23,14 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             \Livewire\LivewireServiceProvider::class,
+            \Filament\Support\SupportServiceProvider::class,
+            \Filament\Actions\ActionsServiceProvider::class,
+            \Filament\Forms\FormsServiceProvider::class,
+            \Filament\Tables\TablesServiceProvider::class,
+            \Filament\Infolists\InfolistsServiceProvider::class,
+            \Filament\Schemas\SchemasServiceProvider::class,
+            \Filament\Notifications\NotificationsServiceProvider::class,
+            \Filament\Widgets\WidgetsServiceProvider::class,
             \Filament\FilamentServiceProvider::class,
             FilamentFlowServiceProvider::class,
         ];
