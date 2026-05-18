@@ -19,10 +19,27 @@ abstract class TestCase extends BaseTestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Filament's SupportServiceProvider calls app()->bind(DataStore::class, DataStoreOverride::class),
+        // which internally calls dropStaleInstances() and removes Livewire's singleton registration.
+        // This causes every app(DataStore::class) call to create a new instance, breaking the WeakMap
+        // that Livewire uses to store per-component state (like the error bag).
+        // Re-registering the instance after boot ensures a stable singleton for tests.
+        $this->app->instance(
+            \Livewire\Mechanisms\DataStore::class,
+            $this->app->make(\Livewire\Mechanisms\DataStore::class)
+        );
+    }
+
     protected function getPackageProviders($app): array
     {
         return [
             \Livewire\LivewireServiceProvider::class,
+            \BladeUI\Icons\BladeIconsServiceProvider::class,
+            \BladeUI\Heroicons\BladeHeroiconsServiceProvider::class,
             \Filament\Support\SupportServiceProvider::class,
             \Filament\Actions\ActionsServiceProvider::class,
             \Filament\Forms\FormsServiceProvider::class,
