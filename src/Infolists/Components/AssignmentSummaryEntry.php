@@ -2,6 +2,7 @@
 
 namespace RoBYCoNTe\FilamentFlow\Infolists\Components;
 
+use Closure;
 use Filament\Infolists\Components\Entry;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
+use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
 
 class AssignmentSummaryEntry extends Entry
 {
@@ -16,9 +18,18 @@ class AssignmentSummaryEntry extends Entry
 
     protected string $stateColumn = 'state';
 
+    protected ?Closure $metadataBadgesCallback = null;
+
     public static function make(?string $name = 'assignment-summary'): static
     {
         return parent::make($name);
+    }
+
+    public function metadataBadges(Closure $callback): static
+    {
+        $this->metadataBadgesCallback = $callback;
+
+        return $this;
     }
 
     public function stateColumn(string $column): static
@@ -52,17 +63,26 @@ class AssignmentSummaryEntry extends Entry
             ->with('user')
             ->get()
             ->filter(fn ($assignment) => $assignment->user !== null)
-            ->map(fn ($assignment) => [
-                'user' => $assignment->user,
-                'assignment_type' => $assignment->assignment_type,
-                'can_view' => $accessService->canView($record, $assignment->user),
-                'can_edit' => $accessService->canEdit($record, $assignment->user),
-                'can_transition' => $accessService->canTransition($record, $assignment->user),
-                'override_view' => $assignment->override_view === true,
-                'override_edit' => $assignment->override_edit === true,
-                'override_transition' => $assignment->override_transition === true,
-                'has_overrides' => $assignment->hasAccessOverride(),
-            ])
+            ->map(function ($assignment) use ($accessService, $record) {
+                $data = [
+                    'user' => $assignment->user,
+                    'assignment_type' => $assignment->assignment_type,
+                    'can_view' => $accessService->canView($record, $assignment->user),
+                    'can_edit' => $accessService->canEdit($record, $assignment->user),
+                    'can_transition' => $accessService->canTransition($record, $assignment->user),
+                    'override_view' => $assignment->override_view === true,
+                    'override_edit' => $assignment->override_edit === true,
+                    'override_transition' => $assignment->override_transition === true,
+                    'has_overrides' => $assignment->hasAccessOverride(),
+                    'metadata' => $assignment->metadata,
+                ];
+
+                $data['metadata_badges'] = $this->metadataBadgesCallback
+                    ? ($this->metadataBadgesCallback)($data)
+                    : [];
+
+                return $data;
+            })
             ->values();
     }
 
@@ -123,6 +143,14 @@ class AssignmentSummaryEntry extends Entry
     /**
      * Check if the current user is a super admin.
      */
+    /**
+     * @return array<string, array{label: string, bg: string, icon: string}>
+     */
+    public function getTypeConfig(): array
+    {
+        return AssignmentTypeConfig::all();
+    }
+
     public function isCurrentUserSuperAdmin(): bool
     {
         $user = Auth::user();

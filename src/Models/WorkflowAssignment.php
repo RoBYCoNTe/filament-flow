@@ -32,6 +32,15 @@ class WorkflowAssignment extends Model
         'override_transition' => 'boolean',
     ];
 
+    public function getMetadata(?string $key = null): mixed
+    {
+        if ($key === null) {
+            return $this->metadata;
+        }
+
+        return $this->metadata[$key] ?? null;
+    }
+
     /**
      * Check if this assignment has any access override.
      */

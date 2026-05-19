@@ -212,4 +212,108 @@ class AssignmentManagerTest extends TestCase
         $this->assertArrayNotHasKey($this->regularUser->id, $availableUsers);
         $this->assertArrayHasKey($secondUser->id, $availableUsers);
     }
+
+    public function test_add_assignment_uses_selected_type(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(AssignmentManager::class, ['record' => $this->order])
+            ->set('addFormData.selectedUserId', $this->regularUser->id)
+            ->set('addFormData.assignmentType', 'secondary')
+            ->set('addFormData.overrideView', true)
+            ->call('addAssignment');
+
+        $assignment = $this->order->fresh()->assignments()->first();
+        $this->assertNotNull($assignment);
+        $this->assertEquals('secondary', $assignment->assignment_type);
+    }
+
+    public function test_add_assignment_defaults_to_primary_type(): void
+    {
+        $this->actingAs($this->admin);
+
+        Livewire::test(AssignmentManager::class, ['record' => $this->order])
+            ->set('addFormData.selectedUserId', $this->regularUser->id)
+            ->set('addFormData.overrideView', true)
+            ->call('addAssignment');
+
+        $assignment = $this->order->fresh()->assignments()->first();
+        $this->assertNotNull($assignment);
+        $this->assertEquals('primary', $assignment->assignment_type);
+    }
+
+    public function test_change_assignment_type_updates_type(): void
+    {
+        $this->actingAs($this->admin);
+
+        $assignment = $this->order->assignTo($this->regularUser, 'viewer');
+
+        Livewire::test(AssignmentManager::class, ['record' => $this->order])
+            ->call('changeAssignmentType', $assignment->id, 'secondary');
+
+        $assignment->refresh();
+        $this->assertEquals('secondary', $assignment->assignment_type);
+    }
+
+    public function test_non_admin_cannot_change_assignment_type(): void
+    {
+        $this->actingAs($this->regularUser);
+
+        $assignment = $this->order->assignTo($this->admin, 'viewer');
+
+        Livewire::test(AssignmentManager::class, ['record' => $this->order])
+            ->call('changeAssignmentType', $assignment->id, 'primary');
+
+        $assignment->refresh();
+        $this->assertEquals('viewer', $assignment->assignment_type);
+    }
+
+    public function test_change_assignment_type_sends_warning_on_conflict(): void
+    {
+        $this->actingAs($this->admin);
+
+        $viewerAssignment = $this->order->assignTo($this->regularUser, 'viewer');
+        $this->order->assignTo($this->regularUser, 'primary');
+
+        Livewire::test(AssignmentManager::class, ['record' => $this->order])
+            ->call('changeAssignmentType', $viewerAssignment->id, 'primary')
+            ->assertNotified();
+
+        $viewerAssignment->refresh();
+        $this->assertEquals('viewer', $viewerAssignment->assignment_type);
+    }
+
+    public function test_assignments_list_includes_metadata(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->order->assignWithOverrides(
+            $this->regularUser,
+            ['view' => true],
+            'viewer',
+            null,
+            ['source' => 'diary_entry'],
+        );
+
+        $component = Livewire::test(AssignmentManager::class, ['record' => $this->order]);
+        $assignments = $component->instance()->getAssignments();
+
+        $this->assertCount(1, $assignments);
+        $this->assertArrayHasKey('metadata', $assignments[0]);
+        $this->assertEquals('diary_entry', $assignments[0]['metadata']['source']);
+    }
+
+    public function test_assignments_list_metadata_is_null_when_not_set(): void
+    {
+        $this->actingAs($this->admin);
+
+        $this->order->assignTo($this->regularUser, 'primary');
+
+        $component = Livewire::test(AssignmentManager::class, ['record' => $this->order]);
+        $assignments = $component->instance()->getAssignments();
+
+        $this->assertCount(1, $assignments);
+        $this->assertArrayHasKey('metadata', $assignments[0]);
+        $this->assertNull($assignments[0]['metadata']);
+    }
 }

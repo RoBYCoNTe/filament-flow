@@ -169,12 +169,14 @@ trait HasWorkflowAssignments
 
     /**
      * @param  array{view?: bool, edit?: bool, transition?: bool}  $overrides
+     * @param  array<string, mixed>|null  $metadata
      */
     public function assignWithOverrides(
         int|Model $user,
         array $overrides,
         string $type = 'primary',
         ?Model $assignedBy = null,
+        ?array $metadata = null,
     ): WorkflowAssignment {
         $userId = $this->resolveUserId($user);
 
@@ -190,9 +192,13 @@ trait HasWorkflowAssignments
         ];
 
         if ($assignment) {
-            $assignment->update($overrideData);
+            $updateData = $overrideData;
+            if ($metadata !== null) {
+                $updateData['metadata'] = array_merge($assignment->metadata ?? [], $metadata);
+            }
+            $assignment->update($updateData);
 
-            return $assignment;
+            return $assignment->refresh();
         }
 
         /** @noinspection LaravelEloquentGuardedAttributeAssignmentInspection */
@@ -200,6 +206,7 @@ trait HasWorkflowAssignments
             'user_id' => $userId,
             'assignment_type' => $type,
             'assigned_by' => $assignedBy?->id ?? auth()->id(),
+            'metadata' => $metadata,
             ...$overrideData,
         ]);
 
@@ -207,6 +214,30 @@ trait HasWorkflowAssignments
         WorkflowAssigned::dispatch($this, $assigneeModel, $assignedBy, $type);
 
         return $assignment;
+    }
+
+    public function changeAssignmentType(int $assignmentId, string $newType): bool
+    {
+        $assignment = $this->assignments()
+            ->select(['id', 'user_id', 'assignment_type'])
+            ->where('id', $assignmentId)
+            ->first();
+
+        if (! $assignment) {
+            return false;
+        }
+
+        $conflict = $this->assignments()
+            ->where('user_id', $assignment->user_id)
+            ->where('assignment_type', $newType)
+            ->where('id', '!=', $assignmentId)
+            ->exists();
+
+        if ($conflict) {
+            return false;
+        }
+
+        return $assignment->update(['assignment_type' => $newType]);
     }
 
     /**

@@ -13,11 +13,22 @@
                 $roleLabels[$role] = array_merge($roleLabels[$role], [$type => true]);
             }
         }
+
+        $typeConfig = $getTypeConfig();
+        $colors = ['bg-primary-500', 'bg-success-500', 'bg-warning-500', 'bg-danger-500', 'bg-info-500'];
     @endphp
 
     <div class="space-y-3">
         {{-- Assigned users --}}
         @forelse($assignedUsers as $entry)
+            @php
+                $nameParts = explode(' ', trim($entry['user']->name));
+                $initials = count($nameParts) >= 2
+                    ? mb_strtoupper(mb_substr($nameParts[0], 0, 1) . mb_substr(end($nameParts), 0, 1))
+                    : mb_strtoupper(mb_substr($entry['user']->name, 0, 2));
+                $colorIndex = crc32($entry['user']->name) % count($colors);
+                $typeCfg = $typeConfig[$entry['assignment_type']] ?? $typeConfig['primary'];
+            @endphp
             <div class="flex items-center gap-3 rounded-lg border p-3
                 @if($entry['has_overrides'])
                     border-warning-300 bg-warning-50 dark:border-warning-600 dark:bg-warning-900/20
@@ -26,15 +37,6 @@
                 @endif
             ">
                 {{-- Avatar --}}
-                @php
-                    $nameParts = explode(' ', trim($entry['user']->name));
-                    $initials = count($nameParts) >= 2
-                        ? mb_strtoupper(mb_substr($nameParts[0], 0, 1) . mb_substr(end($nameParts), 0, 1))
-                        : mb_strtoupper(mb_substr($entry['user']->name, 0, 2));
-
-                    $colors = ['bg-primary-500', 'bg-success-500', 'bg-warning-500', 'bg-danger-500', 'bg-info-500'];
-                    $colorIndex = crc32($entry['user']->name) % count($colors);
-                @endphp
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $colors[$colorIndex] }} text-xs font-semibold text-white">
                     {{ $initials }}
                 </div>
@@ -51,8 +53,24 @@
                             </span>
                         @endif
                     </div>
-                    <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-                        <span>{{ ucfirst($entry['assignment_type']) }}</span>
+                    <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                        {{-- Type badge --}}
+                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {{ $typeCfg['bg'] }}">
+                            <x-filament::icon :icon="$typeCfg['icon']" class="h-3 w-3" />
+                            {{ $typeCfg['label'] }}
+                        </span>
+
+                        {{-- Custom metadata badges --}}
+                        @foreach($entry['metadata_badges'] as $badge)
+                            <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {{ $badge['class'] ?? '' }}">
+                                @if(!empty($badge['icon']))
+                                    <x-filament::icon :icon="$badge['icon']" class="h-3 w-3" />
+                                @endif
+                                {{ $badge['label'] }}
+                            </span>
+                        @endforeach
+
+                        {{-- Override badge --}}
                         @if($entry['has_overrides'])
                             <span class="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold uppercase bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400">
                                 <x-filament::icon icon="heroicon-m-shield-exclamation" class="h-3 w-3" />

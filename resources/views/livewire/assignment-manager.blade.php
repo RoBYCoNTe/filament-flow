@@ -4,6 +4,7 @@
         @php
             $colors = ['bg-primary-500', 'bg-success-500', 'bg-warning-500', 'bg-danger-500', 'bg-info-500'];
             $colorIndex = crc32($assignment['name']) % count($colors);
+            $typeCfg = $typeConfig[$assignment['assignment_type']] ?? $typeConfig['primary'];
         @endphp
         <div class="flex items-center gap-3 rounded-lg border p-3
             @if($assignment['has_overrides'])
@@ -29,8 +30,33 @@
                         </span>
                     @endif
                 </div>
-                <div class="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
-                    <span>{{ ucfirst($assignment['assignment_type']) }}</span>
+                <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                    {{-- Type badge — selectable for admins --}}
+                    @if($canManage)
+                        <div class="inline-flex items-center gap-0.5 rounded {{ $typeCfg['bg'] }}">
+                            <x-filament::icon :icon="$typeCfg['icon']" class="ml-1.5 h-3 w-3 shrink-0" />
+                            <select
+                                wire:change="changeAssignmentType({{ $assignment['id'] }}, $event.target.value)"
+                                class="border-0 bg-transparent py-0.5 pl-0.5 pr-1 text-[10px] font-semibold uppercase focus:ring-0 cursor-pointer"
+                            >
+                                @foreach($typeConfig as $typeKey => $typeMeta)
+                                    <option value="{{ $typeKey }}" @selected($assignment['assignment_type'] === $typeKey)>
+                                        {{ $typeMeta['label'] }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @else
+                        <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {{ $typeCfg['bg'] }}">
+                            <x-filament::icon :icon="$typeCfg['icon']" class="h-3 w-3" />
+                            {{ $typeCfg['label'] }}
+                        </span>
+                    @endif
+
+                    {{-- Custom metadata badges --}}
+                    @includeWhen($assignmentBadgesView, $assignmentBadgesView ?? '', ['assignment' => $assignment])
+
+                    {{-- Override badge --}}
                     @if($assignment['has_overrides'])
                         <span class="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold uppercase bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400">
                             <x-filament::icon icon="heroicon-m-shield-exclamation" class="h-3 w-3" />

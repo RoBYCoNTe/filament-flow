@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
 
 /**
  * Livewire component for managing workflow assignments with access overrides.
@@ -39,8 +40,12 @@ class AssignmentManager extends Component implements HasForms
     #[Locked]
     public ?string $recordType = null;
 
+    #[Locked]
+    public ?string $assignmentBadgesView = null;
+
     public ?array $addFormData = [
         'selectedUserId' => null,
+        'assignmentType' => 'primary',
         'overrideView' => true,
         'overrideEdit' => false,
         'overrideTransition' => false,
@@ -77,6 +82,12 @@ class AssignmentManager extends Component implements HasForms
                     ->preload()
                     ->required()
                     ->live(),
+
+                Select::make('assignmentType')
+                    ->label(__('filament-flow::messages.assignment_type_label'))
+                    ->options(AssignmentTypeConfig::options())
+                    ->default('primary')
+                    ->required(),
 
                 Fieldset::make(__('filament-flow::messages.access_overrides'))
                     ->schema([
@@ -129,6 +140,7 @@ class AssignmentManager extends Component implements HasForms
                     'override_edit' => (bool) $a->override_edit,
                     'override_transition' => (bool) $a->override_transition,
                     'has_overrides' => $a->hasAccessOverride(),
+                    'metadata' => $a->metadata,
                 ];
             })
             ->values()
@@ -198,6 +210,7 @@ class AssignmentManager extends Component implements HasForms
         if ($this->showAddForm) {
             $this->addForm->fill([
                 'selectedUserId' => null,
+                'assignmentType' => 'primary',
                 'overrideView' => true,
                 'overrideEdit' => false,
                 'overrideTransition' => false,
@@ -246,7 +259,7 @@ class AssignmentManager extends Component implements HasForms
         $record->assignWithOverrides(
             (int) $data['selectedUserId'],
             $overrides,
-            'primary',
+            $data['assignmentType'] ?? 'primary',
             auth()->user(),
         );
 
@@ -274,6 +287,35 @@ class AssignmentManager extends Component implements HasForms
 
         Notification::make()
             ->title(__('filament-flow::messages.assignment_removed'))
+            ->success()
+            ->send();
+    }
+
+    public function changeAssignmentType(int $assignmentId, string $newType): void
+    {
+        if (! $this->canManageAssignments()) {
+            return;
+        }
+
+        $record = $this->getRecord();
+
+        if (! $record || ! method_exists($record, 'changeAssignmentType')) {
+            return;
+        }
+
+        $changed = $record->changeAssignmentType($assignmentId, $newType);
+
+        if (! $changed) {
+            Notification::make()
+                ->title(__('filament-flow::messages.change_type_conflict'))
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title(__('filament-flow::messages.assignment_type_changed'))
             ->success()
             ->send();
     }
@@ -313,6 +355,7 @@ class AssignmentManager extends Component implements HasForms
         return view('filament-flow::livewire.assignment-manager', [
             'assignments' => $this->getAssignments(),
             'canManage' => $this->canManageAssignments(),
+            'typeConfig' => AssignmentTypeConfig::all(),
         ]);
     }
 }
