@@ -2,6 +2,7 @@
 
 namespace RoBYCoNTe\FilamentFlow\Tables\Columns;
 
+use Closure;
 use Filament\Tables\Columns\Column;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,8 @@ class AssignmentSummaryColumn extends Column
     protected int $avatarLimit = 3;
 
     protected bool $withAvatarTooltip = true;
+
+    protected ?Closure $avatarDecoratorCallback = null;
 
     protected function setUp(): void
     {
@@ -44,6 +47,18 @@ class AssignmentSummaryColumn extends Column
         return $this->withAvatarTooltip;
     }
 
+    public function avatarDecorator(Closure $callback): static
+    {
+        $this->avatarDecoratorCallback = $callback;
+
+        return $this;
+    }
+
+    public function getAvatarDecorator(): ?Closure
+    {
+        return $this->avatarDecoratorCallback;
+    }
+
     /**
      * Get assigned users for the record.
      *
@@ -58,7 +73,7 @@ class AssignmentSummaryColumn extends Column
         }
 
         return $record->assignments()
-            ->with('user.roles')
+            ->with('user')
             ->get()
             ->filter(fn ($assignment) => $assignment->user !== null)
             ->map(function ($assignment) {
@@ -77,6 +92,7 @@ class AssignmentSummaryColumn extends Column
                     'initials' => $initials,
                     'assignment_type' => $assignment->assignment_type,
                     'roles' => $roles,
+                    'metadata' => $assignment->metadata,
                 ];
             })
             ->values()
