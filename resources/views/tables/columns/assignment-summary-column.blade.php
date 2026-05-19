@@ -28,9 +28,10 @@
                 @php
                     $colorIndex = crc32($user['name']) % count($colors);
                     $ringColor = $typeRingColors[$user['assignment_type']] ?? 'ring-white dark:ring-gray-900';
+                    $opacityClass = $user['assignment_type'] === 'secondary' ? 'opacity-75' : '';
                     $decorator = $avatarDecorator ? $avatarDecorator($user) : null;
                 @endphp
-                <div class="relative flex h-8 w-8 items-center justify-center rounded-full ring-2 {{ $ringColor }} {{ $colors[$colorIndex] }} text-xs font-semibold text-white"
+                <div class="relative flex h-8 w-8 items-center justify-center rounded-full ring-2 {{ $ringColor }} {{ $colors[$colorIndex] }} {{ $opacityClass }} text-xs font-semibold text-white"
                      title="{{ $user['name'] }}"
                 >
                     {{ $user['initials'] }}
