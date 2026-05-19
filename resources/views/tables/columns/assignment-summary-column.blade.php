@@ -33,9 +33,15 @@
                         'viewer'    => 'opacity-50',
                         default     => '',
                     };
+                    $zClass = match($user['assignment_type']) {
+                        'primary'   => 'z-30',
+                        'secondary' => 'z-20',
+                        'viewer'    => 'z-10',
+                        default     => 'z-10',
+                    };
                     $decorator = $avatarDecorator ? $avatarDecorator($user) : null;
                 @endphp
-                <div class="relative flex h-8 w-8 items-center justify-center rounded-full ring-2 {{ $ringColor }} {{ $colors[$colorIndex] }} {{ $opacityClass }} text-xs font-semibold text-white"
+                <div class="relative flex h-8 w-8 items-center justify-center rounded-full ring-2 {{ $ringColor }} {{ $colors[$colorIndex] }} {{ $opacityClass }} {{ $zClass }} text-xs font-semibold text-white"
                      title="{{ $user['name'] }}"
                 >
                     {{ $user['initials'] }}
