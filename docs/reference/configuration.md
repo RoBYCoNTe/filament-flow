@@ -47,6 +47,37 @@ This creates `config/filament-flow.php`.
 
 **Use Case:** Specify a custom user model if you're not using Laravel's default `App\Models\User`.
 
+## Cache
+
+```php
+'cache' => [
+    'enabled' => true,
+    'store'   => null,           // null = use the default Laravel cache store
+    'ttl'     => 300,            // seconds to cache workflow lookups and access rules
+    'prefix'  => 'filament-flow', // cache key prefix
+],
+```
+
+Caching covers workflow lookups, access rule evaluation, and field permission maps. Set `enabled` to `false` to disable all caching (useful during development). Set `store` to any named cache driver from your `config/cache.php` (e.g. `'redis'`).
+
+## Transition History Notes
+
+```php
+/**
+ * Enable or disable logging of transition notes to history.
+ */
+'log_transition_notes' => true,
+
+/**
+ * Default form field name to use for transition notes.
+ * If a transition form contains this field, its value is saved to history.
+ * Set to null to disable automatic field detection.
+ */
+'transition_notes_field' => 'transition_notes',
+```
+
+When `log_transition_notes` is `true`, the value of the field named by `transition_notes_field` in a transition form is persisted to `workflow_state_transitions.notes`.
+
 ## Form Builder Configuration
 
 ```php
@@ -175,5 +206,34 @@ This creates `config/filament-flow.php`.
      * Default template rendering engine.
      */
     'default_template_engine' => 'plain',
+
+    /**
+     * Custom recipient resolver class.
+     * Must implement RoBYCoNTe\FilamentFlow\Contracts\RecipientResolverInterface.
+     * Set to null to use the default resolver.
+     */
+    'recipient_resolver' => null,
 ],
 ```
+
+**`logging_enabled`** — When `true`, every notification dispatch attempt (sent, failed, or skipped) is recorded in `workflow_notification_logs`. Disable for high-volume workflows where audit logging is not required.
+
+**`retry_attempts` / `retry_backoff`** — Configure job-level retries for failed async notification jobs. `retry_backoff` is in seconds.
+
+**`channels`** — Enable or disable individual channels globally. Per-notification channels can still be toggled via `workflow_notification_channels.is_active`.
+
+**`recipient_resolver`** — Provide a custom class to override how recipients are resolved. Useful when your user model or recipient logic differs from the defaults.
+
+## Scheduling
+
+```php
+'scheduling' => [
+    'enabled'   => env('FILAMENT_FLOW_SCHEDULING_ENABLED', true),
+    'frequency' => 'everyFiveMinutes', // everyMinute, everyFiveMinutes, everyTenMinutes,
+                                       // everyFifteenMinutes, everyThirtyMinutes, hourly, daily
+],
+```
+
+Controls the `workflow:process-schedules` Artisan command that evaluates `workflow_scheduled_checks`. When `enabled` is `true`, the command is registered automatically in the Laravel scheduler at the configured frequency.
+
+Set `FILAMENT_FLOW_SCHEDULING_ENABLED=false` in production environments where you prefer to run the command manually or via a dedicated queue worker.

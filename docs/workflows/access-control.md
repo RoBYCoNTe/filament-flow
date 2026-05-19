@@ -352,9 +352,31 @@ Configure state access control in `config/filament-flow.php`:
 ],
 ```
 
+## Performing Transitions
+
+The `HasDatabaseTransitions` trait provides a fluent API for executing and checking transitions.
+
+```php
+// Set the user performing the transition (for access control evaluation)
+$order->asUser(auth()->user())->transitionTo(ProcessingState::class);
+
+// Check if a transition is available for the current user
+$order->canTransitionTo(ProcessingState::class); // bool
+
+// Get all transitions available to the current user in the current state
+$order->getAvailableTransitions(); // Collection<WorkflowTransition>
+
+// Force a transition bypassing access control (use with caution)
+$order->forceTransitionTo(ProcessingState::class);
+```
+
+`forceTransitionTo()` skips all access checks by temporarily disabling enforcement. It still fires lifecycle events (`StateExited`, `StateEntered`, `TransitionCompleted`) and executes side effects. Use it only in trusted server-side contexts such as console commands, queued jobs, or scheduled checks. See also [Scheduled Checks](./scheduled-checks.md).
+
 ## Automatic Enforcement
 
 When `enforce_on_transition` is enabled (default), the system automatically checks access permissions before allowing any state transition. If a user doesn't have permission, an `UnauthorizedTransitionException` is thrown.
+
+When `asUser()` is not called, `transitionTo()` uses the currently authenticated user (`Auth::user()`) for the access check. If no user is authenticated and the transition requires permissions, the check will fail.
 
 **Basic Usage with Enforcement:**
 

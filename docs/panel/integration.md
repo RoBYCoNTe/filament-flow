@@ -30,6 +30,45 @@ Once registered, a new "Workflow" navigation group will appear in your panel wit
 
 **Access URL**: `/your-panel-path/workflows` (or `/your-panel-path/{tenant}/workflows` for multi-tenant panels)
 
+## Access Authorization
+
+By default, the Workflow admin resource is accessible to all authenticated Filament users. In production, restrict access using `authorizeUsing()`:
+
+```php
+FilamentFlowPlugin::make()
+    ->authorizeUsing(fn (User $user): bool => $user->hasRole('super_admin')),
+```
+
+The callback receives the authenticated user and must return a boolean.
+
+To access the plugin instance from anywhere in your application:
+
+```php
+use RoBYCoNTe\FilamentFlow\FilamentFlowPlugin;
+
+$plugin = FilamentFlowPlugin::get();  // from registered Filament panel
+```
+
+## Navigation Customization
+
+Customize how the Workflow section appears in your panel's navigation:
+
+```php
+FilamentFlowPlugin::make()
+    ->navigationLabel('Workflows')
+    ->navigationGroup('Configuration')
+    ->navigationIcon('heroicon-o-cog-6-tooth')
+    ->navigationSort(10)
+    ->navigationParentItem('Settings'), // nest under a parent nav item
+```
+
+To hide the resource entirely (use Filament Flow programmatically only):
+
+```php
+FilamentFlowPlugin::make()
+    ->withoutWorkflowResource(),
+```
+
 ## Disabling the Workflow Resource
 
 If you only want to use Filament Flow programmatically without the admin interface:

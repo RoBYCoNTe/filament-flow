@@ -46,3 +46,27 @@ php artisan vendor:publish --tag="filament-flow-config"
 This creates `config/filament-flow.php` with all configurable options. See [Configuration Options](/reference/configuration) for the full reference.
 
 > **New to Spatie Laravel Model States?** Read their [introduction](https://spatie.be/docs/laravel-model-states/v2/01-introduction) first to understand states, transitions, and the state pattern.
+
+## Frontend Integration (Tailwind CSS)
+
+If your Filament panel uses a custom theme with Tailwind CSS v4, the package's
+views and PHP files must be included in your CSS source scan. Add these directives
+to your panel's `theme.css`:
+
+```css
+@source '../../../../vendor/robyconte/filament-flow/resources/views/**/*';
+@source '../../../../vendor/robyconte/filament-flow/src/**/*.php';
+```
+
+Adjust the relative path to match the location of your `theme.css` file.
+After adding the directives, rebuild your assets: `npm run build`
+
+## Spatie Laravel Permission (Optional)
+
+Filament Flow integrates automatically with [Spatie Laravel Permission](https://spatie.be/docs/laravel-permission)
+if it is installed. Role and permission checks use `hasRole()` and `hasPermission()`
+from the package without any additional configuration.
+
+If Spatie Permission is not installed, the package falls back to checking a `role`
+attribute on the user model or using custom `RoleResolver`/`PermissionResolver`
+implementations (see [Contracts](/reference/contracts)).

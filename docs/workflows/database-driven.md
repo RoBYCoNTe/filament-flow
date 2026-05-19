@@ -84,6 +84,48 @@ $order->canTransitionToFromDatabase($fromState, $toState, 'state');
 $order->canTransitionToFromDatabaseString('pending', 'shipped', 'state');
 ```
 
+## Auto-Initial State on Creation
+
+When `HasDatabaseTransitions` is booted, it automatically sets the model's state field to the initial state on `creating` if no state is already set. This means you do not need to manually set the state when creating records — the workflow handles it automatically.
+
+```php
+// State is set automatically — no need for 'state' => PendingState::class
+$order = Order::create([
+    'customer_id' => 1,
+    'amount' => 250.00,
+]);
+
+// $order->state is already the initial state
+```
+
+The initial state is determined by the `WorkflowState` with `is_initial = true` for the model's workflow. If the state field already has a value (e.g. set by a factory or seeder), the automatic assignment is skipped.
+
+## Querying Available Transitions
+
+Use these methods to discover what the current user can do from the record's current state:
+
+```php
+// Get all state-changing transitions available in current state
+$order->getAvailableTransitions(); // Collection<WorkflowTransition>
+
+// Get all in-state actions available in current state (to_state_id = null)
+$order->getAvailableActions(); // Collection<WorkflowTransition>
+```
+
+Both methods filter by the record's current state, evaluate transition conditions, and check transition-level permissions for the current user (or the user set via `asUser()`). See [Transition Conditions & In-State Actions](./conditions.md) for details.
+
+## Workflow Creation Policy
+
+Workflows support a `creation_policy` JSON field that controls automatic behavior on record creation.
+
+```json
+{
+    "auto_assign_creator": true
+}
+```
+
+When `auto_assign_creator` is `true`, the authenticated user is automatically assigned as `primary` assignee when a new record is created via `WorkflowCreationService`. This pairs with the `HasWorkflowAssignments` trait and enables `@assigned` access rule tokens to work immediately after creation.
+
 ## HasFlexibleStates Trait
 
 The `HasFlexibleStates` trait overrides Laravel's attribute casting to support database-only states.

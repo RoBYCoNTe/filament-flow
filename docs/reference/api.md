@@ -112,16 +112,26 @@
 
 ## Exceptions
 
-| Exception | Namespace | Description |
-|---|---|---|
-| `UnauthorizedTransitionException` | `RoBYCoNTe\FilamentFlow\Exceptions` | Thrown when user attempts unauthorized state transition |
+All exceptions live in the `RoBYCoNTe\FilamentFlow\Exceptions` namespace.
 
-The exception exposes:
+| Exception | When Thrown | Notable Properties / Methods |
+|---|---|---|
+| `UnauthorizedTransitionException` | User not allowed to transition to a state | `getRecord()`, `getFromState()`, `getToState()`, `getUser()` |
+| `WorkflowNotFoundException` | No active workflow found for the model class | `$modelClass` property |
+| `ActionNotFoundException` | Requested action does not exist for the current state | `$actionName` property |
+| `ConditionNotMetException` | A transition condition evaluated to false | `$actionName` property |
+| `InitialStateNotFoundException` | Workflow exists but has no state marked as initial | — |
+| `AuthenticationRequiredException` | An operation requires an authenticated user but none is present | — |
+| `StateDeletionException` | Cannot delete a state because transitions reference it | — |
+| `InvalidStateException` | The state field value is not a valid State instance | — |
+| `InvalidComponentException` | A Filament form component does not support readonly/disabled | `$fieldName` property |
+
+`UnauthorizedTransitionException` exposes:
 - `getMessage()` — Human-readable error message
 - `getRecord()` — The model record involved
-- `getFromState()` — The state being transitioned from
-- `getToState()` — The state being transitioned to
-- `getUser()` — The user who attempted the transition
+- `getFromState()` — The source state class/name
+- `getToState()` — The target state class/name
+- `getUser()` — The user who attempted the transition (`null` if unauthenticated)
 
 ## Builders
 
@@ -177,4 +187,47 @@ Then use sortable columns:
 ```php
 StateSelectColumn::make('state')
     ->sortable() // Uses custom sort order automatically
+```
+
+## Workflow Model Scopes
+
+`RoBYCoNTe\FilamentFlow\Models\Workflow`
+
+### Static Finder
+
+```php
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
+
+// Find the active workflow for a model class (tenant fallback applied automatically)
+Workflow::findForModel(Order::class, 'state');
+
+// Find for a specific tenant ID (overrides auto-detection)
+Workflow::findForModel(Order::class, 'state', $tenantId);
+```
+
+`findForModel` checks for a tenant-specific workflow first, then falls back to a global workflow (`tenant_id = null`). Results are cached using the configured cache store and TTL.
+
+### Query Scopes
+
+```php
+// Include both global and current-tenant workflows
+Workflow::query()->forCurrentTenant()->get();
+
+// Only workflows for a specific tenant
+Workflow::query()->forTenant($tenantId)->get();
+
+// Only global workflows (tenant_id = null)
+Workflow::query()->global()->get();
+```
+
+### Instance Methods
+
+```php
+$workflow->initialState();    // ?WorkflowState — the state marked is_initial = true
+$workflow->finalStates();     // HasMany<WorkflowState> — states marked is_final = true
+$workflow->isGlobal();        // bool — true when tenant_id is null
+$workflow->isTenantSpecific(); // bool — true when tenant_id is set
+
+// Flush all workflow caches (affects entire cache store — use with care)
+Workflow::flushCache();
 ```

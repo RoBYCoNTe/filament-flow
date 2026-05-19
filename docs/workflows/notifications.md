@@ -71,14 +71,17 @@ Define who should receive notifications using various recipient strategies:
 
 | Recipient Type | Description | Configuration |
 |---|---|---|
-| `user` | Specific users by ID | `['user_ids' => [1, 2, 3]]` |
-| `role` | Users with specific roles | `['roles' => ['admin', 'manager']]` |
-| `record_owner` | The owner of the record | `['owner_field' => 'user_id']` |
-| `assigned_users` | Users assigned to the record | `['types' => ['primary', 'secondary']]` |
-| `all_involved` | All users who have interacted with the record | `[]` |
-| `involvement_type` | Users with a specific involvement type | `['involvement_type' => 'reviewer']` |
-| `custom_field` | User(s) from a custom record field | `['field' => 'approver_id']` |
-| `custom_class` | Custom resolver class | `['class' => 'App\\Resolvers\\Custom']` |
+| `role` | Users with a specific role | `{"roles": ["admin", "manager"]}` |
+| `user` | Specific user IDs | `{"user_ids": [1, 2, 3]}` |
+| `trigger_user` | User who triggered the event | none |
+| `assigned_users` | All users assigned to the record | none |
+| `record_owner` | Record's owner field user | none |
+| `state_actors` | Users who performed transitions on the record | none |
+| `all_involved` | Union of assignments + transitions + involvement | none |
+| `involvement_type` | Users involved with a specific type | `{"involvement_type": "reviewer"}` |
+| `custom_field` | User ID(s) stored in a record field | `{"field": "manager_id"}` |
+| `custom_query` | Raw SQL to fetch user IDs | `{"query": "SELECT id FROM users WHERE..."}` |
+| `custom_class` | Custom resolver class | `{"class": "App\\Resolvers\\MyResolver"}` |
 
 **Creating Recipients:**
 
@@ -154,6 +157,25 @@ WorkflowNotificationTemplate::create([
 - `plain` — Simple <code v-pre>{{variable}}</code> or <code v-pre>{{ variable }}</code> substitution
 - `blade` — Laravel Blade syntax with full Blade features
 - `mustache` — Mustache syntax with HTML escaping (<code v-pre>{{var}}</code> escaped, <code v-pre>{{{var}}}</code> unescaped)
+
+## Action Buttons in Templates
+
+Notification templates support a call-to-action button via `action_text` and `action_url`.
+
+| Field | Description |
+|---|---|
+| `action_text` | Button label (e.g., "View Order") |
+| `action_url` | URL — supports template variables like `{{app_url}}/orders/{{record_id}}` |
+
+The button is rendered as an actionable link in database notifications and as a linked button in mail notifications.
+
+The template's `format` field controls how the body is rendered:
+
+| Format | Description |
+|---|---|
+| `html` | Raw HTML body |
+| `markdown` | Markdown rendered to HTML |
+| `plain` | Plain text (default) |
 
 ## Notification Timing
 

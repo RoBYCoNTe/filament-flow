@@ -29,6 +29,34 @@ class Order extends Model
 
 This adds a polymorphic `assignments()` relationship and a full set of assignment management methods to the model.
 
+## AssigneeSelect Form Component
+
+`AssigneeSelect` is a Filament form component for assigning users directly from a form schema. It renders as a searchable multi-select with role labels and automatically syncs with the model's assignments.
+
+```php
+use RoBYCoNTe\FilamentFlow\Forms\Components\AssigneeSelect;
+
+AssigneeSelect::make('assignees')
+    ->label('Assigned Users')
+    ->assignmentType('primary'), // primary | secondary | viewer
+```
+
+### Options
+
+```php
+AssigneeSelect::make('assignees')
+    ->assignmentType('secondary')       // assignment type for synced users (default: 'primary')
+    ->usersQuery(function (Builder $query): Builder {
+        return $query->where('department', 'support');
+    }),
+```
+
+**Tenant awareness**: in multi-tenant panels, the component automatically filters available users to those belonging to the current tenant, using the `tenant_user_relationship` config key (default: `'users'`).
+
+**User labels**: each user is shown as `"Name (Role1, Role2)"` when Spatie Permission is installed, or just `"Name"` otherwise.
+
+**Syncing**: on form save, the component calls `syncAssignments()` on the record for the configured type, replacing existing assignments of that type with the selected users.
+
 ## HasWorkflowAssignments Trait
 
 ### Basic Assignment
@@ -237,6 +265,22 @@ In a multi-tenant panel, the user dropdown is automatically scoped to the curren
 ```php
 'tenant_user_relationship' => 'members',
 ```
+
+### Custom Badge View
+
+The `AssignmentManager` Livewire component accepts an `assignmentBadgesView` property to render a custom Blade view for each assignment row's badge area. Pass it via the Livewire component parameters:
+
+```php
+use Filament\Schemas\Components\Livewire;
+use RoBYCoNTe\FilamentFlow\Livewire\AssignmentManager;
+
+Livewire::make(AssignmentManager::class, [
+    'assignmentBadgesView' => 'my-app::assignment-badges',
+])
+    ->visible(fn (?Model $record) => $record !== null),
+```
+
+The custom view receives the assignment array as `$assignment` (same shape as described in the `metadataBadges` extension point documentation above).
 
 ## AssignmentSummaryEntry Infolist Component
 
