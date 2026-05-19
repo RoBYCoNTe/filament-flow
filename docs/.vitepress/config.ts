@@ -52,6 +52,7 @@ export default defineConfig({
           { text: 'Form Components', link: '/ui/form-components' },
           { text: 'Table Columns', link: '/ui/table-columns' },
           { text: 'Actions', link: '/ui/actions' },
+          { text: 'Assignment Management', link: '/ui/assignments' },
         ],
       },
       {
