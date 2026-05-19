@@ -17,27 +17,21 @@ hero:
       link: https://github.com/RoBYCoNTe/filament-flow
 
 features:
-  - icon: 🔄
-    title: Rich State Management
+  - title: Rich State Management
     details: Display model states with colors, icons, and descriptions. Transition between states using intuitive UI components with bulk actions and custom sorting.
 
-  - icon: 🗄️
-    title: Database-Driven Workflows
+  - title: Database-Driven Workflows
     details: Define states and transitions entirely in the database — no PHP classes required. Configure workflows dynamically without code deployments.
 
-  - icon: 🔒
-    title: State-Based Access Control
+  - title: State-Based Access Control
     details: Define who can view, edit, or transition records based on their current workflow state with flexible token-based access rules.
 
-  - icon: 🔔
-    title: Workflow Notifications
+  - title: Workflow Notifications
     details: Automatically send notifications on state transitions, state entry/exit, and assignments. Supports database and email channels with template engines.
 
-  - icon: 🎨
-    title: Customizable Interface
+  - title: Customizable Interface
     details: Custom labels, colors, icons, and descriptions for states. Confirmation dialogs, custom transition forms, and flexible attribute mapping.
 
-  - icon: 🛠️
-    title: Developer Experience
+  - title: Developer Experience
     details: DRY architecture with reusable traits. Compatible with Filament v4+, dark mode, and Spatie Laravel Model States v2.
 ---
