@@ -151,9 +151,9 @@ WorkflowNotificationTemplate::create([
 
 **Template Engines:**
 
-- `plain` — Simple `{{variable}}` or `{{ variable }}` substitution
+- `plain` — Simple <code v-pre>{{variable}}</code> or <code v-pre>{{ variable }}</code> substitution
 - `blade` — Laravel Blade syntax with full Blade features
-- `mustache` — Mustache syntax with HTML escaping (`{{var}}` escaped, `{{{var}}}` unescaped)
+- `mustache` — Mustache syntax with HTML escaping (<code v-pre>{{var}}</code> escaped, <code v-pre>{{{var}}}</code> unescaped)
 
 ## Notification Timing
 
