@@ -16,17 +16,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get changelog for current version
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          awk "/\\[${VERSION}\\]/{found=1; next} /^## /{found=0} found" CHANGELOG.md > /tmp/changelog.txt
+          {
+            echo 'CONTENT<<EOF'
+            cat /tmp/changelog.txt
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: actions/github-script@v7
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
+            const body = `${{ steps.changelog.outputs.CONTENT }}`;
             await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: tag,
               name: tag,
-              generate_release_notes: true,
+              body: body,
             });
 
       - name: Trigger Packagist update
