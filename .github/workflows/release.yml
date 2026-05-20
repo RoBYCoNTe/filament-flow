@@ -25,3 +25,10 @@ jobs:
               name: tag,
               generate_release_notes: true,
             });
+
+      - name: Trigger Packagist update
+        if: ${{ secrets.PACKAGIST_TOKEN != '' }}
+        run: |
+          curl -sS -XPOST -H'content-type:application/json' \
+            "https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}" \
+            -d'{"repository":{"url":"https://github.com/robyconte/filament-flow"}}'

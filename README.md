@@ -37,7 +37,7 @@ See the [Installation guide](https://robyconte.github.io/filament-flow/guide/ins
 
 ## License
 
-This package is proprietary software. All rights reserved.
+This package is licensed under the [MIT License](LICENSE).
 
 ## Credits
 
