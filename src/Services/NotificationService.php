@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use RoBYCoNTe\FilamentFlow\Builders\WorkflowNotificationBuilder;
 use RoBYCoNTe\FilamentFlow\Contracts\HasStateNotifications;
 use RoBYCoNTe\FilamentFlow\Contracts\HasTransitionNotifications;
@@ -78,6 +79,9 @@ class NotificationService
         if (! $workflow) {
             return;
         }
+
+        // Enrich context with localized labels from the workflow DB config
+        $context = array_merge($context, $this->buildTransitionContextLabels($workflow, $fromState, $toState));
 
         // Find notifications configured for this transition
         $notifications = $this->findTransitionNotifications($workflow, $fromState, $toState);
@@ -544,6 +548,41 @@ class NotificationService
     protected function getWorkflowForModel(Model $record, string $stateColumn = 'state'): ?Workflow
     {
         return Workflow::findForModel(get_class($record), $stateColumn);
+    }
+
+    /**
+     * Build localized label entries for a transition context.
+     *
+     * Looks up state and transition labels stored in the workflow database
+     * configuration so that notification templates can use human-readable,
+     * translated values via {{from_state_label}}, {{to_state_label}}, and
+     * {{transition_label}} instead of raw state codes.
+     *
+     * @return array{from_state_label: string, to_state_label: string, transition_label: string}
+     */
+    private function buildTransitionContextLabels(Workflow $workflow, string $fromState, string $toState): array
+    {
+        $fromWs = $this->resolveWorkflowState($workflow, $fromState);
+        $toWs = $this->resolveWorkflowState($workflow, $toState);
+
+        $transition = null;
+
+        if ($fromWs && $toWs) {
+            $transition = $workflow->transitions()
+                ->where('from_state_id', $fromWs->id)
+                ->where('to_state_id', $toWs->id)
+                ->first();
+        } elseif ($fromWs) {
+            $transition = $workflow->transitions()
+                ->where('from_state_id', $fromWs->id)
+                ->first();
+        }
+
+        return [
+            'from_state_label' => $fromWs?->label ?? Str::headline($fromState),
+            'to_state_label' => $toWs?->label ?? Str::headline($toState),
+            'transition_label' => $transition?->label ?? '',
+        ];
     }
 
     /**
