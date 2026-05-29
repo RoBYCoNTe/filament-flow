@@ -1,0 +1,127 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: src/Builders/WorkflowNotificationBuilder.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Configuration/FieldConfiguration.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Configuration/StateConfiguration.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Configuration/TransitionConfiguration.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 2
+			path: src/Configuration/WorkflowConfiguration.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Livewire\\AssignmentManager\:\:\$addForm\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Livewire/AssignmentManager.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowAssignment\:\:\$metadata\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/WorkflowAssignment.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowAssignment\:\:\$override_edit\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/WorkflowAssignment.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowAssignment\:\:\$override_transition\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/WorkflowAssignment.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowAssignment\:\:\$override_view\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/WorkflowAssignment.php
+
+		-
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Models/WorkflowAssignment.php
+
+		-
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Models/WorkflowNotificationLog.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowScheduledCheck\:\:\$frequency\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/WorkflowScheduledCheck.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowScheduledCheck\:\:\$last_checked_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/WorkflowScheduledCheck.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowScheduledCheck\:\:\$once_per_record\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/WorkflowScheduledCheck.php
+
+		-
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Models/WorkflowStateTransition.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowTransition\:\:\$from_state_id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Models/WorkflowTransition.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowTransition\:\:\$to_state_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/WorkflowTransition.php
+
+		-
+			message: '#^Access to an undefined property RoBYCoNTe\\FilamentFlow\\Models\\WorkflowTransitionSnapshot\:\:\$is_compressed\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Models/WorkflowTransitionSnapshot.php
+
+		-
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Models/WorkflowUserInvolvement.php
+
+		-
+			message: '#^Call to an undefined method RoBYCoNTe\\FilamentFlow\\Tables\\Columns\\StateSelectColumn\:\:getModel\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Tables/Columns/StateSelectColumn.php
