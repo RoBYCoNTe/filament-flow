@@ -84,17 +84,3 @@ AssignmentSummaryEntry::make()
 The `stateColumn` option tells the component which model column holds the current workflow state (default: `'state'`). This is used to resolve the active state and compute effective permissions for each assigned user.
 
 For the `metadataBadges()` extension point and the full data shape passed to callbacks, see the [AssignmentSummaryEntry section in Assignment Management](assignments.md#assignmentsummaryentry-infolist-component).
-
-## WorkflowDiagram
-
-The package includes a `filament-flow::infolists.workflow-diagram` Blade view that renders a visual representation of a workflow's states and the allowed transitions between them. It is used automatically when viewing a Workflow record inside the Filament Flow admin panel and does not need to be wired up manually for that use case.
-
-If you want to embed it in a custom infolist, reference it as a view component:
-
-```php
-use Filament\Infolists\Components\View;
-
-View::make('filament-flow::infolists.workflow-diagram'),
-```
-
-The view expects the `$record` to be a `Workflow` model instance with its `states` and `transitions` relationships loaded.
