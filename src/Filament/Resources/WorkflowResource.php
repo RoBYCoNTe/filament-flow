@@ -214,6 +214,7 @@ class WorkflowResource extends Resource
             'index' => Pages\ListWorkflows::route('/'),
             'create' => Pages\CreateWorkflow::route('/create'),
             'edit' => Pages\EditWorkflow::route('/{record}/edit'),
+            'view' => Pages\ViewWorkflow::route('/{record}'),
         ];
     }
 }

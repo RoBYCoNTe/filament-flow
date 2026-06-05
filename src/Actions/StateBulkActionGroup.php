@@ -60,7 +60,7 @@ class StateBulkActionGroup
         return BulkActionGroup::make(
             static::generateStateBulkActions($stateClass, $columnName)
         )
-            ->label('Change Status')
+            ->label(__('Change Status'))
             ->icon(Heroicon::OutlinedArrowPath)
             ->color('primary');
     }

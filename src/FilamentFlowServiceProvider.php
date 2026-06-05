@@ -65,7 +65,13 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
             });
     }
 
-    public function packageRegistered(): void {}
+    public function packageRegistered(): void
+    {
+        // Register JSON translations early (in register phase) so they are
+        // available before any service provider triggers translation loading
+        // during the boot phase.
+        $this->loadJsonTranslationsFrom(__DIR__.'/../../resources/lang');
+    }
 
     /**
      * @throws ReflectionException

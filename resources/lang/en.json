@@ -70,5 +70,7 @@
     "No users assigned.": "No users assigned.",
     "Access by role": "Access by role",
     "No history yet.": "No history yet.",
-    ":count more entries": ":count more entries"
+    ":count more entries": ":count more entries",
+    "filament-flow.assignment.notification.title": "New Assignment",
+    "filament-flow.assignment.notification.body": "You have been assigned to claim :code."
 }
