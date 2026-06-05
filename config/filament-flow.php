@@ -27,8 +27,9 @@ return [
 
     'cache' => [
         'enabled' => true,
-        'store' => null, // null = default cache store
-        'ttl' => 300, // seconds
+        'store' => null, // null = default cache store (set to 'redis' for Redis, null for Memcached/File/Database based on CACHE_STORE env)
+        'ttl' => 300, // seconds — legacy TTL; prefer safety_ttl for event-driven invalidation
+        'safety_ttl' => 86400, // seconds (24h) — long-lived cache invalidated only on admin updates via observers
         'prefix' => 'filament-flow',
     ],
 

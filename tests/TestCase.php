@@ -15,6 +15,7 @@ use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Livewire\LivewireServiceProvider;
 use Livewire\Mechanisms\DataStore;
@@ -24,6 +25,8 @@ use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowStateMemoryCache;
+use RoBYCoNTe\FilamentFlow\Tables\Columns\StateColumn;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Ticket;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
@@ -35,6 +38,13 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Ensure a clean cache state between tests (array cache persists across RefreshDatabase)
+        Cache::flush();
+
+        // In-memory static caches from caching optimizations
+        WorkflowStateMemoryCache::flush();
+        StateColumn::flushMetadataCache();
 
         // Filament's SupportServiceProvider calls app()->bind(DataStore::class, DataStoreOverride::class),
         // which internally calls dropStaleInstances() and removes Livewire's singleton registration.

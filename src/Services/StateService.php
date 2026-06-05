@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 use Exception;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
 class StateService
 {
@@ -16,13 +17,10 @@ class StateService
     {
         $states = [];
 
-        // Get states from database first
         if (config('filament-flow.enabled', true)) {
             $states = $this->getDatabaseStates($modelClass, $stateColumn);
         }
 
-        // Get states from PHP classes (Spatie) and merge
-        // PHP states with same key override database states for metadata consistency
         try {
             $model = new $modelClass;
             $stateClass = $this->extractStateClass($model->getCasts()[$stateColumn] ?? null);
@@ -30,7 +28,6 @@ class StateService
             if ($stateClass && method_exists($stateClass, 'getStatesLabel')) {
                 $phpStates = $stateClass::getStatesLabel($modelClass);
 
-                // Merge: PHP states take precedence (better metadata)
                 foreach ($phpStates as $key => $label) {
                     $states[$key] = $label;
                 }
@@ -44,33 +41,34 @@ class StateService
 
     /**
      * Get states defined in database
-     * Only returns states that DON'T have a PHP class (class_name is null)
-     * States with PHP classes will be retrieved via Spatie
      */
     protected function getDatabaseStates(string $modelClass, string $stateColumn): array
     {
-        // Get workflow with tenant fallback support
         $workflow = Workflow::findForModel($modelClass, $stateColumn);
 
         if (! $workflow) {
             return [];
         }
 
-        // Get all workflow states and filter to database-only states
-        // A state is "database-only" if it has no class_name or its class_name is not a valid PHP class
-        $workflowStates = WorkflowState::where('workflow_id', $workflow->id)->get();
+        $cache = new WorkflowCacheManager;
+        $cacheKey = "states:{$modelClass}:{$stateColumn}";
 
-        $states = [];
-        foreach ($workflowStates as $workflowState) {
-            $className = $workflowState->class_name;
+        $ttl = config('filament-flow.cache.safety_ttl', 86400);
 
-            // Include state if: no class_name, or class_name is not a real PHP class
-            if ($className === null || ! class_exists($className)) {
-                $states[$workflowState->name] = $workflowState->label;
+        return $cache->remember($cacheKey, $ttl, function () use ($workflow) {
+            $workflowStates = WorkflowState::where('workflow_id', $workflow->id)->get();
+
+            $states = [];
+            foreach ($workflowStates as $workflowState) {
+                $className = $workflowState->class_name;
+
+                if ($className === null || ! class_exists($className)) {
+                    $states[$workflowState->name] = $workflowState->label;
+                }
             }
-        }
 
-        return $states;
+            return $states;
+        }, [$cache->stateTag($workflow->id)]);
     }
 
     /**
@@ -78,30 +76,36 @@ class StateService
      */
     public function getStateMetadata(string $modelClass, string $stateName, string $stateColumn = 'state'): ?array
     {
-        // Get workflow with tenant fallback support
         $workflow = Workflow::findForModel($modelClass, $stateColumn);
 
         if (! $workflow) {
             return null;
         }
 
-        $workflowState = WorkflowState::where('workflow_id', $workflow->id)
-            ->where('name', $stateName)
-            ->first();
+        $cache = new WorkflowCacheManager;
+        $cacheKey = "state_meta:{$workflow->id}:{$stateName}";
 
-        if (! $workflowState) {
-            return null;
-        }
+        $ttl = config('filament-flow.cache.safety_ttl', 86400);
 
-        return [
-            'label' => $workflowState->label,
-            'color' => $workflowState->color,
-            'icon' => $workflowState->icon,
-            'description' => $workflowState->description,
-            'is_initial' => $workflowState->is_initial,
-            'is_final' => $workflowState->is_final,
-            'sort_order' => $workflowState->sort_order,
-        ];
+        return $cache->remember($cacheKey, $ttl, function () use ($workflow, $stateName) {
+            $workflowState = WorkflowState::where('workflow_id', $workflow->id)
+                ->where('name', $stateName)
+                ->first();
+
+            if (! $workflowState) {
+                return null;
+            }
+
+            return [
+                'label' => $workflowState->label,
+                'color' => $workflowState->color,
+                'icon' => $workflowState->icon,
+                'description' => $workflowState->description,
+                'is_initial' => $workflowState->is_initial,
+                'is_final' => $workflowState->is_final,
+                'sort_order' => $workflowState->sort_order,
+            ];
+        }, [$cache->stateTag($workflow->id)]);
     }
 
     /**
@@ -115,11 +119,18 @@ class StateService
             return null;
         }
 
-        $initialState = WorkflowState::where('workflow_id', $workflow->id)
-            ->where('is_initial', true)
-            ->first();
+        $cache = new WorkflowCacheManager;
+        $cacheKey = "initial_state:{$workflow->id}";
 
-        return $initialState?->name;
+        $ttl = config('filament-flow.cache.safety_ttl', 86400);
+
+        return $cache->remember($cacheKey, $ttl, function () use ($workflow) {
+            $initialState = WorkflowState::where('workflow_id', $workflow->id)
+                ->where('is_initial', true)
+                ->first();
+
+            return $initialState?->name;
+        }, [$cache->stateTag($workflow->id)]);
     }
 
     /**
@@ -132,8 +143,6 @@ class StateService
             return null;
         }
 
-        // If using FlexibleStateCast, extract the state class from the parameter
-        // Format: "RoBYCoNTe\FilamentFlow\Casts\FlexibleStateCast:App\States\Order\OrderState"
         if (str_contains($cast, 'FlexibleStateCast:')) {
             $parts = explode(':', $cast);
 

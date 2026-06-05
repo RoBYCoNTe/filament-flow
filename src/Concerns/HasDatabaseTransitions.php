@@ -25,6 +25,7 @@ use RoBYCoNTe\FilamentFlow\Services\ConditionEvaluator;
 use RoBYCoNTe\FilamentFlow\Services\NotificationService;
 use RoBYCoNTe\FilamentFlow\Services\SideEffectExecutor;
 use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowStateMemoryCache;
 use Spatie\ModelStates\Exceptions\TransitionNotFound;
 use Spatie\ModelStates\State;
 use Throwable;
@@ -965,16 +966,27 @@ trait HasDatabaseTransitions
     }
 
     /**
-     * Helper method to get workflow state by class name or name
+     * Helper method to get workflow state by class name or name.
+     * Uses an in-memory cache to avoid repeated queries within the same request.
      */
     private function getWorkflowState(Workflow $workflow, string $stateClass): ?WorkflowState
     {
-        return WorkflowState::where('workflow_id', $workflow->getAttribute('id'))
+        $workflowId = $workflow->getAttribute('id');
+
+        if (WorkflowStateMemoryCache::has($workflowId, $stateClass)) {
+            return WorkflowStateMemoryCache::get($workflowId, $stateClass);
+        }
+
+        $state = WorkflowState::where('workflow_id', $workflowId)
             ->where(function ($query) use ($stateClass) {
                 $query->where('class_name', $stateClass)
                     ->orWhere('name', $stateClass);
             })
             ->first();
+
+        WorkflowStateMemoryCache::set($workflowId, $stateClass, $state);
+
+        return $state;
     }
 
     /**

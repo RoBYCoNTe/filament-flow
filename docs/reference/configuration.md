@@ -51,14 +51,31 @@ This creates `config/filament-flow.php`.
 
 ```php
 'cache' => [
-    'enabled' => true,
-    'store'   => null,           // null = use the default Laravel cache store
-    'ttl'     => 300,            // seconds to cache workflow lookups and access rules
-    'prefix'  => 'filament-flow', // cache key prefix
+    'enabled'    => true,
+    'store'      => null,             // null = use the default Laravel cache store
+    'ttl'        => 300,              // legacy TTL (prefer safety_ttl for event-driven invalidation)
+    'safety_ttl' => 86400,            // 24h safety net — cache lives until invalidated by observers
+    'prefix'     => 'filament-flow',  // cache key prefix
 ],
 ```
 
-Caching covers workflow lookups, access rule evaluation, and field permission maps. Set `enabled` to `false` to disable all caching (useful during development). Set `store` to any named cache driver from your `config/cache.php` (e.g. `'redis'`).
+| Option | Default | Description |
+|---|---|---|
+| `enabled` | `true` | Enable or disable all caching. Set to `false` during local development. |
+| `store` | `null` | Cache store name from `config/cache.php`. `null` = default store. |
+| `ttl` | `300` | Legacy TTL in seconds. Kept for backward compatibility. |
+| `safety_ttl` | `86400` | Safety-net TTL (24 hours). Cache entries are invalidated by observers long before this expires. |
+| `prefix` | `filament-flow` | Prefix prepended to all cache keys. |
+
+### Store Support
+
+| Store | Tag Support | Invalidation |
+|---|---|---|
+| **Redis** (recommended) | Native `Cache::tags()` | Atomic, single operation |
+| **Memcached** | Key-registry fallback | Iterates registry, forgets per key |
+| **File / Database** | Key-registry fallback | Iterates registry, forgets per key |
+
+Redis is recommended for production because it supports native cache tags, enabling granular and atomic invalidation in a single call.
 
 ## Transition History Notes
 

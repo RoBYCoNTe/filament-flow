@@ -14,6 +14,12 @@ use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateFieldRole;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Observers\WorkflowCacheObserver;
 use RoBYCoNTe\FilamentFlow\Testing\TestsFilamentFlow;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -72,15 +78,23 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
 
         // Register cache observer for automatic invalidation
         if (config('filament-flow.cache.enabled', true)) {
-            Workflow::observe(WorkflowCacheObserver::class);
-            WorkflowState::observe(WorkflowCacheObserver::class);
+            $observedModels = [
+                Workflow::class,
+                WorkflowState::class,
+                WorkflowTransition::class,
+                WorkflowStateAccessRule::class,
+                WorkflowStateField::class,
+                WorkflowStateFieldRole::class,
+                WorkflowTransitionField::class,
+                WorkflowTransitionPermission::class,
+                WorkflowTransitionValidationRule::class,
+                WorkflowTransitionSideEffect::class,
+            ];
 
-            if (class_exists(WorkflowStateAccessRule::class)) {
-                WorkflowStateAccessRule::observe(WorkflowCacheObserver::class);
-            }
-
-            if (class_exists(WorkflowStateField::class)) {
-                WorkflowStateField::observe(WorkflowCacheObserver::class);
+            foreach ($observedModels as $modelClass) {
+                if (class_exists($modelClass)) {
+                    $modelClass::observe(WorkflowCacheObserver::class);
+                }
             }
         }
 

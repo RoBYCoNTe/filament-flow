@@ -4,13 +4,13 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Cache;
 use RoBYCoNTe\FilamentFlow\Contracts\HasAccessRules;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 use Spatie\ModelStates\State;
 
 /**
@@ -449,14 +449,18 @@ class WorkflowStateAccessService
             return null;
         }
 
-        // Get active rules for this state and access type
-        /** @noinspection PhpUndefinedMethodInspection */
-        $rules = WorkflowStateAccessRule::query()
-            ->forState($workflowState->id)
-            ->forAccessType($accessType)
-            ->active()
-            ->byPriority()
-            ->get();
+        $cache = new WorkflowCacheManager;
+        $cacheKey = "access_rules:{$workflowState->id}:{$accessType}";
+        $ttl = config('filament-flow.cache.safety_ttl', 86400);
+
+        $rules = $cache->remember($cacheKey, $ttl, function () use ($workflowState, $accessType) {
+            return WorkflowStateAccessRule::query()
+                ->forState($workflowState->id)
+                ->forAccessType($accessType)
+                ->active()
+                ->byPriority()
+                ->get();
+        }, [$cache->accessTag($workflowState->id)]);
 
         if ($rules->isEmpty()) {
             return null;
@@ -681,14 +685,13 @@ class WorkflowStateAccessService
     protected function categorizeAccessibleStates(Workflow $workflow, ?Model $user, string $accessType): array
     {
         if (config('filament-flow.cache.enabled', true) && $user) {
-            $prefix = config('filament-flow.cache.prefix', 'filament-flow');
-            $cacheKey = "{$prefix}:access_cat:{$workflow->id}:{$user->getKey()}:{$accessType}";
-            $ttl = min(config('filament-flow.cache.ttl', 300), 60);
-            $store = config('filament-flow.cache.store');
+            $cache = new WorkflowCacheManager;
+            $cacheKey = "access_cat:{$workflow->id}:{$user->getKey()}:{$accessType}";
+            $ttl = min(config('filament-flow.cache.safety_ttl', 86400), 3600);
 
-            return Cache::store($store)->remember($cacheKey, $ttl, function () use ($workflow, $user, $accessType) {
+            return $cache->remember($cacheKey, $ttl, function () use ($workflow, $user, $accessType) {
                 return $this->categorizeAccessibleStatesUncached($workflow, $user, $accessType);
-            });
+            }, [$cache->accessTag($workflow->id)]);
         }
 
         return $this->categorizeAccessibleStatesUncached($workflow, $user, $accessType);
@@ -775,14 +778,13 @@ class WorkflowStateAccessService
     protected function getAccessibleStates(Workflow $workflow, ?Model $user, string $accessType): array
     {
         if (config('filament-flow.cache.enabled', true) && $user) {
-            $prefix = config('filament-flow.cache.prefix', 'filament-flow');
-            $cacheKey = "{$prefix}:access:{$workflow->id}:{$user->getKey()}:{$accessType}";
-            $ttl = min(config('filament-flow.cache.ttl', 300), 60);
-            $store = config('filament-flow.cache.store');
+            $cache = new WorkflowCacheManager;
+            $cacheKey = "access_states:{$workflow->id}:{$user->getKey()}:{$accessType}";
+            $ttl = min(config('filament-flow.cache.safety_ttl', 86400), 3600);
 
-            return Cache::store($store)->remember($cacheKey, $ttl, function () use ($workflow, $user, $accessType) {
+            return $cache->remember($cacheKey, $ttl, function () use ($workflow, $user, $accessType) {
                 return $this->getAccessibleStatesUncached($workflow, $user, $accessType);
-            });
+            }, [$cache->accessTag($workflow->id)]);
         }
 
         return $this->getAccessibleStatesUncached($workflow, $user, $accessType);
@@ -829,22 +831,26 @@ class WorkflowStateAccessService
      */
     protected function findWorkflowState(Model $record, $state): ?WorkflowState
     {
-        // Get workflow for this model (with tenant fallback support)
+        /** @noinspection PhpPossiblePolymorphicInvocationInspection */
         $workflow = Workflow::findForModel(get_class($record));
 
         if (! $workflow) {
             return null;
         }
 
-        // Convert state to string for lookup
         $stateValue = $state instanceof State ? get_class($state) : (string) $state;
 
-        // Find by class_name first, then by name
-        return $workflow->states()
-            ->where(function ($query) use ($stateValue) {
-                $query->where('class_name', $stateValue)
-                    ->orWhere('name', $stateValue);
-            })
-            ->first();
+        $cache = new WorkflowCacheManager;
+        $cacheKey = "wf_state:{$workflow->id}:{$stateValue}";
+        $ttl = config('filament-flow.cache.safety_ttl', 86400);
+
+        return $cache->remember($cacheKey, $ttl, function () use ($workflow, $stateValue) {
+            return $workflow->states()
+                ->where(function ($query) use ($stateValue) {
+                    $query->where('class_name', $stateValue)
+                        ->orWhere('name', $stateValue);
+                })
+                ->first();
+        }, [$cache->stateTag($workflow->id)]);
     }
 }

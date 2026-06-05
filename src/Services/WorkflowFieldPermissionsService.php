@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
 class WorkflowFieldPermissionsService
 {
@@ -35,14 +36,13 @@ class WorkflowFieldPermissionsService
         $rolesHash = md5(implode(',', $effectiveRoles));
 
         if (config('filament-flow.cache.enabled', true)) {
-            $prefix = config('filament-flow.cache.prefix', 'filament-flow');
-            $cacheKey = "{$prefix}:perms:{$workflow->id}:{$state->id}:{$rolesHash}";
-            $ttl = min(config('filament-flow.cache.ttl', 300), 60);
-            $store = config('filament-flow.cache.store');
+            $cache = new WorkflowCacheManager;
+            $cacheKey = "perms:{$workflow->id}:{$state->id}:{$rolesHash}";
+            $ttl = config('filament-flow.cache.safety_ttl', 86400);
 
-            return Cache::store($store)->remember($cacheKey, $ttl, function () use ($state, $user, $effectiveRoles) {
+            return $cache->remember($cacheKey, $ttl, function () use ($state, $user, $effectiveRoles) {
                 return $this->buildFieldPermissions($state, $user, $effectiveRoles);
-            });
+            }, [$cache->fieldsTag($workflow->id)]);
         }
 
         return $this->buildFieldPermissions($state, $user, $effectiveRoles);
@@ -95,10 +95,26 @@ class WorkflowFieldPermissionsService
             return [];
         }
 
-        $fieldPermissions = $initialState->fields()->with('roleOverrides')->get();
-
-        // During creation the user is always the owner (no record yet, no assignments)
         $effectiveRoles = $user ? $this->resolveEffectiveRoles($user, null, isCreation: true) : [];
+        $rolesHash = md5(implode(',', $effectiveRoles));
+
+        $cache = new WorkflowCacheManager;
+
+        if (config('filament-flow.cache.enabled', true)) {
+            $cacheKey = "creation_perms:{$workflow->id}:{$initialState->id}:{$rolesHash}";
+            $ttl = config('filament-flow.cache.safety_ttl', 86400);
+
+            return $cache->remember($cacheKey, $ttl, function () use ($initialState, $user, $effectiveRoles) {
+                return $this->buildCreationFieldPermissions($initialState, $user, $effectiveRoles);
+            }, [$cache->fieldsTag($workflow->id)]);
+        }
+
+        return $this->buildCreationFieldPermissions($initialState, $user, $effectiveRoles);
+    }
+
+    protected function buildCreationFieldPermissions(WorkflowState $initialState, ?Model $user, array $effectiveRoles): array
+    {
+        $fieldPermissions = $initialState->fields()->with('roleOverrides')->get();
 
         $config = [];
 
@@ -133,8 +149,26 @@ class WorkflowFieldPermissionsService
             return [];
         }
 
-        $states = $workflow->states()->with('fields.roleOverrides')->get();
         $userRoles = $user ? $this->resolveUserRoles($user) : [];
+        $rolesHash = md5(implode(',', $userRoles));
+
+        $cache = new WorkflowCacheManager;
+
+        if (config('filament-flow.cache.enabled', true)) {
+            $cacheKey = "table_perms:{$workflow->id}:{$rolesHash}";
+            $ttl = config('filament-flow.cache.safety_ttl', 86400);
+
+            return $cache->remember($cacheKey, $ttl, function () use ($workflow, $user, $userRoles) {
+                return $this->buildTableColumnPermissions($workflow, $user, $userRoles);
+            }, [$cache->fieldsTag($workflow->id)]);
+        }
+
+        return $this->buildTableColumnPermissions($workflow, $user, $userRoles);
+    }
+
+    protected function buildTableColumnPermissions(Workflow $workflow, ?Model $user, array $userRoles): array
+    {
+        $states = $workflow->states()->with('fields.roleOverrides')->get();
 
         // Collect per-field visibility across all states
         $fieldVisibility = [];

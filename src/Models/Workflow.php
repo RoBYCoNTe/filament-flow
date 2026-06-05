@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Cache;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 use RuntimeException;
 
 /**
@@ -76,15 +77,13 @@ class Workflow extends Model
      */
     public static function findForModel(string $modelClass, string $stateColumn = 'state', ?int $tenantId = null): ?static
     {
-        // Determine the tenant ID
         $effectiveTenantId = $tenantId ?? static::getCurrentTenantId();
 
-        // Check cache
         if (config('filament-flow.cache.enabled', true)) {
             $prefix = config('filament-flow.cache.prefix', 'filament-flow');
-            $cacheKey = "{$prefix}:workflow:{$modelClass}:{$stateColumn}:{$effectiveTenantId}";
-            $ttl = config('filament-flow.cache.ttl', 300);
             $store = config('filament-flow.cache.store');
+            $cacheKey = "{$prefix}:workflow:{$modelClass}:{$stateColumn}:{$effectiveTenantId}";
+            $ttl = config('filament-flow.cache.safety_ttl', 86400);
 
             return Cache::store($store)->remember($cacheKey, $ttl, function () use ($modelClass, $stateColumn, $effectiveTenantId) {
                 return static::findForModelUncached($modelClass, $stateColumn, $effectiveTenantId);
@@ -132,12 +131,13 @@ class Workflow extends Model
      */
     public static function flushCache(): void
     {
-        $prefix = config('filament-flow.cache.prefix', 'filament-flow');
+        if (! config('filament-flow.cache.enabled', true)) {
+            return;
+        }
+
+        $cache = new WorkflowCacheManager;
         $store = config('filament-flow.cache.store');
 
-        // Since we can't enumerate cache keys easily, flush the tagged group
-        // or rely on the observer to clear specific keys.
-        // For stores that support tags:
         try {
             Cache::store($store)->flush();
         } catch (\Throwable) {
@@ -248,6 +248,17 @@ class Workflow extends Model
 
     public function initialState(): ?WorkflowState
     {
+        $cache = new WorkflowCacheManager;
+
+        if ($cache->hasTagSupport() || $cache->getStore() === 'array') {
+            $cacheKey = "initial_state_obj:{$this->id}";
+            $ttl = config('filament-flow.cache.safety_ttl', 86400);
+
+            return $cache->remember($cacheKey, $ttl, function () {
+                return $this->states()->where('is_initial', true)->first();
+            }, [$cache->stateTag($this->id)]);
+        }
+
         return $this->states()->where('is_initial', true)->first();
     }
 

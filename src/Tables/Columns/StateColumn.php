@@ -8,22 +8,26 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateSorting;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 
-/**
- * A text column for displaying states with custom sort order support.
- *
- * This column displays the state label and supports sorting based on
- * the sort order defined in the state class via HasStateSortOrder interface.
- *
- * @example
- * StateColumn::make('status')
- *     ->badge()
- *     ->sortable()
- */
 class StateColumn extends TextColumn
 {
     use HasStateSorting;
 
     protected Closure|string|null $attribute = null;
+
+    /**
+     * In-memory cache for getStateMetadata results during a single render.
+     *
+     * @var array<string, array|null>
+     */
+    protected static array $metadataCache = [];
+
+    /**
+     * Flush the in-memory metadata cache (useful in tests).
+     */
+    public static function flushMetadataCache(): void
+    {
+        static::$metadataCache = [];
+    }
 
     protected function setUp(): void
     {
@@ -41,19 +45,12 @@ class StateColumn extends TextColumn
                 return null;
             }
 
-            // If it's a database-only state (string), get label from database
             if (is_string($stateInstance)) {
-                $stateService = app(StateService::class);
-                $metadata = $stateService->getStateMetadata(
-                    get_class($record),
-                    $stateInstance,
-                    $this->getAttribute()
-                );
+                $metadata = $this->getCachedStateMetadata($record, $stateInstance);
 
                 return $metadata['label'] ?? $stateInstance;
             }
 
-            // Get label if available (PHP State class)
             if (method_exists($stateInstance, 'getLabel')) {
                 return $stateInstance->getLabel();
             }
@@ -61,7 +58,6 @@ class StateColumn extends TextColumn
             return $stateInstance::getMorphClass();
         });
 
-        // Setup badge colors if states have color metadata
         $this->badge()
             ->color(function ($record) {
                 $stateInstance = $record->{$this->getAttribute()};
@@ -70,14 +66,8 @@ class StateColumn extends TextColumn
                     return null;
                 }
 
-                // If it's a database-only state (string), get color from database
                 if (is_string($stateInstance)) {
-                    $stateService = app(StateService::class);
-                    $metadata = $stateService->getStateMetadata(
-                        get_class($record),
-                        $stateInstance,
-                        $this->getAttribute()
-                    );
+                    $metadata = $this->getCachedStateMetadata($record, $stateInstance);
 
                     return $metadata['color'] ?? null;
                 }
@@ -89,7 +79,6 @@ class StateColumn extends TextColumn
                 return null;
             });
 
-        // Setup icon if states have icon metadata
         $this->icon(function ($record) {
             $stateInstance = $record->{$this->getAttribute()};
 
@@ -97,14 +86,8 @@ class StateColumn extends TextColumn
                 return null;
             }
 
-            // If it's a database-only state (string), get icon from database
             if (is_string($stateInstance)) {
-                $stateService = app(StateService::class);
-                $metadata = $stateService->getStateMetadata(
-                    get_class($record),
-                    $stateInstance,
-                    $this->getAttribute()
-                );
+                $metadata = $this->getCachedStateMetadata($record, $stateInstance);
 
                 return $metadata['icon'] ?? null;
             }
@@ -117,6 +100,22 @@ class StateColumn extends TextColumn
         });
     }
 
+    protected function getCachedStateMetadata(Model $record, string $stateValue): ?array
+    {
+        $class = get_class($record);
+        $attribute = $this->getAttribute();
+        $cacheKey = "{$class}:{$attribute}:{$stateValue}";
+
+        if (array_key_exists($cacheKey, static::$metadataCache)) {
+            return static::$metadataCache[$cacheKey];
+        }
+
+        $stateService = app(StateService::class);
+        $metadata = $stateService->getStateMetadata($class, $stateValue, $attribute);
+
+        return static::$metadataCache[$cacheKey] = $metadata;
+    }
+
     public function getAttribute(?Model $model = null): string
     {
         if ($model === null) {
@@ -127,7 +126,6 @@ class StateColumn extends TextColumn
             return $this->evaluate($this->attribute);
         }
 
-        // Fallback: try getDefaultStates() if available, otherwise use column name or 'state'
         if (method_exists($model, 'getDefaultStates')) {
             $defaultStates = $model::getDefaultStates();
             if ($defaultStates && ! $defaultStates->isEmpty()) {

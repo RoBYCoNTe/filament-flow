@@ -13,6 +13,7 @@ use RoBYCoNTe\FilamentFlow\Forms\Components\AssigneeSelect;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
 class TransitionFormService
 {
@@ -33,39 +34,40 @@ class TransitionFormService
             return null;
         }
 
-        // Get from and to states - search by class_name OR name
-        /** @noinspection DuplicatedCode */
-        $fromState = WorkflowState::where('workflow_id', $workflow->id)
-            ->where(function ($query) use ($fromStateClass) {
-                $query->where('class_name', $fromStateClass)
-                    ->orWhere('name', $fromStateClass);
-            })
-            ->first();
+        $cache = new WorkflowCacheManager;
+        $cacheKey = "trans_cfg:{$workflow->id}:{$fromStateClass}:{$toStateClass}:{$transitionClass}";
+        $ttl = config('filament-flow.cache.safety_ttl', 86400);
 
-        $toState = WorkflowState::where('workflow_id', $workflow->id)
-            ->where(function ($query) use ($toStateClass) {
-                $query->where('class_name', $toStateClass)
-                    ->orWhere('name', $toStateClass);
-            })
-            ->first();
+        return $cache->remember($cacheKey, $ttl, function () use ($workflow, $fromStateClass, $toStateClass, $transitionClass) {
+            $fromState = WorkflowState::where('workflow_id', $workflow->id)
+                ->where(function ($query) use ($fromStateClass) {
+                    $query->where('class_name', $fromStateClass)
+                        ->orWhere('name', $fromStateClass);
+                })
+                ->first();
 
-        if (! $fromState || ! $toState) {
-            return null;
-        }
+            $toState = WorkflowState::where('workflow_id', $workflow->id)
+                ->where(function ($query) use ($toStateClass) {
+                    $query->where('class_name', $toStateClass)
+                        ->orWhere('name', $toStateClass);
+                })
+                ->first();
 
-        // Build transition query
-        $query = WorkflowTransition::where('workflow_id', $workflow->id)
-            ->where('from_state_id', $fromState->id)
-            ->where('to_state_id', $toState->id)
-            ->with('fields');
+            if (! $fromState || ! $toState) {
+                return null;
+            }
 
-        // If transition class is specified, filter by it
-        // This allows selecting a specific transition when multiple exist for same from/to states
-        if ($transitionClass) {
-            $query->where('class_name', $transitionClass);
-        }
+            $query = WorkflowTransition::where('workflow_id', $workflow->id)
+                ->where('from_state_id', $fromState->id)
+                ->where('to_state_id', $toState->id)
+                ->with('fields');
 
-        return $query->first();
+            if ($transitionClass) {
+                $query->where('class_name', $transitionClass);
+            }
+
+            return $query->first();
+        }, [$cache->stateTag($workflow->id)]);
     }
 
     /**
