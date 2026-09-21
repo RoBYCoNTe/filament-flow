@@ -75,7 +75,6 @@ trait ChecksTransitionGuards
             $transition,
         );
 
-        file_put_contents('/tmp/x.log', 'ENGINE errors='.json_encode($result->errors()).PHP_EOL, FILE_APPEND);
 
         if ($result->isNotEmpty()) {
             throw new WorkflowValidationException($result);
