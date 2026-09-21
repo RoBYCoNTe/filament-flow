@@ -224,14 +224,34 @@ trait DiffsWorkflowDefinition
             }
         }
 
-        if ($this->normalize($row->conditions) !== $this->normalize($data['conditions'])) {
+        // How much a transition checks, and what it expects of the caller, are part of
+        // the declaration as much as its label is: without them here a call could be
+        // loosened — a draft that stops validating, a step that stops requiring every
+        // field — and the database would keep answering with the old rule.
+        if ($row->validation_level->value !== ($data['validation_level'] ?? null)) {
+            return true;
+        }
+
+        // An empty set of metadata is one thing written two ways — the column may hold
+        // `null`, the definition may hold `[]` — and a difference that is not one would
+        // keep every transition permanently out of date.
+        if ($this->normalize((array) $row->metadata) !== $this->normalize((array) ($data['metadata'] ?? []))) {
+            return true;
+        }
+
+        // Same rule as the metadata: a set that is empty may be written `null` in the
+        // column and `[]` in the definition, and that is not a difference.
+        if ($this->normalize((array) $row->conditions) !== $this->normalize((array) $data['conditions'])) {
             return true;
         }
 
         $existingEffects = WorkflowTransitionSideEffect::query()
             ->where('transition_id', $row->id)
             ->get()
-            ->map(fn (WorkflowTransitionSideEffect $e): array => $this->clean($e->getAttributes(), ['id', 'transition_id', 'created_at', 'updated_at', 'sort_order']))
+            // `toArray()` and not `getAttributes()`: the raw attributes keep a JSON column
+            // as the string it is stored in, while the definition holds the decoded value,
+            // and comparing the two would make every row look different forever.
+            ->map(fn (WorkflowTransitionSideEffect $e): array => $this->clean($e->toArray(), ['id', 'transition_id', 'created_at', 'updated_at', 'sort_order']))
             ->sortBy('field_name')
             ->values()
             ->all();
@@ -246,7 +266,7 @@ trait DiffsWorkflowDefinition
         $existingRules = WorkflowTransitionValidationRule::query()
             ->where('transition_id', $row->id)
             ->get()
-            ->map(fn (WorkflowTransitionValidationRule $r): array => $this->clean($r->getAttributes(), ['id', 'transition_id', 'created_at', 'updated_at', 'sort_order']))
+            ->map(fn (WorkflowTransitionValidationRule $r): array => $this->clean($r->toArray(), ['id', 'transition_id', 'created_at', 'updated_at', 'sort_order']))
             ->sortBy('field_name')
             ->values()
             ->all();
