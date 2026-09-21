@@ -87,7 +87,11 @@ class WorkflowResource extends Resource
                     ->required()
                     ->maxLength(255)
                     ->placeholder(__('e.g., Order Processing'))
-                    ->helperText(__('A descriptive name to identify this workflow (e.g., "Order Processing", "Invoice Approval").'))
+                    ->helperText(__('A descriptive name to identify this workflow (e.g., "Order Processing", "Invoice Approval").')),
+
+                Forms\Components\TextInput::make('label')
+                    ->maxLength(255)
+                    ->helperText(__('What people read: the name stays the key the code and the rows use.'))
                     ->columnSpanFull(),
 
                 Forms\Components\Select::make('model_type')
@@ -122,6 +126,7 @@ class WorkflowResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
+                    ->getStateUsing(fn (Workflow $record): string => $record->label ?: $record->name)
                     ->label(__('Name'))
                     ->searchable()
                     ->sortable(),

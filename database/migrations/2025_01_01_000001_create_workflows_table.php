@@ -14,6 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tenant_id')->nullable();
 
             $table->string('name');
+            $table->string('label')->nullable();
             $table->string('model_type');
             $table->string('state_column')->default('state');
             $table->boolean('is_active')->default(true);

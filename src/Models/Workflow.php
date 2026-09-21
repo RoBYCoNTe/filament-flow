@@ -26,6 +26,7 @@ use RuntimeException;
  * @property int $id
  * @property int|null $tenant_id
  * @property string $name
+ * @property string|null $label
  * @property string $model_type
  * @property bool $is_active
  * @property int $schema_version
@@ -43,6 +44,7 @@ class Workflow extends Model
     protected $fillable = [
         'tenant_id',
         'name',
+        'label',
         'model_type',
         'state_column',
         'is_active',

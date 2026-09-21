@@ -445,5 +445,6 @@
     "Safe": "Sicura",
     "Additive": "Aggiuntiva",
     "Breaking": "Distruttiva",
-    "{1}1 error|[2,*]:count errors": "{1}1 errore|[2,*]:count errori"
+    "{1}1 error|[2,*]:count errors": "{1}1 errore|[2,*]:count errori",
+    "What people read: the name stays the key the code and the rows use.": "Ciò che le persone leggono: il nome resta la chiave usata dal codice e dalle righe."
 }

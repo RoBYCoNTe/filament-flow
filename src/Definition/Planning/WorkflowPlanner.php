@@ -54,6 +54,10 @@ final class WorkflowPlanner
             return new WorkflowChangePlan($definition, null, $changes, $conflicts);
         }
 
+        if (($existing->label ?: null) !== ($definition->getLabel() ?: null)) {
+            $changes[] = new WorkflowChange('updated_workflow', $definition->getName(), MutationClass::Safe);
+        }
+
         $existingStates = WorkflowState::query()->where('workflow_id', $existing->id)->get()->keyBy('name');
         $statesById = $existingStates->keyBy('id');
         $existingTransitions = WorkflowTransition::query()->where('workflow_id', $existing->id)->get()->keyBy('name');

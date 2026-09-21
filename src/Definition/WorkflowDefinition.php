@@ -31,6 +31,12 @@ final class WorkflowDefinition
     /** @var array<string,mixed> */
     private array $metadata = [];
 
+    /**
+     * What the workflow is called where a person reads it; the name stays the key the
+     * code and the rows use. A workflow without a label is shown by its name.
+     */
+    private ?string $label = null;
+
     private function __construct(
         private readonly string $name,
         private readonly string $modelType,
@@ -39,6 +45,18 @@ final class WorkflowDefinition
     public static function make(string $name, string $modelType): self
     {
         return new self($name, $modelType);
+    }
+
+    public function label(string $label): self
+    {
+        $this->label = $label;
+
+        return $this;
+    }
+
+    public function getLabel(): ?string
+    {
+        return $this->label;
     }
 
     public function stateColumn(string $column): self
@@ -211,6 +229,7 @@ final class WorkflowDefinition
     {
         return [
             'name' => $this->name,
+            'label' => $this->label,
             'model_type' => $this->modelType,
             'state_column' => $this->stateColumn,
             'is_active' => $this->active,
@@ -231,6 +250,10 @@ final class WorkflowDefinition
             ->active((bool) ($data['is_active'] ?? true))
             ->creationPolicy($data['creation_policy'] ?? [])
             ->metadata($data['metadata'] ?? []);
+
+        if (($data['label'] ?? null) !== null) {
+            $definition->label((string) $data['label']);
+        }
 
         foreach ($data['states'] ?? [] as $state) {
             $built = State::make((string) $state['name'], (string) ($state['label'] ?? $state['name']))

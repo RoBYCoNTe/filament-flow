@@ -63,6 +63,7 @@ final class WorkflowApplier
             $workflow->fill([
                 'tenant_id' => $tenantId,
                 'name' => $definition->getName(),
+                'label' => $definition->getLabel() ?: null,
                 'model_type' => $modelType,
                 'state_column' => $definition->getStateColumn(),
                 'is_active' => $definition->isActive(),
