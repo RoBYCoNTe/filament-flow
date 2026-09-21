@@ -54,7 +54,9 @@ export default defineConfig({
         text: 'Workflows',
         items: [
           { text: 'Database-Driven', link: '/workflows/database-driven' },
+          { text: 'Definition SDK', link: '/workflows/definition-sdk' },
           { text: 'Access Control', link: '/workflows/access-control' },
+          { text: 'Validation', link: '/workflows/validation' },
           { text: 'Notifications', link: '/workflows/notifications' },
           { text: 'Lifecycle Events', link: '/workflows/events' },
           { text: 'Conditions & Actions', link: '/workflows/conditions' },

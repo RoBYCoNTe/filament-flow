@@ -40,7 +40,7 @@ return new class extends Migration
             $table->foreignId('check_id')->constrained('workflow_scheduled_checks')->cascadeOnDelete();
 
             $table->string('model_type', 100);
-            $table->unsignedBigInteger('model_id');
+            $table->string('model_id', 36);
 
             $table->enum('result', ['triggered', 'skipped', 'already_executed', 'error']);
             $table->json('metadata')->nullable();

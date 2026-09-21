@@ -54,11 +54,26 @@ return new class extends Migration
             $table->string('field_name');
             $table->json('rules');
             $table->string('custom_message')->nullable();
+
+            // How `rules` is interpreted: Laravel rules, names resolved by the
+            // validation rule registry, or a single formula expression.
+            $table->string('rule_type', 24)->default('laravel');
+
+            // Formula that must hold for the rule to be evaluated (conditional
+            // validation); null means "always".
+            $table->string('condition', 1024)->nullable();
+
+            // Label of the target field, shown in the validation summary for
+            // paths that have no form component (virtual keys).
+            $table->string('label')->nullable();
             $table->integer('sort_order')->default(0);
 
             $table->timestamps();
 
-            $table->unique(['transition_id', 'field_name'], 'wf_trans_val_rules_transition_field_unique');
+            // A field can carry more than one rule entry (e.g. a Laravel rule and
+            // an expression rule, with different conditions and messages), so the
+            // field name is not unique: the order is what the engine follows.
+            $table->index(['transition_id', 'field_name'], 'wf_trans_val_rules_transition_field_index');
             $table->index(['transition_id', 'sort_order'], 'wf_trans_val_rules_transition_sort_index');
         });
     }

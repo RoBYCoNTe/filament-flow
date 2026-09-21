@@ -52,7 +52,9 @@ class FieldPermissionApplier
                     $children = $component->getChildComponents();
                     if (! empty($children)) {
                         $modifiedChildren = static::apply($children, $permissions);
-                        $component->schema($modifiedChildren);
+                        if (method_exists($component, 'schema')) {
+                            $component->schema($modifiedChildren);
+                        }
                     }
                 } catch (\Throwable) {
                     // Component may not have a container context (e.g. standalone usage)

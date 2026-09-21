@@ -11,17 +11,19 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
 use RoBYCoNTe\FilamentFlow\Contracts\PermissionResolver;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use Spatie\Permission\Models\Role;
 
 class TransitionPermissionsRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'permissions';
 
     protected static ?string $title = 'Permissions';
@@ -126,13 +128,6 @@ class TransitionPermissionsRelationManager extends RelationManager
         ];
     }
 
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
-    }
-
     public function table(Table $table): Table
     {
         return $table
@@ -168,19 +163,19 @@ class TransitionPermissionsRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(fn (Model $record) => $record->toArray())
+                        ->fillForm(fn (WorkflowTransitionPermission $record) => $record->toArray())
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => __(ucfirst($record->permission_type)).($record->permission_value ? ": {$record->permission_value}" : ''))
+                        ->modalHeading(fn (WorkflowTransitionPermission $record) => __(ucfirst($record->permission_type)).($record->permission_value ? ": {$record->permission_value}" : ''))
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(fn (Model $record, array $data) => $record->update(static::resolveData($data))),
+                        ->action(fn (WorkflowTransitionPermission $record, array $data) => $record->update(static::resolveData($data))),
 
                     Action::make('delete')
                         ->label(__('Delete'))
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowTransitionPermission $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

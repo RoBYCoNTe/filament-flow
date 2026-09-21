@@ -14,12 +14,31 @@ Stores one workflow definition per model class (and optionally per tenant).
 | `model_type` | varchar | No | Fully-qualified model class name |
 | `state_column` | varchar | No | Column on the model that holds the state value (default: `state`) |
 | `is_active` | boolean | No | Whether this workflow is active (default: `true`) |
+| `schema_version` | unsigned int | No | Workflow definition version (default `1`); bumped on breaking changes |
 | `creation_policy` | json | Yes | Options for record creation, e.g. `auto_assign_creator`, `assignment_type` |
 | `metadata` | json | Yes | Arbitrary extra data |
 | `created_at` | timestamp | Yes | |
 | `updated_at` | timestamp | Yes | |
 
 Unique index on `(tenant_id, model_type, state_column)`.
+
+## workflow_snapshots
+
+Versioned snapshots of a workflow definition, written before a breaking change.
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | bigint unsigned | No | Primary key |
+| `workflow_id` | bigint unsigned | No | Foreign key to `workflows` |
+| `version` | unsigned int | No | Definition version captured by this snapshot |
+| `snapshot` | json | No | Snapshot payload (states, transitions, side effects, validation rules, state fields) |
+| `created_by` | bigint unsigned | Yes | User who triggered the change |
+| `changes` | json | Yes | Description of the change that required the snapshot |
+| `migrated_records` | unsigned int | Yes | Records migrated by the resulting change (if any) |
+| `created_at` | timestamp | Yes | |
+| `updated_at` | timestamp | Yes | |
+
+Unique index on `(workflow_id, version)`.
 
 ## workflow_states
 

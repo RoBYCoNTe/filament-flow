@@ -3,6 +3,8 @@
 namespace RoBYCoNTe\FilamentFlow\Services;
 
 use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Exceptions\FormulaConditionFailedException;
+use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
 use Throwable;
 
 class ConditionEvaluator
@@ -13,9 +15,12 @@ class ConditionEvaluator
      *
      * @param  array|null  $conditions  JSON-decoded conditions array
      *
-     * Each condition: {"field": "assignmentType.name", "operator": "in", "value": ["Compatibilità"]}
+     * Field condition: {"field": "assignmentType.name", "operator": "in", "value": ["Compatibilità"]}
+     * Formula condition: {"type": "formula", "expression": "amount > 0", "message_template": "Amount must be positive."}
      *
      * Supported operators: =, !=, in, not_in, >, <, >=, <=, is_null, is_not_null, contains
+     *
+     * @throws FormulaConditionFailedException when a formula condition is not satisfied
      */
     public function evaluate(Model $model, ?array $conditions): bool
     {
@@ -32,8 +37,15 @@ class ConditionEvaluator
         return true;
     }
 
+    /**
+     * @throws FormulaConditionFailedException
+     */
     protected function evaluateCondition(Model $model, array $condition): bool
     {
+        if (($condition['type'] ?? 'field') === 'formula') {
+            return $this->evaluateFormulaCondition($model, $condition);
+        }
+
         $field = $condition['field'] ?? null;
         $operator = $condition['operator'] ?? '=';
         $value = $condition['value'] ?? $condition['values'] ?? null;
@@ -58,6 +70,29 @@ class ConditionEvaluator
             'contains' => is_string($modelValue) && str_contains($modelValue, (string) $value),
             default => true,
         };
+    }
+
+    /**
+     * @throws FormulaConditionFailedException when the formula evaluates to false
+     */
+    protected function evaluateFormulaCondition(Model $model, array $condition): bool
+    {
+        $expression = $condition['expression'] ?? '';
+        $messageTemplate = $condition['message_template'] ?? $condition['message'] ?? 'Condition not met.';
+
+        $registry = app(FormulaConditionRegistry::class);
+
+        if (! $registry->has()) {
+            return true;
+        }
+
+        $provider = $registry->get();
+
+        if ($provider->evaluate($expression, $model)) {
+            return true;
+        }
+
+        throw new FormulaConditionFailedException($provider->interpolate($messageTemplate, $model));
     }
 
     /**

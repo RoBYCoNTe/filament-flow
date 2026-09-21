@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationRecipient;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowUserInvolvement;
+use RoBYCoNTe\FilamentFlow\Support\UserModel;
 
 /**
  * Resolves notification recipients based on configuration.
@@ -363,9 +364,7 @@ class RecipientResolver
      */
     protected function getUserModel(): string
     {
-        return config('filament-flow.user_model')
-            ?? config('auth.providers.users.model')
-            ?? 'App\\Models\\User';
+        return UserModel::resolve();
     }
 
     /**

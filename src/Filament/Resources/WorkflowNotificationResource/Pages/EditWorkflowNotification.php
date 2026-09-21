@@ -8,7 +8,11 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowNotificationResource;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification;
 
+/**
+ * @property WorkflowNotification $record
+ */
 class EditWorkflowNotification extends EditRecord
 {
     protected static string $resource = WorkflowNotificationResource::class;

@@ -15,9 +15,19 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowTransitionResource;
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
 class TransitionsRelationManager extends RelationManager
 {
+    /** Owner record of this relation manager, with its concrete type. */
+    protected function owner(): Workflow
+    {
+        /** @var Workflow $owner */
+        $owner = $this->getOwnerRecord();
+
+        return $owner;
+    }
+
     protected static string $relationship = 'transitions';
 
     protected static ?string $title = 'Transitions';
@@ -32,7 +42,7 @@ class TransitionsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema
-            ->schema(WorkflowTransitionResource::getGeneralFormSchema($this->getOwnerRecord()->getKey()))
+            ->schema(WorkflowTransitionResource::getGeneralFormSchema($this->owner()->getKey()))
             ->columns(1);
     }
 
@@ -45,7 +55,7 @@ class TransitionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('fromState.label')
                     ->label(__('From'))
                     ->badge()
-                    ->color(fn ($record) => $record->fromState?->color ?? 'gray')
+                    ->color(fn ($record) => $record->fromState->color ?? 'gray')
                     ->placeholder(__('Any'))
                     ->sortable(),
 
@@ -58,7 +68,7 @@ class TransitionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('toState.label')
                     ->label(__('To'))
                     ->badge()
-                    ->color(fn ($record) => $record->toState?->color ?? 'gray')
+                    ->color(fn ($record) => $record->toState->color ?? 'gray')
                     ->placeholder(__('Action'))
                     ->sortable(),
 
@@ -98,21 +108,21 @@ class TransitionsRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\SelectFilter::make('from_state_id')
                     ->label(__('From State'))
-                    ->options(fn () => $this->getOwnerRecord()
+                    ->options(fn () => $this->owner()
                         ->states()
                         ->pluck('label', 'id')),
 
                 Tables\Filters\SelectFilter::make('to_state_id')
                     ->label(__('To State'))
-                    ->options(fn () => $this->getOwnerRecord()
+                    ->options(fn () => $this->owner()
                         ->states()
                         ->pluck('label', 'id')),
             ])
             ->headerActions([
                 CreateAction::make()
                     ->label(__('Add Transition'))
-                    ->disabled(fn () => $this->getOwnerRecord()->states()->count() < 2)
-                    ->tooltip(fn () => $this->getOwnerRecord()->states()->count() < 2
+                    ->disabled(fn () => $this->owner()->states()->count() < 2)
+                    ->tooltip(fn () => $this->owner()->states()->count() < 2
                         ? __('You need at least 2 states to create a transition')
                         : null),
             ])

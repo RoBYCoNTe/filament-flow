@@ -3,6 +3,7 @@
 namespace RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowTransitionResource\RelationManagers;
 
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -10,13 +11,24 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use RoBYCoNTe\FilamentFlow\Forms\Components\FormulaEditorComponent;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 
 class SideEffectsRelationManager extends RelationManager
 {
+    /** Effect type of the record being edited, as a plain string. */
+    private function editedEffectType(Component $component): string
+    {
+        $record = $component->getRecord();
+
+        return $record instanceof WorkflowTransitionSideEffect ? (string) $record->effect_type : '';
+    }
+
     protected static string $relationship = 'sideEffects';
 
     protected static ?string $title = 'Side Effects';
@@ -41,6 +53,7 @@ class SideEffectsRelationManager extends RelationManager
                         'clear_field' => __('Clear Field'),
                         'increment' => __('Increment'),
                         'custom_class' => __('Custom Class'),
+                        'create_child_application' => __('Create Child Application'),
                     ])
                     ->native(false)
                     ->live()
@@ -52,27 +65,27 @@ class SideEffectsRelationManager extends RelationManager
                     ->maxLength(255)
                     ->placeholder('closed_date')
                     ->helperText(__('The model attribute to modify.'))
-                    ->hidden(fn (Forms\Components\TextInput $component): bool => ($component->getRecord()?->effect_type ?? $component->getState()) === 'custom_class'),
+                    ->hidden(fn (Forms\Components\TextInput $component): bool => in_array(
+                        $this->editedEffectType($component) ?: $component->getState(),
+                        ['custom_class', 'create_child_application'],
+                    )),
 
-                Forms\Components\TextInput::make('value_expression')
-                    ->label(fn (Forms\Components\TextInput $component): string => match ($component->getRecord()?->effect_type ?? '') {
+                FormulaEditorComponent::make('value_expression')
+                    ->label(fn (FormulaEditorComponent $component): string => match ($this->editedEffectType($component)) {
                         'custom_class' => __('Class Name'),
                         'set_timestamp' => __('Timestamp Expression'),
                         default => __('Value Expression'),
                     })
-                    ->maxLength(255)
-                    ->placeholder(fn (Forms\Components\TextInput $component): string => match ($component->getRecord()?->effect_type ?? '') {
-                        'set_field' => 'field:source_field or literal value',
-                        'set_timestamp' => 'now',
-                        'increment' => '1',
-                        'custom_class' => 'App\\SideEffects\\MyEffect',
-                        default => '',
-                    })
-                    ->helperText(fn (Forms\Components\TextInput $component): string => match ($component->getRecord()?->effect_type ?? '') {
+                    ->scope('workflow')
+                    ->contextType(WorkflowTransitionSideEffect::class)
+                    ->contextId(fn (FormulaEditorComponent $component) => $component->getRecord()?->getKey())
+                    ->height('80px')
+                    ->hint(fn (FormulaEditorComponent $component): string => match ($this->editedEffectType($component)) {
                         'set_field' => __('Use "field:name" to copy from another field, or a literal value.'),
                         'set_timestamp' => __('Use "now" for current time, or leave empty.'),
                         'increment' => __('Amount to increment by (default: 1).'),
                         'custom_class' => __('Fully qualified class name with an execute(Model) method.'),
+                        'create_child_application' => __('JSON config: child_scheme_slug, initial_state, prevent_duplicates, assign_sequential_number, field_mapping [{from, to, transform?}].'),
                         default => '',
                     }),
 
@@ -114,6 +127,7 @@ class SideEffectsRelationManager extends RelationManager
                         'clear_field' => __('Clear'),
                         'increment' => __('Increment'),
                         'custom_class' => __('Custom'),
+                        'create_child_application' => __('Child App'),
                         default => $state,
                     }),
 
@@ -135,8 +149,10 @@ class SideEffectsRelationManager extends RelationManager
                     ->label(__('Add Side Effect')),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ]),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

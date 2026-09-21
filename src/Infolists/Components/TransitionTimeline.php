@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
+use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 
 class TransitionTimeline extends Entry
 {
@@ -94,13 +95,9 @@ class TransitionTimeline extends Entry
             return false;
         }
 
-        $superAdminRoles = config('filament-flow.state_access.super_admin_roles', ['super_admin']);
-
-        if (method_exists($user, 'hasAnyRole')) {
-            return $user->hasAnyRole($superAdminRoles);
-        }
-
-        return false;
+        // Same resolver as the access rules: a host that keeps super admins
+        // elsewhere (tenant roles, custom resolver) is honoured here too.
+        return app(AccessRuleEvaluator::class)->isSuperAdmin($user);
     }
 
     public function getLimit(): int

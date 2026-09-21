@@ -4,13 +4,29 @@
 
 namespace RoBYCoNTe\FilamentFlow\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+use RoBYCoNTe\FilamentFlow\Concerns\ResolvesUserModel;
 
+/**
+ * @property int $id
+ * @property string $assignable_type
+ * @property int|string $assignable_id
+ * @property int $user_id
+ * @property string $assignment_type
+ * @property Carbon|null $assigned_at
+ * @property int|null $assigned_by
+ * @property array<string,mixed>|null $metadata
+ * @property bool|null $override_view
+ * @property bool|null $override_edit
+ * @property bool|null $override_transition
+ */
 class WorkflowAssignment extends Model
 {
+    use ResolvesUserModel;
+
     protected $fillable = [
         'assignable_type',
         'assignable_id',
@@ -69,18 +85,8 @@ class WorkflowAssignment extends Model
         return $this->morphTo();
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo($this->getUserModel());
-    }
-
     public function assignedBy(): BelongsTo
     {
         return $this->belongsTo($this->getUserModel(), 'assigned_by');
-    }
-
-    protected function getUserModel(): string
-    {
-        return config('filament-flow.user_model') ?? config('auth.providers.users.model', User::class);
     }
 }

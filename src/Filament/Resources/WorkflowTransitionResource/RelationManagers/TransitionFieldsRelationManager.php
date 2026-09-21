@@ -11,15 +11,17 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 
 class TransitionFieldsRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'fields';
 
     protected static ?string $title = 'Form Fields';
@@ -70,7 +72,7 @@ class TransitionFieldsRelationManager extends RelationManager
                     ->label(__('Model Attribute'))
                     ->options(function (Forms\Components\Select $component) {
                         $livewire = $component->getLivewire();
-                        $modelType = $livewire->ownerRecord?->workflow?->model_type ?? null;
+                        $modelType = $livewire->ownerRecord?->workflow->model_type ?? null;
 
                         return ModelDiscovery::getColumnOptions($modelType);
                     })
@@ -98,13 +100,6 @@ class TransitionFieldsRelationManager extends RelationManager
                     ->helperText(__('Display order in the transition form.')),
             ]),
         ];
-    }
-
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
     }
 
     public function table(Table $table): Table
@@ -154,19 +149,19 @@ class TransitionFieldsRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(fn (Model $record) => $record->toArray())
+                        ->fillForm(fn (WorkflowTransitionField $record) => $record->toArray())
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => $record->field_name)
+                        ->modalHeading(fn (WorkflowTransitionField $record) => $record->field_name)
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(fn (Model $record, array $data) => $record->update($data)),
+                        ->action(fn (WorkflowTransitionField $record, array $data) => $record->update($data)),
 
                     Action::make('delete')
                         ->label(__('Delete'))
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowTransitionField $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

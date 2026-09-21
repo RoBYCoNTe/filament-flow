@@ -14,9 +14,10 @@ namespace RoBYCoNTe\FilamentFlow\Builders;
  *     ->body('Order {{order_number}} has been updated.')
  * ```
  */
-class WorkflowNotificationBuilder
+final class WorkflowNotificationBuilder
 {
-    protected string $channel = 'database';
+    /** Channel used when none is set explicitly (see notifications.default_channel). */
+    protected ?string $channel = null;
 
     protected array $channelConfig = [];
 
@@ -34,7 +35,8 @@ class WorkflowNotificationBuilder
 
     protected string $priority = 'medium';
 
-    protected string $templateEngine = 'plain';
+    /** Engine used when none is set explicitly (see notifications.default_template_engine). */
+    protected ?string $templateEngine = null;
 
     protected string $timing = 'immediate';
 
@@ -49,7 +51,7 @@ class WorkflowNotificationBuilder
      */
     public static function make(): static
     {
-        return new static;
+        return new self;
     }
 
     /**
@@ -219,7 +221,7 @@ class WorkflowNotificationBuilder
      */
     public function getChannel(): string
     {
-        return $this->channel;
+        return $this->channel ?? (string) config('filament-flow.notifications.default_channel', 'database');
     }
 
     /**
@@ -291,7 +293,7 @@ class WorkflowNotificationBuilder
      */
     public function getTemplateEngine(): string
     {
-        return $this->templateEngine;
+        return $this->templateEngine ?? (string) config('filament-flow.notifications.default_template_engine', 'plain');
     }
 
     /**
@@ -333,7 +335,7 @@ class WorkflowNotificationBuilder
     {
         return [
             'name' => $this->name,
-            'channel' => $this->channel,
+            'channel' => $this->getChannel(),
             'channel_config' => $this->channelConfig,
             'recipients' => $this->recipients,
             'template' => [
@@ -342,7 +344,7 @@ class WorkflowNotificationBuilder
                 'body' => $this->body ?: 'A workflow event has occurred.',
                 'action_url' => $this->actionUrl,
                 'action_text' => $this->actionText,
-                'template_engine' => $this->templateEngine,
+                'template_engine' => $this->getTemplateEngine(),
             ],
             'priority' => $this->priority,
             'timing' => $this->timing,

@@ -11,12 +11,7 @@ return new class extends Migration
         Schema::create('workflows', function (Blueprint $table) {
             $table->id();
 
-            if (config('filament-flow.tenant_model')) {
-                $tenantTable = (new (config('filament-flow.tenant_model')))->getTable();
-                $table->foreignId('tenant_id')->nullable()->constrained($tenantTable)->cascadeOnDelete();
-            } else {
-                $table->unsignedBigInteger('tenant_id')->nullable();
-            }
+            $table->unsignedBigInteger('tenant_id')->nullable();
 
             $table->string('name');
             $table->string('model_type');
@@ -66,6 +61,11 @@ return new class extends Migration
 
             $table->boolean('requires_confirmation')->default(false);
             $table->boolean('requires_reason')->default(false);
+
+            // How much the transition is validated: a "save draft" action accepts
+            // whatever was typed so far, the transitions that move the record on
+            // require every rule to hold (see ValidationLevel).
+            $table->string('validation_level', 16)->default('full');
 
             $table->json('conditions')->nullable();
             $table->json('metadata')->nullable();

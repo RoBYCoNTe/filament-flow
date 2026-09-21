@@ -6,15 +6,26 @@
 
 namespace RoBYCoNTe\FilamentFlow\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use RoBYCoNTe\FilamentFlow\Concerns\ResolvesUserModel;
 
 /**
  * @method static create(array $array)
+ *
+ * @property string $model_type
+ * @property string $model_id
+ * @property int $user_id
+ * @property string $involvement_type
+ * @property string|null $state
+ * @property Carbon|null $first_involved_at
+ * @property Carbon|null $last_involved_at
+ * @property int $involvement_count
  */
 class WorkflowUserInvolvement extends Model
 {
+    use ResolvesUserModel;
+
     protected $table = 'workflow_user_involvement';
 
     protected $fillable = [
@@ -33,23 +44,13 @@ class WorkflowUserInvolvement extends Model
         'last_involved_at' => 'datetime',
     ];
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo($this->getUserModel());
-    }
-
-    protected function getUserModel(): string
-    {
-        return config('filament-flow.user_model') ?? config('auth.providers.users.model', User::class);
-    }
-
     /**
      * Scope: Get involved users for a record
      */
     public function scopeForRecord($query, Model $record)
     {
         return $query->where('model_type', get_class($record))
-            ->where('model_id', $record->id);
+            ->where('model_id', $record->getKey());
     }
 
     /**

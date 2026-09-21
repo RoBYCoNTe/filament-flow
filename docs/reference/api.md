@@ -231,3 +231,36 @@ $workflow->isTenantSpecific(); // bool — true when tenant_id is set
 // Flush all workflow caches (affects entire cache store — use with care)
 Workflow::flushCache();
 ```
+
+## Workflow Definition SDK
+
+| Class | Namespace | Description |
+|---|---|---|
+| `WorkflowDefinition` | `RoBYCoNTe\FilamentFlow\Definition` | Typed workflow definition (states, transitions, metadata) |
+| `State` | `RoBYCoNTe\FilamentFlow\Definition` | A workflow state (initial/final, color, per-state fields) |
+| `StateField` | `RoBYCoNTe\FilamentFlow\Definition` | Per-state field visibility/mutability/required |
+| `Transition` | `RoBYCoNTe\FilamentFlow\Definition` | State transition or in-state action (guards, effects, rules) |
+| `SideEffect` | `RoBYCoNTe\FilamentFlow\Definition` | Transition side effect |
+| `ValidationRule` | `RoBYCoNTe\FilamentFlow\Definition` | Transition validation rule |
+| `ScheduledCheck` | `RoBYCoNTe\FilamentFlow\Definition` | Typed scheduled check (condition, frequency, action) |
+| `AccessRule` | `RoBYCoNTe\FilamentFlow\Definition` | State access rule (view/edit/transition/create) |
+| `Notification` | `RoBYCoNTe\FilamentFlow\Definition` | Notification (trigger, channels, template) |
+| `Recipient` | `RoBYCoNTe\FilamentFlow\Definition` | Typed notification recipient |
+
+### Enums
+
+| Enum | Values |
+|---|---|
+| `Visibility` | `visible`, `hidden` |
+| `Mutability` | `readonly`, `editable`, `locked` |
+| `SideEffectType` | `set_field`, `set_timestamp`, `clear_field`, `increment`, `custom_class`, `create_child_application` |
+| `ScheduledCheckCondition` | `date_offset`, `field_compare`, `custom_class` |
+| `ScheduledCheckAction` | `notification`, `transition`, `side_effect` |
+| `ScheduledCheckFrequency` | `every_minute`, `every_five_minutes`, `hourly`, `daily`, `weekly` |
+| `AccessType` | `view`, `edit`, `transition`, `create` |
+| `AccessOperator` | `or`, `and` |
+| `NotificationTrigger` | `on_transition`, `on_state_enter`, `on_state_exit`, `on_assignment`, `on_field_change` |
+| `NotificationTiming` | `immediate`, `delayed` |
+| `NotificationPriority` | `low`, `medium`, `high`, `urgent` |
+| `NotificationChannel` | `database`, `mail` |
+| `RecipientType` | `role`, `user`, `trigger_user`, `assigned_users`, `record_owner`, `state_actors`, `all_involved`, `involvement_type`, `custom_field`, `custom_query`, `custom_class` |

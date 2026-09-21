@@ -82,7 +82,10 @@ class FilamentFlowPlugin implements Plugin
 
     public static function getInstance(): ?static
     {
-        return static::$instance;
+        /** @var static|null $instance */
+        $instance = static::$instance;
+
+        return $instance;
     }
 
     public function withoutWorkflowResource(): static

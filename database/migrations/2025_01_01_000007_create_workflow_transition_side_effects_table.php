@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('transition_id')->constrained('workflow_transitions')->cascadeOnDelete();
 
-            $table->enum('effect_type', ['set_field', 'set_timestamp', 'clear_field', 'increment', 'custom_class']);
+            $table->enum('effect_type', ['set_field', 'set_timestamp', 'clear_field', 'increment', 'custom_class', 'create_child_application']);
             $table->string('field_name');
             $table->string('value_expression')->nullable();
 

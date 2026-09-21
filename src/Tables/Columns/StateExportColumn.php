@@ -60,8 +60,9 @@ class StateExportColumn extends ExportColumn
 
         // Get the first state attribute from the model's default states
         $record = $this->getRecord();
-        if ($record && method_exists($record, 'getDefaultStates')) {
-            $defaultStates = $record::getDefaultStates();
+        if ($record instanceof Model && method_exists($record, 'getDefaultStates')) {
+            $class = $record::class;
+            $defaultStates = $class::getDefaultStates();
             if ($defaultStates && ! $defaultStates->isEmpty()) {
                 return (string) array_key_first($defaultStates->toArray());
             }

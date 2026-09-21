@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait HasStateSorting
 {
+    use ParsesStateCast;
+
     public function setupStateSorting(): void
     {
         $this->sortable(query: function (Builder $query, string $direction): Builder {
@@ -50,27 +52,6 @@ trait HasStateSorting
         $orderByExpression = "CASE $cases ELSE 999 END";
 
         return $query->orderByRaw("$orderByExpression $direction");
-    }
-
-    /**
-     * Extract the base state class from cast definition
-     * Handles both Spatie's default cast and FlexibleStateCast
-     */
-    protected function extractStateClass(?string $cast): ?string
-    {
-        if (! $cast) {
-            return null;
-        }
-
-        // If using FlexibleStateCast, extract the state class from the parameter
-        // Format: "RoBYCoNTe\FilamentFlow\Casts\FlexibleStateCast:App\States\Order\OrderState"
-        if (str_contains($cast, 'FlexibleStateCast:')) {
-            $parts = explode(':', $cast);
-
-            return $parts[1] ?? null;
-        }
-
-        return $cast;
     }
 
     abstract public function getAttribute(?Model $model): string;

@@ -13,9 +13,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Exceptions\StateDeletionException;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowStateResource;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 
 class StatesRelationManager extends RelationManager
 {
@@ -94,13 +94,13 @@ class StatesRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('transitionsFrom')
                     ->label(__('Out'))
-                    ->state(fn (Model $record) => $record->transitionsFrom()->count())
+                    ->state(fn (WorkflowState $record) => $record->transitionsFrom()->count())
                     ->badge()
                     ->color('info'),
 
                 Tables\Columns\TextColumn::make('transitionsTo')
                     ->label(__('In'))
-                    ->state(fn (Model $record) => $record->transitionsTo()->count())
+                    ->state(fn (WorkflowState $record) => $record->transitionsTo()->count())
                     ->badge()
                     ->color('success'),
             ])
@@ -115,7 +115,7 @@ class StatesRelationManager extends RelationManager
                 CreateAction::make()
                     ->label(__('Add State')),
             ])
-            ->recordUrl(fn (Model $record): string => WorkflowStateResource::getUrl('edit', [
+            ->recordUrl(fn (WorkflowState $record): string => WorkflowStateResource::getUrl('edit', [
                 'workflow' => $this->ownerRecord,
                 'record' => $record,
             ]))
@@ -124,7 +124,7 @@ class StatesRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->url(fn (Model $record): string => WorkflowStateResource::getUrl('edit', [
+                        ->url(fn (WorkflowState $record): string => WorkflowStateResource::getUrl('edit', [
                             'workflow' => $this->ownerRecord,
                             'record' => $record,
                         ])),
@@ -133,7 +133,7 @@ class StatesRelationManager extends RelationManager
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(function (Model $record) {
+                        ->action(function (WorkflowState $record) {
                             if ($record->transitionsFrom()->exists() || $record->transitionsTo()->exists()) {
                                 throw new StateDeletionException;
                             }

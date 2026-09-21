@@ -122,12 +122,18 @@ class TransitionTestHelpersTest extends FilamentTestCase
         $order->refresh();
         $this->assertEquals('processing', $order->state);
 
+        // `processing` requires processing_notes before the order can ship
+        $order->update(['processing_notes' => 'Packed and ready']);
+
         // processing -> shipped
         Livewire::test(EditOrder::class, ['record' => $order->getRouteKey()])
             ->callTransition('ship_order');
 
         $order->refresh();
         $this->assertEquals('shipped', $order->state);
+
+        // `shipped` requires tracking number and carrier before delivery
+        $order->update(['tracking_number' => 'TRACK-1', 'carrier' => 'DHL']);
 
         // shipped -> delivered
         Livewire::test(EditOrder::class, ['record' => $order->getRouteKey()])

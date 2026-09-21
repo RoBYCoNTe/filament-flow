@@ -5,3 +5,5 @@
 .DS_Store
 composer.lock
 coverage/
+/docs/.vitepress/dist/
+/docs/.vitepress/cache/

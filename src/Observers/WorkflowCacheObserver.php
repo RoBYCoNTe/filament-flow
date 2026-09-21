@@ -111,9 +111,9 @@ class WorkflowCacheObserver
         return match (true) {
             method_exists($model, 'workflow_id') => $model->getAttribute('workflow_id') ?? null,
             $model->getAttribute('workflow_id') !== null => $model->getAttribute('workflow_id'),
-            method_exists($model, 'workflow') && $model->relationLoaded('workflow') => $model->workflow?->id,
-            method_exists($model, 'transition') && $model->relationLoaded('transition') => $model->transition?->workflow_id,
-            method_exists($model, 'state') && $model->relationLoaded('state') => $model->state?->workflow_id,
+            method_exists($model, 'workflow') && $model->relationLoaded('workflow') => $model->getRelation('workflow')?->getKey(),
+            method_exists($model, 'transition') && $model->relationLoaded('transition') => $model->getRelation('transition')?->getAttribute('workflow_id'),
+            method_exists($model, 'state') && $model->relationLoaded('state') => $model->getRelation('state')?->getAttribute('workflow_id'),
             default => null,
         };
     }
@@ -122,7 +122,7 @@ class WorkflowCacheObserver
     {
         return match (true) {
             $model->getAttribute('state_id') !== null => $model->getAttribute('state_id'),
-            method_exists($model, 'transition') && $model->relationLoaded('transition') => $model->transition?->from_state_id ?? $model->transition?->to_state_id,
+            method_exists($model, 'transition') && $model->relationLoaded('transition') => $model->getRelation('transition')?->getAttribute('from_state_id') ?? $model->getRelation('transition')?->getAttribute('to_state_id'),
             default => null,
         };
     }

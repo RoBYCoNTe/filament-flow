@@ -12,8 +12,12 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowResource;
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 
+/**
+ * @property Workflow $record
+ */
 class EditWorkflow extends EditRecord
 {
     protected static string $resource = WorkflowResource::class;

@@ -408,3 +408,30 @@ WorkflowNotificationBuilder::make()
     ->delay(30)                            // Delay by minutes
     ->metadata(['key' => 'value']);        // Additional metadata
 ```
+
+
+## Definition SDK
+
+Notifications can be declared with the typed
+[`Notification`](/workflows/definition-sdk#notifications) builder and attached to
+a transition, a state or the workflow itself:
+
+```php
+use RoBYCoNTe\FilamentFlow\Definition\Notification;
+use RoBYCoNTe\FilamentFlow\Definition\Recipient;
+use RoBYCoNTe\FilamentFlow\Definition\Transition;
+
+Transition::make('approve', 'under_review', 'approved')
+    ->notification(
+        Notification::make('approved-notice', 'Approved')
+            ->database()
+            ->mail()
+            ->recipient(Recipient::role('reviewer'))
+            ->title('Approved')
+            ->body('Your request was approved.')
+    );
+```
+
+The attachment sets the trigger event (`on_transition`, `on_state_enter`,
+`on_state_exit`). Recipients, channels and templates are reconciled
+idempotently: re-applying an unchanged definition performs no write.

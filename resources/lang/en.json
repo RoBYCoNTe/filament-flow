@@ -1,4 +1,6 @@
 {
+    "The form cannot be submitted yet": "The form cannot be submitted yet",
+    "Validation Failed": "Validation Failed",
     "filament-flow.title": "Filament Flow",
     "filament-flow.description": "Business Process Management plugin that enables workflow and state machine capabilities within Filament.",
     "filament-flow.tabs.all": "All",
@@ -72,5 +74,9 @@
     "No history yet.": "No history yet.",
     ":count more entries": ":count more entries",
     "filament-flow.assignment.notification.title": "New Assignment",
-    "filament-flow.assignment.notification.body": "You have been assigned to claim :code."
+    "filament-flow.assignment.notification.body": "You have been assigned to claim :code.",
+    "Safe": "Safe",
+    "Additive": "Additive",
+    "Breaking": "Breaking",
+    "{1}1 error|[2,*]:count errors": "{1}1 error|[2,*]:count errors"
 }

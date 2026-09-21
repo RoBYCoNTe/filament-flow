@@ -104,14 +104,15 @@ class StateColumn extends TextColumn
     {
         $class = get_class($record);
         $attribute = $this->getAttribute();
-        $cacheKey = "{$class}:{$attribute}:{$stateValue}";
+        $tenantId = method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null;
+        $cacheKey = "{$class}:{$tenantId}:{$attribute}:{$stateValue}";
 
         if (array_key_exists($cacheKey, static::$metadataCache)) {
             return static::$metadataCache[$cacheKey];
         }
 
         $stateService = app(StateService::class);
-        $metadata = $stateService->getStateMetadata($class, $stateValue, $attribute);
+        $metadata = $stateService->getStateMetadata($class, $stateValue, $attribute, $tenantId);
 
         return static::$metadataCache[$cacheKey] = $metadata;
     }
@@ -126,8 +127,9 @@ class StateColumn extends TextColumn
             return $this->evaluate($this->attribute);
         }
 
-        if (method_exists($model, 'getDefaultStates')) {
-            $defaultStates = $model::getDefaultStates();
+        if ($model instanceof Model && method_exists($model, 'getDefaultStates')) {
+            $class = $model::class;
+            $defaultStates = $class::getDefaultStates();
             if ($defaultStates && ! $defaultStates->isEmpty()) {
                 return (string) array_key_first($defaultStates->toArray());
             }

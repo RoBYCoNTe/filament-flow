@@ -69,9 +69,9 @@ class WorkflowCreationService
                 if (method_exists($record, 'assignments')) {
                     /** @noinspection PhpPossiblePolymorphicInvocationInspection */
                     $record->assignments()->create([
-                        'user_id' => $user->id,
+                        'user_id' => $user->getKey(),
                         'assignment_type' => $creationPolicy['assignment_type'] ?? 'primary',
-                        'assigned_by' => $user->id,
+                        'assigned_by' => $user->getKey(),
                     ]);
                 }
             }

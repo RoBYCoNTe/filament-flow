@@ -5,6 +5,8 @@ namespace RoBYCoNTe\FilamentFlow\Forms\Components;
 use Closure;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Collection;
+use RoBYCoNTe\FilamentFlow\Support\UserModel;
 
 /**
  * A select component for assigning users in workflow transitions.
@@ -61,8 +63,7 @@ class AssigneeSelect extends Select
      */
     protected function resolveAvailableUsers(): array
     {
-        $userModel = config('filament-flow.user_model')
-            ?? config('auth.providers.users.model', 'App\\Models\\User');
+        $userModel = UserModel::resolve();
 
         $query = $userModel::query();
 
@@ -87,11 +88,13 @@ class AssigneeSelect extends Select
 
         $options = [];
         foreach ($users as $user) {
-            $label = $user->name;
-            if (isset($user->roles) && $user->roles->isNotEmpty()) {
-                $label .= ' ('.$user->roles->pluck('name')->implode(', ').')';
+            $label = (string) $user->getAttribute('name');
+            $roles = $user->getAttribute('roles');
+
+            if ($roles instanceof Collection && $roles->isNotEmpty()) {
+                $label .= ' ('.$roles->pluck('name')->implode(', ').')';
             }
-            $options[$user->id] = $label;
+            $options[$user->getKey()] = $label;
         }
 
         return $options;

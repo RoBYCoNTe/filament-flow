@@ -9,7 +9,44 @@ use Spatie\ModelStates\State;
 
 trait HasStateOptions
 {
+    use ParsesStateCast;
+
     protected bool $respectTransitions = true;
+
+    /**
+     * Model of the owning component: a form field knows its model, a table column
+     * its table. Null when neither is available (no options to show).
+     *
+     * @return class-string<Model>|null
+     */
+    protected function resolveStateModelClass(): ?string
+    {
+        if (method_exists($this, 'getModel')) {
+            $model = $this->getModel();
+
+            if ($model instanceof Model) {
+                return $model::class;
+            }
+
+            if (is_string($model) && $model !== '') {
+                return $model;
+            }
+        }
+
+        if (method_exists($this, 'getTable')) {
+            $model = $this->getTable()->getModel();
+
+            if ($model instanceof Model) {
+                return $model::class;
+            }
+
+            if (is_string($model) && $model !== '') {
+                return $model;
+            }
+        }
+
+        return null;
+    }
 
     protected function setupOptions(): void
     {
@@ -17,9 +54,13 @@ trait HasStateOptions
             $stateService = app(StateService::class);
 
             if (! $record instanceof Model) {
-                $model = $this->getModel();
+                $modelClass = $this->resolveStateModelClass();
 
-                return $stateService->getAllStatesForModel($model, $this->getAttribute());
+                if ($modelClass === null) {
+                    return [];
+                }
+
+                return $stateService->getAllStatesForModel($modelClass, $this->getAttribute());
             }
 
             return $stateService->getAllStatesForModel($record::class, $this->getAttribute());
@@ -103,26 +144,5 @@ trait HasStateOptions
     public function ignoreTransitions(): static
     {
         return $this->respectTransitions(false);
-    }
-
-    /**
-     * Extract the base state class from cast definition
-     * Handles both Spatie's default cast and FlexibleStateCast
-     */
-    protected function extractStateClass(?string $cast): ?string
-    {
-        if (! $cast) {
-            return null;
-        }
-
-        // If using FlexibleStateCast, extract the state class from the parameter
-        // Format: "RoBYCoNTe\FilamentFlow\Casts\FlexibleStateCast:App\States\Order\OrderState"
-        if (str_contains($cast, 'FlexibleStateCast:')) {
-            $parts = explode(':', $cast);
-
-            return $parts[1] ?? null;
-        }
-
-        return $cast;
     }
 }

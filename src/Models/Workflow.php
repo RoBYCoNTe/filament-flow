@@ -7,11 +7,11 @@ namespace RoBYCoNTe\FilamentFlow\Models;
 use Closure;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 use RuntimeException;
@@ -25,7 +25,18 @@ use RuntimeException;
  * @property mixed $state_column
  * @property int $id
  * @property int|null $tenant_id
- * @property Collection $states
+ * @property string $name
+ * @property string $model_type
+ * @property bool $is_active
+ * @property int $schema_version
+ * @property array<string,mixed>|null $creation_policy
+ * @property array<string,mixed>|null $metadata
+ * @property-read Collection<int, WorkflowState> $states
+ * @property-read Collection<int, WorkflowTransition> $transitions
+ * @property-read Collection<int, WorkflowNotification> $notifications
+ * @property-read Collection<int, WorkflowScheduledCheck> $scheduledChecks
+ * @property-read Collection<int, WorkflowState> $finalStates
+ * @property-read Collection<int, WorkflowStateTransition> $transitionHistory
  */
 class Workflow extends Model
 {
@@ -77,7 +88,14 @@ class Workflow extends Model
      */
     public static function findForModel(string $modelClass, string $stateColumn = 'state', ?int $tenantId = null): ?static
     {
-        $effectiveTenantId = $tenantId ?? static::getCurrentTenantId();
+        // Explicit tenantId always wins; auto-detect from Filament only when multi-tenancy is configured.
+        if ($tenantId !== null) {
+            $effectiveTenantId = $tenantId;
+        } elseif (static::isMultiTenancyEnabled()) {
+            $effectiveTenantId = static::getCurrentTenantId();
+        } else {
+            $effectiveTenantId = null;
+        }
 
         if (config('filament-flow.cache.enabled', true)) {
             $prefix = config('filament-flow.cache.prefix', 'filament-flow');
@@ -98,12 +116,12 @@ class Workflow extends Model
      */
     protected static function findForModelUncached(string $modelClass, string $stateColumn, ?int $effectiveTenantId): ?static
     {
-        // If multi-tenancy is enabled and we have a tenant, try tenant-specific first
-        if (static::isMultiTenancyEnabled() && $effectiveTenantId !== null) {
+        // When a tenant ID is available (explicit or auto-detected), try scoped workflow first.
+        if ($effectiveTenantId !== null) {
             $tenantForeignKey = config('filament-flow.tenant_foreign_key', 'tenant_id');
 
             // Try tenant-specific workflow first
-            $workflow = static::where('model_type', $modelClass)
+            $workflow = static::query()->where('model_type', $modelClass)
                 ->where('state_column', $stateColumn)
                 ->where($tenantForeignKey, $effectiveTenantId)
                 ->where('is_active', true)
@@ -117,7 +135,7 @@ class Workflow extends Model
         // Fallback to global workflow (tenant_id = null)
         $tenantForeignKey = config('filament-flow.tenant_foreign_key', 'tenant_id');
 
-        return static::where('model_type', $modelClass)
+        return static::query()->where('model_type', $modelClass)
             ->where('state_column', $stateColumn)
             ->where(function (Builder $query) use ($tenantForeignKey) {
                 $query->whereNull($tenantForeignKey);
@@ -226,21 +244,25 @@ class Workflow extends Model
         return $query->whereNull($tenantForeignKey);
     }
 
+    /** @return HasMany<WorkflowState, $this> */
     public function states(): HasMany
     {
         return $this->hasMany(WorkflowState::class);
     }
 
+    /** @return HasMany<WorkflowTransition, $this> */
     public function transitions(): HasMany
     {
         return $this->hasMany(WorkflowTransition::class);
     }
 
+    /** @return HasMany<WorkflowNotification, $this> */
     public function notifications(): HasMany
     {
         return $this->hasMany(WorkflowNotification::class);
     }
 
+    /** @return HasMany<WorkflowScheduledCheck, $this> */
     public function scheduledChecks(): HasMany
     {
         return $this->hasMany(WorkflowScheduledCheck::class);
@@ -262,11 +284,13 @@ class Workflow extends Model
         return $this->states()->where('is_initial', true)->first();
     }
 
+    /** @return HasMany<WorkflowState, $this> */
     public function finalStates(): HasMany
     {
         return $this->states()->where('is_final', true);
     }
 
+    /** @return HasMany<WorkflowStateTransition, $this> */
     public function transitionHistory(): HasMany
     {
         return $this->hasMany(WorkflowStateTransition::class);

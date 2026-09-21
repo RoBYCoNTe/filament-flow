@@ -11,18 +11,20 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationRecipient;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use Spatie\Permission\Models\Role;
 
 class RecipientsRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'recipients';
 
     protected static ?string $title = 'Recipients';
@@ -104,7 +106,7 @@ class RecipientsRelationManager extends RelationManager
                 ->label(__('Owner Field'))
                 ->options(function (Forms\Components\Select $component) {
                     $livewire = $component->getLivewire();
-                    $modelType = $livewire->ownerRecord?->workflow?->model_type ?? null;
+                    $modelType = $livewire->ownerRecord?->workflow->model_type ?? null;
 
                     return ModelDiscovery::getColumnOptions($modelType);
                 })
@@ -119,7 +121,7 @@ class RecipientsRelationManager extends RelationManager
                 ->multiple()
                 ->options(function (Forms\Components\Select $component) {
                     $livewire = $component->getLivewire();
-                    $workflowId = $livewire->ownerRecord?->workflow_id ?? null;
+                    $workflowId = $livewire->ownerRecord->workflow_id ?? null;
 
                     if (! $workflowId) {
                         return [];
@@ -157,7 +159,7 @@ class RecipientsRelationManager extends RelationManager
                 ->label(__('Model Field'))
                 ->options(function (Forms\Components\Select $component) {
                     $livewire = $component->getLivewire();
-                    $modelType = $livewire->ownerRecord?->workflow?->model_type ?? null;
+                    $modelType = $livewire->ownerRecord?->workflow->model_type ?? null;
 
                     return ModelDiscovery::getColumnOptions($modelType);
                 })
@@ -231,13 +233,6 @@ class RecipientsRelationManager extends RelationManager
         ];
     }
 
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
-    }
-
     public function table(Table $table): Table
     {
         return $table
@@ -260,7 +255,7 @@ class RecipientsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('config_summary')
                     ->label(__('Details'))
-                    ->state(function (Model $record): string {
+                    ->state(function (WorkflowNotificationRecipient $record): string {
                         $config = $record->recipient_config ?? [];
 
                         return match ($record->recipient_type) {
@@ -287,19 +282,19 @@ class RecipientsRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(fn (Model $record) => $record->toArray())
+                        ->fillForm(fn (WorkflowNotificationRecipient $record) => $record->toArray())
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => __(str_replace('_', ' ', ucfirst($record->recipient_type))))
+                        ->modalHeading(fn (WorkflowNotificationRecipient $record) => __(str_replace('_', ' ', ucfirst($record->recipient_type))))
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(fn (Model $record, array $data) => $record->update($data)),
+                        ->action(fn (WorkflowNotificationRecipient $record, array $data) => $record->update($data)),
 
                     Action::make('delete')
                         ->label(__('Delete'))
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowNotificationRecipient $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

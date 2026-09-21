@@ -31,15 +31,17 @@ class FilamentFlow
      */
     public static function getStates(Model $record): array
     {
-        return app(StateService::class)->getAllStates($record);
+        $tenantId = method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null;
+
+        return app(StateService::class)->getAllStatesForModel($record::class, 'state', $tenantId);
     }
 
     /**
      * Check if a user can perform an action on a record in its current state.
      */
-    public static function canAccess(Model $record, string $accessType, ?object $user = null): bool
+    public static function canAccess(Model $record, string $accessType, ?Model $user = null): bool
     {
-        return app(WorkflowStateAccessService::class)->checkAccess($record, $accessType, $user);
+        return app(WorkflowStateAccessService::class)->checkAccess($record, $user, $accessType);
     }
 
     /**

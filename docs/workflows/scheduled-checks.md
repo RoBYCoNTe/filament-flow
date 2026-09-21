@@ -181,6 +181,28 @@ Done.
 
 If any checks fail, the error count is shown and exceptions are reported via Laravel's exception handler without aborting the run.
 
+## Definition SDK
+
+Scheduled checks can be declared with the typed
+[`ScheduledCheck`](/workflows/definition-sdk#scheduled-checks) builder instead of
+array configuration, and are reconciled together with the rest of the workflow:
+
+```php
+use RoBYCoNTe\FilamentFlow\Definition\ScheduledCheck;
+use RoBYCoNTe\FilamentFlow\Definition\WorkflowDefinition;
+
+$definition = WorkflowDefinition::make('order', Order::class)
+    ->state(/* ... */)
+    ->scheduledCheck(
+        ScheduledCheck::make('overdue', 'Overdue reminder')
+            ->state('under_review')
+            ->daily()
+            ->oncePerRecord()
+            ->whenDateOffset('due_date', -2)
+            ->thenNotificationNamed('review-reminder')
+    );
+```
+
 ## Monitoring
 
 Every check execution is logged to the `workflow_scheduled_check_logs` table with the following result values:

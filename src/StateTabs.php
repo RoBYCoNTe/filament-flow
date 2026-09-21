@@ -17,6 +17,8 @@ class StateTabs
 
     protected ?Builder $baseQuery = null;
 
+    protected ?int $tenantId = null;
+
     public function __construct(
         protected Model|string $model,
     ) {}
@@ -60,6 +62,35 @@ class StateTabs
         return $this;
     }
 
+    /**
+     * Owner of the scoped workflow (a scheme, for example): without it only the
+     * global workflow would be found.
+     */
+    public function tenant(?int $tenantId): self
+    {
+        $this->tenantId = $tenantId;
+
+        return $this;
+    }
+
+    /** Model class of the tabs, resolved from the class or the instance. */
+    protected function getModelClass(): string
+    {
+        return $this->model instanceof Model ? get_class($this->model) : $this->model;
+    }
+
+    /** Tenant of the workflow: explicit, or read from the model instance. */
+    protected function getTenantId(): ?int
+    {
+        if ($this->tenantId !== null) {
+            return $this->tenantId;
+        }
+
+        return $this->model instanceof Model && method_exists($this->model, 'getWorkflowTenantId')
+            ? $this->model->getWorkflowTenantId()
+            : null;
+    }
+
     /** @noinspection PhpUndefinedMethodInspection */
     public function getAttribute(): string
     {
@@ -67,7 +98,7 @@ class StateTabs
             return $this->attribute;
         }
 
-        if (method_exists($this->model, 'getDefaultStates')) {
+        if (is_string($this->model) && method_exists($this->model, 'getDefaultStates')) {
             $defaultStates = $this->model::getDefaultStates();
             if ($defaultStates?->isNotEmpty()) {
                 return (string) array_key_first($defaultStates->toArray());
@@ -98,7 +129,7 @@ class StateTabs
         }
 
         $stateService = app(StateService::class);
-        $allStates = $stateService->getAllStatesForModel($this->model, $this->getAttribute());
+        $allStates = $stateService->getAllStatesForModel($this->getModelClass(), $this->getAttribute(), $this->getTenantId());
 
         $phpStates = $this->resolvePhpStates();
 
@@ -127,6 +158,7 @@ class StateTabs
         $state = new $stateClass(null);
 
         $tab = Tab::make($stateKey)
+            ->key($stateKey)
             ->label($state->getLabel())
             ->icon($state->getIcon())
             ->modifyQueryUsing(fn (Builder $query) => $query->whereState($this->getAttribute(), $stateKey));
@@ -142,9 +174,12 @@ class StateTabs
 
     private function buildDatabaseStateTab(string $stateKey, string $stateLabel, StateService $stateService): Tab
     {
-        $metadata = $stateService->getStateMetadata($this->model, $stateKey, $this->getAttribute());
+        $metadata = $stateService->getStateMetadata($this->getModelClass(), $stateKey, $this->getAttribute(), $this->getTenantId());
 
+        // The key is what identifies the state: hosts that render the tabs
+        // themselves (a plain page with a table) need it to filter the query.
         $tab = Tab::make($stateKey)
+            ->key($stateKey)
             ->label($metadata['label'] ?? $stateLabel)
             ->icon($metadata['icon'] ?? null)
             ->modifyQueryUsing(fn (Builder $query) => $query->where($this->getAttribute(), $stateKey));
@@ -171,12 +206,48 @@ class StateTabs
 
     protected function getBaseQuery(): Builder
     {
-        return $this->baseQuery ? clone $this->baseQuery : $this->model::query();
+        return $this->baseQuery ? clone $this->baseQuery : $this->getModelClass()::query();
     }
 
     /** @return array<int, Tab> */
     public function toArray(): array
     {
         return $this->generateTabs();
+    }
+
+    /**
+     * The tabs as plain arrays (state, label, color, icon, count).
+     *
+     * Hosts that render the tabs themselves — a page with a table, which filters
+     * its own query — can use this instead of the Filament Tab objects, whose
+     * accessors need a mounted container. The counts use the base query, so they
+     * respect the scope of the caller.
+     *
+     * @return list<array{state:string,label:string,color:?string,icon:?string,count:?int}>
+     */
+    public function data(): array
+    {
+        $service = app(StateService::class);
+        $attribute = $this->getAttribute();
+        $modelClass = $this->getModelClass();
+        $tenantId = $this->getTenantId();
+
+        $tabs = [];
+
+        foreach ($service->getAllStatesForModel($modelClass, $attribute, $tenantId) as $state => $label) {
+            $metadata = $service->getStateMetadata($modelClass, (string) $state, $attribute, $tenantId);
+
+            $tabs[] = [
+                'state' => (string) $state,
+                'label' => (string) ($metadata['label'] ?? $label),
+                'color' => $metadata['color'] ?? null,
+                'icon' => $metadata['icon'] ?? null,
+                'count' => $this->includeBadge
+                    ? $this->getBaseQuery()->where($attribute, $state)->count()
+                    : null,
+            ];
+        }
+
+        return $tabs;
     }
 }

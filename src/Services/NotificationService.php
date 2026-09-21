@@ -5,17 +5,13 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
 use RoBYCoNTe\FilamentFlow\Builders\WorkflowNotificationBuilder;
 use RoBYCoNTe\FilamentFlow\Contracts\HasStateNotifications;
 use RoBYCoNTe\FilamentFlow\Contracts\HasTransitionNotifications;
 use RoBYCoNTe\FilamentFlow\Jobs\SendWorkflowNotification;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification as WorkflowNotificationConfig;
-use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationLog;
-use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Notifications\WorkflowNotification;
 use Spatie\ModelStates\State;
 
@@ -30,6 +26,9 @@ use Spatie\ModelStates\State;
  */
 class NotificationService
 {
+    use DeliversNotifications;
+    use FindsNotificationTargets;
+
     public function __construct(
         protected RecipientResolver $recipientResolver
     ) {}
@@ -224,6 +223,22 @@ class NotificationService
         Collection $recipients,
         array $notificationData
     ): void {
+        $this->sendPreparedNotification($record, $recipients, $notificationData);
+    }
+
+    /**
+     * Dispatch an already built notification payload. Used for code-first
+     * notifications, immediately and from the queued job (which has no
+     * notification configuration row).
+     *
+     * @param  Collection<int, Model>  $recipients
+     * @param  array<string, mixed>  $notificationData
+     */
+    public function sendPreparedNotification(
+        Model $record,
+        Collection $recipients,
+        array $notificationData
+    ): void {
         try {
             $notification = new WorkflowNotification($notificationData, $record);
             Notification::send($recipients, $notification);
@@ -276,7 +291,7 @@ class NotificationService
      * Trigger notifications for an assignment.
      *
      * @param  Model  $record  The record with the assignment
-     * @param  int  $userId  The assigned user ID
+     * @param  int|Model  $user  The assigned user (or its id)
      * @param  string  $assignmentType  The type of assignment (primary, secondary, etc.)
      */
     public function triggerForAssignment(
@@ -344,330 +359,5 @@ class NotificationService
                 'new_value' => $newValue,
             ]);
         }
-    }
-
-    /**
-     * Dispatch a notification to recipients.
-     */
-    protected function dispatchNotification(
-        WorkflowNotificationConfig $config,
-        Model $record,
-        array $context = []
-    ): void {
-        if (! config('filament-flow.notifications.enabled', true)) {
-            return;
-        }
-
-        if (! $config->is_active) {
-            return;
-        }
-
-        $recipients = $this->recipientResolver->resolveAll(
-            $config->recipients,
-            $record,
-            $context
-        );
-
-        if ($recipients->isEmpty()) {
-            $this->logNotification($config, $record, 'database', 'skipped', 'No recipients found');
-
-            return;
-        }
-
-        // Get active channels with their templates in a single query
-        $channels = $config->channels()->where('is_active', true)->with('templates')->get();
-
-        if ($channels->isEmpty()) {
-            // Log that no channels were configured
-            $this->logNotification($config, $record, 'none', 'skipped', 'No active channels configured');
-
-            return;
-        }
-
-        // Preload all templates for fallback
-        $allTemplates = $config->templates()->get();
-
-        // Handle timing
-        $timing = $config->timing ?? 'immediate';
-        $delayMinutes = $config->delay_minutes ?? 0;
-
-        foreach ($channels as $channel) {
-            // Get template for this channel from eager-loaded relation or fallback
-            $template = $allTemplates->firstWhere('channel_id', $channel->id)
-                ?? $allTemplates->first();
-
-            $notificationData = [
-                'config_id' => $config->id,
-                'channel' => $channel->channel_type,
-                'channel_config' => $channel->channel_config ?? [],
-                'template' => $template ? [
-                    'subject' => $template->subject,
-                    'title' => $template->title,
-                    'body' => $template->body,
-                    'action_text' => $template->action_text,
-                    'action_url' => $template->action_url,
-                    'template_engine' => $template->template_engine ?? 'plain',
-                    'format' => $template->format ?? 'html',
-                    'variables' => $template->variables ?? [],
-                ] : null,
-                'record_type' => get_class($record),
-                'record_id' => $record->getKey(),
-                'context' => $context,
-                'priority' => $config->priority ?? 'medium',
-            ];
-
-            if ($timing === 'immediate') {
-                $this->sendNotification($config, $record, $recipients, $notificationData);
-            } else {
-                // Queue the notification
-                $delay = $timing === 'delayed' ? now()->addMinutes($delayMinutes) : null;
-
-                SendWorkflowNotification::dispatch(
-                    $config->id,
-                    get_class($record),
-                    $record->getKey(),
-                    $recipients->pluck('id')->toArray(),
-                    $notificationData
-                )->delay($delay);
-
-                // Log as pending
-                foreach ($recipients as $recipient) {
-                    $this->logNotification(
-                        $config,
-                        $record,
-                        $notificationData['channel'],
-                        'pending',
-                        null,
-                        $notificationData,
-                        $recipient->id
-                    );
-                }
-            }
-        }
-    }
-
-    /**
-     * Send notification immediately.
-     */
-    public function sendNotification(
-        WorkflowNotificationConfig $config,
-        Model $record,
-        Collection $recipients,
-        array $notificationData
-    ): void {
-        $channelType = $notificationData['channel'];
-
-        try {
-            // Create the Laravel notification
-            $notification = new WorkflowNotification($notificationData, $record);
-
-            // Determine the Laravel notification channel
-            $laravelChannel = $this->mapToLaravelChannel($channelType);
-
-            if ($laravelChannel) {
-                // Use Laravel's notification system
-                Notification::send($recipients, $notification);
-            }
-
-            // Log success for each recipient
-            foreach ($recipients as $recipient) {
-                $this->logNotification(
-                    $config,
-                    $record,
-                    $channelType,
-                    'sent',
-                    null,
-                    $notificationData,
-                    $recipient->id
-                );
-            }
-        } catch (Exception $e) {
-            // Log failure
-            foreach ($recipients as $recipient) {
-                $this->logNotification(
-                    $config,
-                    $record,
-                    $channelType,
-                    'failed',
-                    $e->getMessage(),
-                    $notificationData,
-                    $recipient->id
-                );
-            }
-
-            report($e);
-        }
-    }
-
-    /**
-     * Map our channel type to Laravel notification channel.
-     */
-    protected function mapToLaravelChannel(string $channelType): ?string
-    {
-        return match ($channelType) {
-            'database' => 'database',
-            'mail' => 'mail',
-            default => tap(null, fn () => report(
-                new Exception("Unsupported notification channel: {$channelType}")
-            )),
-        };
-    }
-
-    /**
-     * Log a notification.
-     */
-    protected function logNotification(
-        WorkflowNotificationConfig $config,
-        Model $record,
-        string $channel,
-        string $status,
-        ?string $errorMessage = null,
-        ?array $payload = null,
-        ?int $recipientUserId = null
-    ): void {
-        try {
-            WorkflowNotificationLog::create([
-                'notification_id' => $config->id,
-                'user_id' => $recipientUserId ?? Auth::id(),
-                'notifiable_type' => get_class($record),
-                'notifiable_id' => $record->getKey(),
-                'channel' => $channel,
-                'status' => $status,
-                'error_message' => $errorMessage,
-                'payload' => $payload,
-                'sent_at' => $status === 'sent' ? now() : null,
-            ]);
-        } catch (Exception $e) {
-            report($e);
-        }
-    }
-
-    /**
-     * Get the workflow for a model (with tenant fallback support).
-     */
-    protected function getWorkflowForModel(Model $record, string $stateColumn = 'state'): ?Workflow
-    {
-        return Workflow::findForModel(get_class($record), $stateColumn);
-    }
-
-    /**
-     * Build localized label entries for a transition context.
-     *
-     * Looks up state and transition labels stored in the workflow database
-     * configuration so that notification templates can use human-readable,
-     * translated values via {{from_state_label}}, {{to_state_label}}, and
-     * {{transition_label}} instead of raw state codes.
-     *
-     * @return array{from_state_label: string, to_state_label: string, transition_label: string}
-     */
-    private function buildTransitionContextLabels(Workflow $workflow, string $fromState, string $toState): array
-    {
-        $fromWs = $this->resolveWorkflowState($workflow, $fromState);
-        $toWs = $this->resolveWorkflowState($workflow, $toState);
-
-        $transition = null;
-
-        if ($fromWs && $toWs) {
-            $transition = $workflow->transitions()
-                ->where('from_state_id', $fromWs->id)
-                ->where('to_state_id', $toWs->id)
-                ->first();
-        } elseif ($fromWs) {
-            $transition = $workflow->transitions()
-                ->where('from_state_id', $fromWs->id)
-                ->first();
-        }
-
-        return [
-            'from_state_label' => $fromWs?->label ?? Str::headline($fromState),
-            'to_state_label' => $toWs?->label ?? Str::headline($toState),
-            'transition_label' => $transition?->label ?? '',
-        ];
-    }
-
-    /**
-     * Resolve a workflow state by class_name or name.
-     */
-    protected function resolveWorkflowState(Workflow $workflow, string $state): ?WorkflowState
-    {
-        return $workflow->states()
-            ->where(function ($q) use ($state) {
-                $q->where('class_name', $state)
-                    ->orWhere('name', $state);
-            })
-            ->first();
-    }
-
-    /**
-     * Find notifications configured for a specific transition.
-     */
-    protected function findTransitionNotifications(
-        Workflow $workflow,
-        string $fromState,
-        string $toState
-    ): Collection {
-        // Resolve from-state to ID first, then find transition
-        $fromWs = $this->resolveWorkflowState($workflow, $fromState);
-
-        if (! $fromWs) {
-            // No from-state found — return all on_transition notifications as fallback
-            return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-                ->where('trigger_event', 'on_transition')
-                ->where('is_active', true)
-                ->get();
-        }
-
-        $transition = $workflow->transitions()
-            ->where('from_state_id', $fromWs->id)
-            ->first();
-
-        if (! $transition) {
-            return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-                ->where('trigger_event', 'on_transition')
-                ->where('is_active', true)
-                ->get();
-        }
-
-        return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-            ->where('trigger_event', 'on_transition')
-            ->where('transition_id', $transition->id)
-            ->where('is_active', true)
-            ->get();
-    }
-
-    /**
-     * Find notifications for state entry.
-     */
-    protected function findStateEntryNotifications(Workflow $workflow, string $state): Collection
-    {
-        $workflowState = $this->resolveWorkflowState($workflow, $state);
-
-        if (! $workflowState) {
-            return collect();
-        }
-
-        return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-            ->where('trigger_event', 'on_state_enter')
-            ->where('state_id', $workflowState->id)
-            ->where('is_active', true)
-            ->get();
-    }
-
-    /**
-     * Find notifications for state exit.
-     */
-    protected function findStateExitNotifications(Workflow $workflow, string $state): Collection
-    {
-        $workflowState = $this->resolveWorkflowState($workflow, $state);
-
-        if (! $workflowState) {
-            return collect();
-        }
-
-        return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-            ->where('trigger_event', 'on_state_exit')
-            ->where('state_id', $workflowState->id)
-            ->where('is_active', true)
-            ->get();
     }
 }

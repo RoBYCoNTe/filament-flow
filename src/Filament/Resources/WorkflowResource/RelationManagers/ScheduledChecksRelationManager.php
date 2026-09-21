@@ -14,9 +14,20 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 
 class ScheduledChecksRelationManager extends RelationManager
 {
+    /** Owner record of this relation manager, with its concrete type. */
+    protected function owner(): Workflow
+    {
+        /** @var Workflow $owner */
+        $owner = $this->getOwnerRecord();
+
+        return $owner;
+    }
+
     protected static string $relationship = 'scheduledChecks';
 
     protected static ?string $title = 'Scheduled Checks';
@@ -46,7 +57,7 @@ class ScheduledChecksRelationManager extends RelationManager
 
                 Forms\Components\Select::make('state_id')
                     ->label(__('State Filter'))
-                    ->options(fn () => $this->getOwnerRecord()
+                    ->options(fn () => $this->owner()
                         ->states()
                         ->pluck('label', 'id'))
                     ->searchable()
@@ -83,11 +94,16 @@ class ScheduledChecksRelationManager extends RelationManager
                 Forms\Components\KeyValue::make('condition_config')
                     ->label(__('Condition Config'))
                     ->required()
-                    ->helperText(fn (Forms\Components\KeyValue $component): string => match ($component->getRecord()?->condition_type ?? '') {
-                        'date_offset' => __('Keys: field, offset_days, operator (<=, >=, =)'),
-                        'field_compare' => __('Key: conditions (JSON array)'),
-                        'custom_class' => __('Key: class (FQCN with evaluate method)'),
-                        default => __('Configure the condition parameters.'),
+                    ->helperText(function (Forms\Components\KeyValue $component): string {
+                        $record = $component->getRecord();
+
+                        /** @var WorkflowScheduledCheck|null $record */
+                        return match ($record->condition_type ?? '') {
+                            'date_offset' => __('Keys: field, offset_days, operator (<=, >=, =)'),
+                            'field_compare' => __('Key: conditions (JSON array)'),
+                            'custom_class' => __('Key: class (FQCN with evaluate method)'),
+                            default => __('Configure the condition parameters.'),
+                        };
                     })
                     ->columnSpanFull(),
 
@@ -106,11 +122,16 @@ class ScheduledChecksRelationManager extends RelationManager
                 Forms\Components\KeyValue::make('action_config')
                     ->label(__('Action Config'))
                     ->required()
-                    ->helperText(fn (Forms\Components\KeyValue $component): string => match ($component->getRecord()?->action_type ?? '') {
-                        'notification' => __('Key: notification_id'),
-                        'transition' => __('Keys: to_state, force (true/false)'),
-                        'side_effect' => __('Key: transition_id'),
-                        default => __('Configure the action parameters.'),
+                    ->helperText(function (Forms\Components\KeyValue $component): string {
+                        $record = $component->getRecord();
+
+                        /** @var WorkflowScheduledCheck|null $record */
+                        return match ($record->action_type ?? '') {
+                            'notification' => __('Key: notification_id'),
+                            'transition' => __('Keys: to_state, force (true/false)'),
+                            'side_effect' => __('Key: transition_id'),
+                            default => __('Configure the action parameters.'),
+                        };
                     })
                     ->columnSpanFull(),
 
@@ -140,7 +161,7 @@ class ScheduledChecksRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('state.label')
                     ->label(__('State'))
                     ->badge()
-                    ->color(fn ($record) => $record->state?->color ?? 'gray')
+                    ->color(fn ($record) => $record->state->color ?? 'gray')
                     ->placeholder(__('All')),
 
                 Tables\Columns\TextColumn::make('condition_type')

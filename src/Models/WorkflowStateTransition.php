@@ -6,12 +6,14 @@
 
 namespace RoBYCoNTe\FilamentFlow\Models;
 
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use RoBYCoNTe\FilamentFlow\Concerns\ResolvesUserModel;
 
 /**
  * @method static create(array $array)
@@ -19,9 +21,35 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  *
  * @property string $from_state
  * @property string $to_state
+ * @property string $transitionable_type
+ * @property string $transitionable_id
+ * @property int|null $workflow_id
+ * @property int|null $transition_id
+ * @property string|null $from_state_label
+ * @property string $to_state_label
+ * @property int|null $user_id
+ * @property string|null $user_name
+ * @property string|null $user_email
+ * @property string|null $ip_address
+ * @property string|null $user_agent
+ * @property string|null $reason
+ * @property string|null $notes
+ * @property Carbon $created_at
+ * @property int|null $duration_seconds
+ * @property bool $has_metadata
+ * @property bool $has_snapshot
+ * @property bool $is_visible
+ * @property-read Workflow|null $workflow
+ * @property-read WorkflowTransition|null $transition
+ * @property-read WorkflowTransitionMetadata|null $metadata
+ * @property-read Collection<int, WorkflowTransitionSnapshot> $snapshots
+ * @property-read WorkflowTransitionSnapshot|null $snapshotBefore
+ * @property-read WorkflowTransitionSnapshot|null $snapshotAfter
  */
 class WorkflowStateTransition extends Model
 {
+    use ResolvesUserModel;
+
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -58,42 +86,38 @@ class WorkflowStateTransition extends Model
         return $this->morphTo();
     }
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
     }
 
+    /** @return BelongsTo<WorkflowTransition, $this> */
     public function transition(): BelongsTo
     {
         return $this->belongsTo(WorkflowTransition::class);
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo($this->getUserModel());
-    }
-
-    protected function getUserModel(): string
-    {
-        return config('filament-flow.user_model') ?? config('auth.providers.users.model', User::class);
-    }
-
+    /** @return HasOne<WorkflowTransitionMetadata, $this> */
     public function metadata(): HasOne
     {
         return $this->hasOne(WorkflowTransitionMetadata::class, 'transition_history_id');
     }
 
+    /** @return HasMany<WorkflowTransitionSnapshot, $this> */
     public function snapshots(): HasMany
     {
         return $this->hasMany(WorkflowTransitionSnapshot::class, 'transition_history_id');
     }
 
+    /** @return HasOne<WorkflowTransitionSnapshot, $this> */
     public function snapshotBefore(): HasOne
     {
         return $this->hasOne(WorkflowTransitionSnapshot::class, 'transition_history_id')
             ->where('snapshot_type', 'before');
     }
 
+    /** @return HasOne<WorkflowTransitionSnapshot, $this> */
     public function snapshotAfter(): HasOne
     {
         return $this->hasOne(WorkflowTransitionSnapshot::class, 'transition_history_id')
@@ -106,7 +130,7 @@ class WorkflowStateTransition extends Model
     public function scopeForRecord($query, Model $record)
     {
         return $query->where('transitionable_type', get_class($record))
-            ->where('transitionable_id', $record->id);
+            ->where('transitionable_id', $record->getKey());
     }
 
     /**

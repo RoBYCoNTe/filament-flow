@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $priority
  * @property bool $is_active
  * @property array|null $metadata
- * @property WorkflowState $state
+ * @property-read WorkflowState|null $state
  *
  * @method static create(array $attributes)
  * @method static where(string $column, mixed $value)
@@ -73,6 +73,7 @@ class WorkflowStateAccessRule extends Model
     /**
      * Get the state this rule belongs to
      */
+    /** @return BelongsTo<WorkflowState, $this> */
     public function state(): BelongsTo
     {
         return $this->belongsTo(WorkflowState::class, 'state_id');

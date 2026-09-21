@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheckLog;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
@@ -204,7 +205,7 @@ class ScheduledCheckRunner
         $config = $check->action_config;
 
         match ($check->action_type) {
-            'notification' => $this->executeNotificationAction($record, $config),
+            'notification' => $this->executeNotificationAction($record, $config, $check),
             'transition' => $this->executeTransitionAction($record, $config),
             'side_effect' => $this->executeSideEffectAction($record, $config, $check),
             default => null,
@@ -214,16 +215,58 @@ class ScheduledCheckRunner
     /**
      * Execute a notification action.
      *
-     * Config: {"notification_id": 5} or {"channel": "mail", "template": "..."}
+     * Config: {"notification_id": 5} or {"notification_name": "review-reminder"}
+     * (a name is looked up inside the check's own workflow).
      */
-    protected function executeNotificationAction(Model $record, array $config): void
+    protected function executeNotificationAction(Model $record, array $config, WorkflowScheduledCheck $check): void
     {
-        $notificationService = app(NotificationService::class);
+        $notificationId = $this->resolveNotificationId($check, $config);
 
-        $notificationId = $config['notification_id'] ?? null;
         if ($notificationId) {
-            $notificationService->triggerById($notificationId, $record);
+            app(NotificationService::class)->triggerById($notificationId, $record);
         }
+    }
+
+    /**
+     * Resolve the target notification id from an action config. Accepts an
+     * explicit id or a name looked up inside the check's workflow.
+     *
+     * @param  array<string,mixed>  $config
+     */
+    protected function resolveNotificationId(WorkflowScheduledCheck $check, array $config): ?int
+    {
+        $id = $config['notification_id'] ?? null;
+
+        if (! $id && ($name = $config['notification_name'] ?? null)) {
+            $id = WorkflowNotification::query()
+                ->where('workflow_id', $check->workflow_id)
+                ->where('name', $name)
+                ->orderBy('id')
+                ->value('id');
+        }
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    /**
+     * Resolve the target transition id from an action config. Accepts an
+     * explicit id or a name looked up inside the check's workflow.
+     *
+     * @param  array<string,mixed>  $config
+     */
+    protected function resolveTransitionId(WorkflowScheduledCheck $check, array $config): ?int
+    {
+        $id = $config['transition_id'] ?? null;
+
+        if (! $id && ($name = $config['transition_name'] ?? null)) {
+            $id = WorkflowTransition::query()
+                ->where('workflow_id', $check->workflow_id)
+                ->where('name', $name)
+                ->orderBy('id')
+                ->value('id');
+        }
+
+        return $id !== null ? (int) $id : null;
     }
 
     /**
@@ -254,7 +297,7 @@ class ScheduledCheckRunner
      */
     protected function executeSideEffectAction(Model $record, array $config, WorkflowScheduledCheck $check): void
     {
-        $transitionId = $config['transition_id'] ?? null;
+        $transitionId = $this->resolveTransitionId($check, $config);
 
         if (! $transitionId) {
             return;

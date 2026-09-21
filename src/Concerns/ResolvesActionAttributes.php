@@ -2,6 +2,7 @@
 
 namespace RoBYCoNTe\FilamentFlow\Concerns;
 
+use Filament\Actions\Action;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasDescription;
 use Filament\Support\Contracts\HasIcon;
@@ -127,7 +128,7 @@ trait ResolvesActionAttributes
 
         // Model
         $this->requiresConfirmation();
-        $this->modalSubmitAction(fn ($action) => $action->outlined());
+        $this->modalSubmitAction(fn (Action $action) => $action->outlined());
         $this->modalDescription(fn () => $this->getTooltip());
         $this->modalIcon(fn () => $this->getIcon());
         $this->modalIconColor(fn () => $this->getColor());

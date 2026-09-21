@@ -11,14 +11,16 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationChannel;
 
 class ChannelsRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'channels';
 
     protected static ?string $title = 'Channels & Templates';
@@ -54,7 +56,7 @@ class ChannelsRelationManager extends RelationManager
                         'blade' => __('Blade — Full Laravel Blade syntax'),
                         'mustache' => __('Mustache — {{var}} and {{{raw}}}'),
                     ])
-                    ->default('plain')
+                    ->default((string) config('filament-flow.notifications.default_template_engine', 'plain'))
                     ->native(false)
                     ->helperText(__('How template variables are rendered.')),
             ]),
@@ -97,6 +99,7 @@ class ChannelsRelationManager extends RelationManager
         return [
             Forms\Components\Radio::make('channel_type')
                 ->label(__('Channel'))
+                ->default((string) config('filament-flow.notifications.default_channel', 'database'))
                 ->required()
                 ->options([
                     'database' => __('Database'),
@@ -127,13 +130,6 @@ class ChannelsRelationManager extends RelationManager
         ];
     }
 
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
-    }
-
     public function table(Table $table): Table
     {
         return $table
@@ -155,7 +151,7 @@ class ChannelsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('template_summary')
                     ->label(__('Template'))
-                    ->state(function (Model $record): string {
+                    ->state(function (WorkflowNotificationChannel $record): string {
                         $record->loadMissing('templates');
                         $template = $record->templates->first();
 
@@ -187,7 +183,7 @@ class ChannelsRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(function (Model $record) {
+                        ->fillForm(function (WorkflowNotificationChannel $record) {
                             $data = $record->toArray();
                             $record->loadMissing('templates');
                             $data['templates'] = $record->templates->toArray();
@@ -196,9 +192,9 @@ class ChannelsRelationManager extends RelationManager
                         })
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => __(ucfirst($record->channel_type)).' '.__('Channel'))
+                        ->modalHeading(fn (WorkflowNotificationChannel $record) => __(ucfirst($record->channel_type)).' '.__('Channel'))
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(function (Model $record, array $data) {
+                        ->action(function (WorkflowNotificationChannel $record, array $data) {
                             $record->update($data);
 
                             if (isset($data['templates'])) {
@@ -214,7 +210,7 @@ class ChannelsRelationManager extends RelationManager
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowNotificationChannel $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

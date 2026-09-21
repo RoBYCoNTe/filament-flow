@@ -9,6 +9,7 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasDatabaseTransitions;
 use RoBYCoNTe\FilamentFlow\Concerns\HasFlexibleStates;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateAccess;
 use RoBYCoNTe\FilamentFlow\Concerns\HasWorkflowAssignments;
+use RoBYCoNTe\FilamentFlow\Contracts\HasFieldLabels;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\OrderState;
 
 /**
@@ -33,12 +34,23 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\OrderState;
  * @method static visibleTo(User $user)
  * @method static editableBy(User $user)
  */
-class Order extends Model
+class Order extends Model implements HasFieldLabels
 {
     use HasDatabaseTransitions;
     use HasFlexibleStates;
     use HasStateAccess;
     use HasWorkflowAssignments;
+
+    /** Labels used by the tests of the validation messages. */
+    public function fieldLabel(string $path): ?string
+    {
+        return [
+            'tracking_number' => 'Tracking number',
+            'order_number' => 'Order number',
+            'customer_email' => 'Customer e-mail',
+            'customer_name' => 'Customer name',
+        ][$path] ?? null;
+    }
 
     protected $table = 'test_orders';
 

@@ -11,16 +11,18 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use RoBYCoNTe\FilamentFlow\Support\RuleOptions;
 
 class FieldPermissionsRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'fields';
 
     protected static ?string $title = 'Field Permissions';
@@ -30,13 +32,6 @@ class FieldPermissionsRelationManager extends RelationManager
     public static function getTitle($ownerRecord, string $pageClass): string
     {
         return __('Field Permissions');
-    }
-
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
     }
 
     protected static function getVisibilityOptions(): array
@@ -64,7 +59,7 @@ class FieldPermissionsRelationManager extends RelationManager
                 ->required()
                 ->options(function (Forms\Components\Select $component) {
                     $livewire = $component->getLivewire();
-                    $modelType = $livewire->ownerRecord?->workflow?->model_type ?? null;
+                    $modelType = $livewire->ownerRecord?->workflow->model_type ?? null;
 
                     return ModelDiscovery::getResourceComponentOptions($modelType);
                 })
@@ -224,7 +219,7 @@ class FieldPermissionsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('overrides_summary')
                     ->label(__('Overrides'))
-                    ->state(function (Model $record): string {
+                    ->state(function (WorkflowStateField $record): string {
                         $record->loadMissing('roleOverrides');
                         $overrides = $record->roleOverrides;
 
@@ -263,12 +258,12 @@ class FieldPermissionsRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(fn (Model $record) => $record->toArray())
+                        ->fillForm(fn (WorkflowStateField $record) => $record->toArray())
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => $record->field_name)
+                        ->modalHeading(fn (WorkflowStateField $record) => $record->field_name)
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(function (Model $record, array $data) {
+                        ->action(function (WorkflowStateField $record, array $data) {
                             $record->update($data);
 
                             if (isset($data['roleOverrides'])) {
@@ -284,7 +279,7 @@ class FieldPermissionsRelationManager extends RelationManager
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowStateField $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

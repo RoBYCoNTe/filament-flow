@@ -149,6 +149,7 @@ trait HasStateAccess
     /**
      * Check if a field (form field or RelationManager action) is visible for the current state.
      *
+     * Accepts dotted paths: a rule on `costs` also covers `costs.amount`.
      * Returns true if the field is not configured (default: visible).
      *
      * @param  Model|null  $user  The user to check (defaults to authenticated user)
@@ -157,12 +158,10 @@ trait HasStateAccess
     {
         $user ??= auth()->user();
 
-        $perms = app(WorkflowFieldPermissionsService::class)
-            ->getFieldPermissions($this, $user);
+        $perm = app(WorkflowFieldPermissionsService::class)
+            ->permissionFor($this, $fieldName, $user);
 
-        $perm = $perms[$fieldName] ?? null;
-
-        if (! $perm) {
+        if ($perm === null) {
             return true;
         }
 
@@ -172,15 +171,17 @@ trait HasStateAccess
     /**
      * Check if a field is readonly for the current state.
      *
+     * Accepts dotted paths: a rule on `costs` also covers `costs.amount`.
+     *
      * @param  Model|null  $user  The user to check (defaults to authenticated user)
      */
     public function isFieldReadonly(string $fieldName, ?Model $user = null): bool
     {
         $user ??= auth()->user();
 
-        $perms = app(WorkflowFieldPermissionsService::class)
-            ->getFieldPermissions($this, $user);
+        $perm = app(WorkflowFieldPermissionsService::class)
+            ->permissionFor($this, $fieldName, $user);
 
-        return $perms[$fieldName]['readonly'] ?? false;
+        return (bool) ($perm['readonly'] ?? false);
     }
 }

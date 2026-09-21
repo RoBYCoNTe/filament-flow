@@ -109,7 +109,9 @@ return new class extends Migration
             $table->foreignId('notification_id')->constrained('workflow_notifications')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
 
-            $table->morphs('notifiable');
+            $table->string('notifiable_type');
+            $table->string('notifiable_id', 36);
+            $table->index(['notifiable_type', 'notifiable_id']);
 
             $table->string('channel');
             $table->enum('status', ['pending', 'sent', 'failed', 'skipped'])->default('pending');

@@ -68,3 +68,13 @@ php artisan vendor:publish --tag=filament-flow-config --force
 ```
 
 Compare the published file with the package default to find newly introduced configuration keys. Merge any new keys into your existing `config/filament-flow.php` manually if you prefer not to overwrite your customisations.
+
+## Workflow definition versioning
+
+The SDK adds two schema objects. Run `php artisan migrate` after upgrading:
+
+- `workflows.schema_version` (unsigned int, default `1`) — the workflow definition version.
+- `workflow_snapshots` table — versioned snapshots written before a breaking change.
+
+Both migrations are idempotent (they skip when the column/table already exists), so
+they are safe to run on databases migrated by earlier versions.

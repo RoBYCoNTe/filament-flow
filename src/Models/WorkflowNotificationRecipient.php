@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $recipient_type
  * @property array $recipient_config
  * @property int $sort_order
+ * @property-read WorkflowNotification|null $notification
  */
 class WorkflowNotificationRecipient extends Model
 {
@@ -27,6 +28,7 @@ class WorkflowNotificationRecipient extends Model
         'recipient_config' => 'array',
     ];
 
+    /** @return BelongsTo<WorkflowNotification, $this> */
     public function notification(): BelongsTo
     {
         return $this->belongsTo(WorkflowNotification::class, 'notification_id');

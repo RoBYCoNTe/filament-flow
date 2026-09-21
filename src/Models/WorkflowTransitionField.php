@@ -5,6 +5,22 @@ namespace RoBYCoNTe\FilamentFlow\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $transition_id
+ * @property string $field_name
+ * @property string $field_type
+ * @property string $label
+ * @property string|null $model_attribute
+ * @property string $mapping_type
+ * @property array<string,mixed>|null $mapping_config
+ * @property bool $is_required
+ * @property array<string,mixed>|null $validation_rules
+ * @property string|null $custom_validation_class
+ * @property int $sort_order
+ * @property array<string,mixed>|null $field_config
+ * @property bool $save_to_model
+ * @property-read WorkflowTransition|null $transition
+ */
 class WorkflowTransitionField extends Model
 {
     protected $fillable = [
@@ -31,6 +47,7 @@ class WorkflowTransitionField extends Model
         'save_to_model' => 'boolean',
     ];
 
+    /** @return BelongsTo<WorkflowTransition, $this> */
     public function transition(): BelongsTo
     {
         return $this->belongsTo(WorkflowTransition::class, 'transition_id');

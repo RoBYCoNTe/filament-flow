@@ -625,7 +625,9 @@ class ListOrders extends ListRecords
     public function getTabs(): array
     {
         return StateTabs::make(Order::class)
+            ->tenant($tenantId)         // Workflows scoped to an owner
             ->attribute('state')        // State attribute name
+            ->query($scopedQuery)       // Base query for the badge counts
             ->badge()                   // Show record count badges
             ->includeAll()              // Include an "All" tab
             ->toArray();
@@ -635,6 +637,11 @@ class ListOrders extends ListRecords
 
 **Options:**
 
+- `tenant(?int $tenantId)` — Owner of the scoped workflow; read from the model
+  instance when it implements `getWorkflowTenantId()`
+- `query(Builder $query)` — Base query for the badge counts (record/tenant scoped)
+- `data()` — The same tabs as plain arrays (`state`, `label`, `color`, `icon`,
+  `count`) for hosts that render the tabs themselves (a page with a table)
 - `attribute(string $attribute)` — Specify the state attribute (default: first state attribute)
 - `badge(bool $badge = true)` — Show/hide record count badges
 - `includeAll(bool $include = true)` — Include an "All records" tab

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
+use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
 
 class AssignmentSummaryEntry extends Entry
@@ -159,12 +160,7 @@ class AssignmentSummaryEntry extends Entry
             return false;
         }
 
-        $superAdminRoles = config('filament-flow.state_access.super_admin_roles', ['super_admin']);
-
-        if (method_exists($user, 'hasAnyRole')) {
-            return $user->hasAnyRole($superAdminRoles);
-        }
-
-        return false;
+        // Same resolver as the access rules (see TransitionTimeline).
+        return app(AccessRuleEvaluator::class)->isSuperAdmin($user);
     }
 }

@@ -1,4 +1,6 @@
 {
+    "The form cannot be submitted yet": "Il modulo non può ancora essere inviato",
+    "The value of :field is not valid.": "Il valore di :field non è valido.",
     "filament-flow.title": "Filament Flow",
     "filament-flow.description": "Plugin di Business Process Management che abilita funzionalità di workflow e macchine a stati all'interno di Filament.",
     "filament-flow.tabs.all": "Tutti",
@@ -439,5 +441,9 @@
     "hidden": "nascosto",
     "Access by role": "Accesso per ruolo",
     "No history yet.": "Nessuna cronologia.",
-    "No users assigned.": "Nessun utente assegnato."
+    "No users assigned.": "Nessun utente assegnato.",
+    "Safe": "Sicura",
+    "Additive": "Aggiuntiva",
+    "Breaking": "Distruttiva",
+    "{1}1 error|[2,*]:count errors": "{1}1 errore|[2,*]:count errori"
 }

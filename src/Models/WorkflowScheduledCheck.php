@@ -5,7 +5,27 @@ namespace RoBYCoNTe\FilamentFlow\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
+/**
+ * @property int $id
+ * @property int $workflow_id
+ * @property string $name
+ * @property string|null $description
+ * @property int|null $state_id
+ * @property string $condition_type
+ * @property array<string,mixed>|null $condition_config
+ * @property string $action_type
+ * @property array<string,mixed>|null $action_config
+ * @property string $frequency
+ * @property bool $once_per_record
+ * @property bool $is_active
+ * @property Carbon|null $last_checked_at
+ * @property-read Workflow|null $workflow
+ * @property-read WorkflowState|null $state
+ * @property-read Collection<int, WorkflowScheduledCheckLog> $logs
+ */
 class WorkflowScheduledCheck extends Model
 {
     protected $fillable = [
@@ -31,16 +51,19 @@ class WorkflowScheduledCheck extends Model
         'last_checked_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Workflow, $this> */
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
     }
 
+    /** @return BelongsTo<WorkflowState, $this> */
     public function state(): BelongsTo
     {
         return $this->belongsTo(WorkflowState::class, 'state_id');
     }
 
+    /** @return HasMany<WorkflowScheduledCheckLog, $this> */
     public function logs(): HasMany
     {
         return $this->hasMany(WorkflowScheduledCheckLog::class, 'check_id');

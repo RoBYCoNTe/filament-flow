@@ -63,11 +63,6 @@ class FlexibleStateCast implements CastsAttributes
             return $value::getMorphClass();
         }
 
-        // If it's a State class name, instantiate and get morph class
-        if (is_subclass_of($value, State::class)) {
-            return $value::getMorphClass();
-        }
-
-        return $value;
+        return is_scalar($value) ? (string) $value : null;
     }
 }

@@ -2,6 +2,9 @@
 
 namespace RoBYCoNTe\FilamentFlow;
 
+use Filament\Support\Assets\Css;
+use Filament\Support\Assets\Js;
+use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Console\Scheduling\Schedule;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -21,6 +24,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Observers\WorkflowCacheObserver;
+use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
+use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
+use RoBYCoNTe\FilamentFlow\Support\ValidationRuleRegistry;
+use RoBYCoNTe\FilamentFlow\Support\WorkflowFormulaScope;
 use RoBYCoNTe\FilamentFlow\Testing\TestsFilamentFlow;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
@@ -41,6 +48,7 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasTranslations()
             ->hasViews()
+            ->hasRoute('web')
             ->hasMigrations([
                 '2025_01_01_000001_create_workflows_table',
                 '2025_01_01_000002_create_workflow_transition_details_table',
@@ -50,6 +58,8 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
                 '2025_01_01_000006_create_workflow_transition_history_table',
                 '2025_01_01_000007_create_workflow_transition_side_effects_table',
                 '2025_01_01_000008_create_workflow_scheduled_checks_table',
+                '2025_01_01_000009_add_schema_version_to_workflows_table',
+                '2025_01_01_000010_create_workflow_snapshots_table',
             ])
             ->runsMigrations()
             ->hasCommands([
@@ -67,10 +77,22 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        // Register JSON translations early (in register phase) so they are
-        // available before any service provider triggers translation loading
-        // during the boot phase.
-        $this->loadJsonTranslationsFrom(__DIR__.'/../../resources/lang');
+        // Register JSON translations early so they are available before any
+        // service provider triggers translation loading during the boot phase.
+        $this->loadJsonTranslationsFrom(__DIR__.'/../resources/lang');
+
+        $this->app->singleton(FormulaCompletionRegistry::class, function () {
+            $registry = new FormulaCompletionRegistry;
+            $registry->register('workflow', new WorkflowFormulaScope);
+
+            return $registry;
+        });
+
+        $this->app->singleton(FormulaConditionRegistry::class, fn () => new FormulaConditionRegistry);
+
+        // Named validation rules: shared by every rule declaration (state field
+        // rules, transition rules, host field rules).
+        $this->app->singleton(ValidationRuleRegistry::class, fn () => new ValidationRuleRegistry);
     }
 
     /**
@@ -78,6 +100,11 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
      */
     public function packageBooted(): void
     {
+        FilamentAsset::register([
+            Js::make('formula-editor', __DIR__.'/../resources/js/formula-editor.js'),
+            Css::make('formula-editor', __DIR__.'/../resources/css/formula-editor.css'),
+        ], package: 'robyconte/filament-flow');
+
         Livewire::component('assignment-manager', AssignmentManager::class);
 
         Testable::mixin(new TestsFilamentFlow);

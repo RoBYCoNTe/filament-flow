@@ -65,6 +65,12 @@ class WorkflowNotification extends Notification implements ShouldQueue
             ->greeting($this->renderTemplate($this->template['title'] ?? 'Hello!'))
             ->line($this->renderTemplate($this->template['body'] ?? 'A workflow event has occurred.'));
 
+        $fromAddress = config('filament-flow.notifications.channels.mail.from_address');
+
+        if (filled($fromAddress)) {
+            $message->from((string) $fromAddress, (string) config('filament-flow.notifications.channels.mail.from_name', ''));
+        }
+
         // Add action button if configured
         if (! empty($this->template['action_url'])) {
             $message->action(

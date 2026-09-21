@@ -9,10 +9,12 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Support\Collection;
 use RoBYCoNTe\FilamentFlow\Forms\Components\AssigneeSelect;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
 class TransitionFormService
@@ -26,10 +28,16 @@ class TransitionFormService
      * @param  string  $toStateClass  The to state class or name
      * @param  string|null  $transitionClass  Optional transition class to filter by (when multiple transitions exist for same from/to states)
      */
-    public function getTransitionConfig(string $modelClass, string $fromStateClass, string $toStateClass, ?string $transitionClass = null): ?WorkflowTransition
+    /**
+     * @param  string|null  $transitionClass  Optional transition class for disambiguation.
+     * @param  int|null  $tenantId  Scope discriminator (e.g. scheme_id). Pass
+     *                              record->getWorkflowTenantId() when available so
+     *                              that models with N scoped workflows resolve
+     *                              the correct one instead of the global fallback.
+     */
+    public function getTransitionConfig(string $modelClass, string $fromStateClass, string $toStateClass, ?string $transitionClass = null, ?int $tenantId = null): ?WorkflowTransition
     {
-        // Get workflow for this model (with tenant fallback support)
-        $workflow = Workflow::findForModel($modelClass);
+        $workflow = Workflow::findForModel($modelClass, 'state', $tenantId);
         if (! $workflow) {
             return null;
         }
@@ -206,6 +214,7 @@ class TransitionFormService
      */
     public function applyTransitionDataToModel($model, WorkflowTransition $transition, array $data): void
     {
+        /** @var Collection<int, WorkflowTransitionField> $fields */
         $fields = $transition->fields;
 
         foreach ($fields as $field) {

@@ -8,9 +8,19 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
 class TransitionHistoryRelationManager extends RelationManager
 {
+    /** Owner record of this relation manager, with its concrete type. */
+    protected function owner(): Workflow
+    {
+        /** @var Workflow $owner */
+        $owner = $this->getOwnerRecord();
+
+        return $owner;
+    }
+
     protected static string $relationship = 'transitionHistory';
 
     protected static ?string $title = 'Transition History';
@@ -95,7 +105,7 @@ class TransitionHistoryRelationManager extends RelationManager
             ->filters([
                 Tables\Filters\SelectFilter::make('to_state')
                     ->label(__('To State'))
-                    ->options(fn () => $this->getOwnerRecord()
+                    ->options(fn () => $this->owner()
                         ->states()
                         ->pluck('label', 'name')),
             ]);

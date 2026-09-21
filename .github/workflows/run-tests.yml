@@ -49,6 +49,27 @@ jobs:
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse
 
+  docs:
+    runs-on: ubuntu-latest
+
+    name: Docs (VitePress build)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      # A missing/broken doc page breaks the PR build, not the release.
+      - name: Build docs
+        run: npm run docs:build
+
   test:
     runs-on: ubuntu-latest
 

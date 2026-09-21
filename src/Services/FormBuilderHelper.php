@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\RichEditor;
@@ -12,7 +13,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Support\Components\Component;
 use RoBYCoNTe\FilamentFlow\Exceptions\InvalidComponentException;
 
 class FormBuilderHelper
@@ -45,7 +45,7 @@ class FormBuilderHelper
      *
      * @throws InvalidComponentException
      */
-    public function buildComponent(string $fieldName, array $config): ?Component
+    public function buildComponent(string $fieldName, array $config): ?Field
     {
         // Check if component type is explicitly defined
         $componentType = $config['component_type'] ?? null;
@@ -70,7 +70,7 @@ class FormBuilderHelper
      *
      * @noinspection PhpUnusedParameterInspection
      */
-    protected function createComponentByType(string $type, string $fieldName, array $config): ?Component
+    protected function createComponentByType(string $type, string $fieldName, array $config): ?Field
     {
         return match ($type) {
             'text' => TextInput::make($fieldName),
@@ -95,7 +95,7 @@ class FormBuilderHelper
     /**
      * Infer component type from field name patterns
      */
-    protected function inferComponentFromFieldName(string $fieldName, array $config): ?Component
+    protected function inferComponentFromFieldName(string $fieldName, array $config): ?Field
     {
         // Email fields
         if (str_contains($fieldName, 'email')) {
@@ -175,7 +175,7 @@ class FormBuilderHelper
      *
      * @throws InvalidComponentException
      */
-    protected function applyConfiguration(Component $component, string $fieldName, array $config): Component
+    protected function applyConfiguration(Field $component, string $fieldName, array $config): Field
     {
         // Label
         if (isset($config['label'])) {
@@ -187,9 +187,10 @@ class FormBuilderHelper
             $component->label($label);
         }
 
-        // Placeholder
-        if (isset($config['placeholder'])) {
-            $component->placeholder($config['placeholder']);
+        // Placeholder: only some field types accept one, and they do not share a
+        // common interface — the call is dynamic after the guard.
+        if (isset($config['placeholder']) && method_exists($component, 'placeholder')) {
+            $component->{'placeholder'}($config['placeholder']);
         }
 
         // Helper text
@@ -239,7 +240,7 @@ class FormBuilderHelper
     /**
      * Apply component-specific configuration
      */
-    protected function applyComponentSpecificConfig(Component $component, array $config): void
+    protected function applyComponentSpecificConfig(Field $component, array $config): void
     {
         // Select options
         if ($component instanceof Select && isset($config['options'])) {

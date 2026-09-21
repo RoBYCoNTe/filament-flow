@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
 
             $table->string('transitionable_type', 100)->index();
-            $table->unsignedBigInteger('transitionable_id')->index();
+            $table->string('transitionable_id', 36)->index();
 
             $table->foreignId('workflow_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('transition_id')->nullable()->constrained('workflow_transitions')->nullOnDelete();
@@ -80,7 +80,7 @@ return new class extends Migration
             $table->id();
 
             $table->string('model_type', 100);
-            $table->unsignedBigInteger('model_id');
+            $table->string('model_id', 36);
 
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 

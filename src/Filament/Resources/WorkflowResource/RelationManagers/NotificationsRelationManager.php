@@ -15,9 +15,19 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowNotificationResource;
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
 class NotificationsRelationManager extends RelationManager
 {
+    /** Owner record of this relation manager, with its concrete type. */
+    protected function owner(): Workflow
+    {
+        /** @var Workflow $owner */
+        $owner = $this->getOwnerRecord();
+
+        return $owner;
+    }
+
     protected static string $relationship = 'notifications';
 
     protected static ?string $title = 'Notifications';
@@ -32,7 +42,7 @@ class NotificationsRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema
-            ->schema(WorkflowNotificationResource::getGeneralFormSchema($this->getOwnerRecord()->getKey()))
+            ->schema(WorkflowNotificationResource::getGeneralFormSchema($this->owner()->getKey()))
             ->columns(1);
     }
 

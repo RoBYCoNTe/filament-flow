@@ -180,3 +180,31 @@ $initial = $service->getInitialState(Order::class, 'state'); // 'pending'
 ```
 
 `getAllStatesForModel` only includes database-only states (those without a matching PHP class). States that have a `class_name` pointing to a real PHP class are retrieved through Spatie's `getStatesLabel()` instead, so metadata always comes from the most authoritative source.
+
+## Workflow Definition SDK
+
+`RoBYCoNTe\FilamentFlow\Definition\*` — typed, read-only definition and planning layer (no database access).
+
+| Class | Namespace | Purpose |
+|---|---|---|
+| `WorkflowDefinition` | `RoBYCoNTe\FilamentFlow\Definition` | Typed workflow definition (states, transitions, metadata) |
+| `State` / `StateField` | `RoBYCoNTe\FilamentFlow\Definition` | States and per-state field visibility/mutability |
+| `Transition` | `RoBYCoNTe\FilamentFlow\Definition` | State transition or in-state action (guards, effects, rules) |
+| `SideEffect` / `ValidationRule` | `RoBYCoNTe\FilamentFlow\Definition` | Transition side effects and validation rules |
+| `WorkflowPlanner` | `RoBYCoNTe\FilamentFlow\Definition\Planning` | Diffs a definition against the persisted workflow |
+| `WorkflowChangePlan` / `WorkflowChange` | `RoBYCoNTe\FilamentFlow\Definition\Planning` | Plan result and single change |
+| `PlanOptions` | `RoBYCoNTe\FilamentFlow\Definition\Planning` | `force()` / `migrate()` / `userId()` opt-ins |
+| `MutationClass` | `RoBYCoNTe\FilamentFlow\Definition\Enums` | `Safe` / `Additive` / `Breaking` |
+| `WorkflowConflictException` | `RoBYCoNTe\FilamentFlow\Exceptions` | Thrown when a plan has blocking conflicts |
+| `WorkflowApplier` | `RoBYCoNTe\FilamentFlow\Definition` | Reconciles a definition with the database (model-agnostic, transactional) |
+| `WorkflowSnapshotService` | `RoBYCoNTe\FilamentFlow\Revision` | Stores a versioned workflow snapshot and bumps `schema_version` |
+
+```php
+use RoBYCoNTe\FilamentFlow\Definition\Planning\WorkflowPlanner;
+
+$plan = (new WorkflowPlanner)->plan($definition, $existingWorkflow);
+
+if (! $plan->isApplicable()) {
+    // $plan->conflicts: list<array{code, message, key}>
+}
+```

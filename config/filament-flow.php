@@ -80,12 +80,6 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Use the advanced FormBuilderHelper for building forms.
-     * Set to false to use basic form building in HasWorkflowCreation trait.
-     */
-    'use_form_builder_helper' => true,
-
     /*
     |--------------------------------------------------------------------------
     | Transition History Notes Configuration
@@ -287,6 +281,33 @@ return [
     | Laravel scheduler.
     |
     */
+
+    'ui' => [
+        /**
+         * Reload the whole page after a transition instead of refreshing the
+         * Livewire component.
+         */
+        'reload_after_transition' => false,
+
+        /**
+         * When a transition is refused by the validation engine, come back to the
+         * form with the errors in the session. Livewire does not re-render the
+         * page on that exception, so without this the form would show nothing.
+         */
+        'reload_form_on_validation_failure' => true,
+    ],
+
+    'validation' => [
+        /**
+         * Classes implementing RoBYCoNTe\FilamentFlow\Contracts\FieldRuleSource.
+         *
+         * They declare the rules of the host application fields (the scheme
+         * schema, in this project). The engine merges them with the rules the
+         * workflow itself declares (state field permissions and transition
+         * rules) and runs everything in one pass.
+         */
+        'rule_sources' => [],
+    ],
 
     'scheduling' => [
         /**

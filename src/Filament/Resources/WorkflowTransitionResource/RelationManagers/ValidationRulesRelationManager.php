@@ -10,15 +10,17 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 
 class ValidationRulesRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'validationRules';
 
     protected static ?string $title = 'Validation Rules';
@@ -38,7 +40,7 @@ class ValidationRulesRelationManager extends RelationManager
                 ->required()
                 ->options(function (Forms\Components\Select $component) {
                     $livewire = $component->getLivewire();
-                    $modelType = $livewire->ownerRecord?->workflow?->model_type ?? null;
+                    $modelType = $livewire->ownerRecord?->workflow->model_type ?? null;
 
                     return ModelDiscovery::getResourceComponentOptions($modelType);
                 })
@@ -79,13 +81,6 @@ class ValidationRulesRelationManager extends RelationManager
         ];
     }
 
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
-    }
-
     public function table(Table $table): Table
     {
         return $table
@@ -121,19 +116,19 @@ class ValidationRulesRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(fn (Model $record) => $record->toArray())
+                        ->fillForm(fn (WorkflowTransitionValidationRule $record) => $record->toArray())
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => $record->field_name)
+                        ->modalHeading(fn (WorkflowTransitionValidationRule $record) => $record->field_name)
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(fn (Model $record, array $data) => $record->update($data)),
+                        ->action(fn (WorkflowTransitionValidationRule $record, array $data) => $record->update($data)),
 
                     Action::make('delete')
                         ->label(__('Delete'))
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowTransitionValidationRule $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

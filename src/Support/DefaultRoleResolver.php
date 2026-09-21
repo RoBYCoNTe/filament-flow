@@ -35,8 +35,7 @@ class DefaultRoleResolver implements RoleResolver
 
         // Check for roles relationship
         if (method_exists($user, 'roles')) {
-            /** @noinspection PhpUndefinedFieldInspection */
-            $roles = $user->roles;
+            $roles = $user->getAttribute('roles');
             if ($roles) {
                 return $roles->pluck('name')->toArray();
             }
@@ -57,14 +56,13 @@ class DefaultRoleResolver implements RoleResolver
 
     /**
      * {@inheritDoc}
+     *
+     * Roles always come from getRoles(), so a resolver that adds roles (tenant
+     * or company roles, for example) is honoured instead of being shadowed by
+     * the model's own role checker.
      */
     public function hasAnyRole(Model $user, array $roles): bool
     {
-        // Check for Spatie Permission
-        if (method_exists($user, 'hasAnyRole')) {
-            return $user->hasAnyRole($roles);
-        }
-
         $userRoles = $this->getRoles($user);
 
         foreach ($roles as $role) {
@@ -81,11 +79,6 @@ class DefaultRoleResolver implements RoleResolver
      */
     public function hasAllRoles(Model $user, array $roles): bool
     {
-        // Check for Spatie Permission
-        if (method_exists($user, 'hasAllRoles')) {
-            return $user->hasAllRoles($roles);
-        }
-
         $userRoles = $this->getRoles($user);
 
         foreach ($roles as $role) {

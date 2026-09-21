@@ -10,9 +10,11 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use ReflectionClass;
+use RoBYCoNTe\FilamentFlow\Exceptions\WorkflowValidationException;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use Spatie\ModelStates\State;
+use Throwable;
 
 /**
  * StateBulkActionGroup generates bulk actions for all possible state transitions.
@@ -46,6 +48,95 @@ class StateBulkActionGroup
     public static function make(string $columnName, string $stateClass): array
     {
         return static::generateStateBulkActions($stateClass, $columnName);
+    }
+
+    /**
+     * Bulk transitions of a database-first workflow (states stored as strings,
+     * no Spatie state class).
+     *
+     * Every transition becomes a BulkAction; the records it does not apply to are
+     * skipped, and the ones that fail (access rules or validation) are counted
+     * and reported, never silently ignored.
+     *
+     * @return array<int, BulkAction>
+     */
+    public static function forDatabaseRecord(string $modelClass, string $columnName = 'state', ?int $tenantId = null): array
+    {
+        $workflow = Workflow::findForModel($modelClass, $columnName, $tenantId);
+
+        if ($workflow === null) {
+            return [];
+        }
+
+        $states = $workflow->states()->get()->keyBy('id');
+
+        return WorkflowTransition::query()
+            ->where('workflow_id', $workflow->id)
+            ->whereNotNull('to_state_id')
+            ->get()
+            ->map(function (WorkflowTransition $transition) use ($states, $columnName): ?BulkAction {
+                $from = $states->get($transition->from_state_id);
+                $to = $states->get($transition->to_state_id);
+
+                if ($to === null) {
+                    return null;
+                }
+
+                $fromName = $from?->name;
+                $toName = $to->class_name ?: $to->name;
+
+                return BulkAction::make(Str::slug('transition-'.$transition->name))
+                    ->label($transition->label ?: $to->label)
+                    ->icon($to->icon)
+                    ->color($to->color ?: 'primary')
+                    ->requiresConfirmation()
+                    ->action(function (Collection $records) use ($fromName, $toName, $columnName): void {
+                        $updated = 0;
+                        $failures = [];
+
+                        foreach ($records as $record) {
+                            if (! method_exists($record, 'transitionTo')) {
+                                continue;
+                            }
+
+                            if ($fromName !== null && $record->{$columnName} !== $fromName) {
+                                continue;
+                            }
+
+                            try {
+                                $record->transitionTo($toName);
+                                $updated++;
+                            } catch (WorkflowValidationException $exception) {
+                                $failures[] = $record->getKey().': '.collect($exception->summary())
+                                    ->map(static fn (array $error): string => $error['message'])
+                                    ->implode(', ');
+                            } catch (Throwable $exception) {
+                                $failures[] = $record->getKey().': '.$exception->getMessage();
+                            }
+                        }
+
+                        $failed = count($failures);
+
+                        Notification::make()
+                            ->color($failed === 0 ? 'success' : ($updated > 0 ? 'warning' : 'danger'))
+                            ->title($failed === 0
+                                ? __('filament-flow.bulk_action.notification.title.success')
+                                : ($updated > 0
+                                    ? __('filament-flow.bulk_action.notification.title.partial_success')
+                                    : __('filament-flow.bulk_action.notification.title.failure')
+                                ))
+                            ->body($failed === 0
+                                ? trans_choice('filament-flow.bulk_action.notification.body', $updated, [
+                                    'count' => $updated,
+                                    'total' => $records->count(),
+                                ])
+                                : collect($failures)->take(5)->implode("\n"))
+                            ->send();
+                    });
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
     /**

@@ -209,6 +209,70 @@ public static function canCreate(): bool
 @endif
 ```
 
+## Field-Level Visibility and Mutability
+
+State field rules control a single field in a given state:
+
+```php
+WorkflowStateField::create([
+    'state_id' => $state->id,
+    'field_name' => 'costs',
+    'visibility' => 'hidden',   // visible | hidden
+    'mutability' => 'locked',   // editable | readonly | locked
+    'is_required' => false,
+]);
+```
+
+Role overrides refine a rule for specific roles (`workflow_state_field_roles`):
+the last matching role wins.
+
+### Nested field paths
+
+Rule names may be dotted paths, so the same mechanism works for the columns of a
+repeater or spreadsheet field:
+
+```php
+// the whole repeater is locked...
+WorkflowStateField::create(['field_name' => 'costs', 'mutability' => 'locked', /* ... */]);
+
+// ...except one column, editable only by reviewers
+$amount = WorkflowStateField::create(['field_name' => 'costs.amount', 'mutability' => 'editable', /* ... */]);
+WorkflowStateFieldRole::create([
+    'state_field_id' => $amount->id,
+    'role_name' => 'reviewer',
+    'mutability' => 'readonly',
+]);
+```
+
+Resolution rules:
+
+- a rule on an **ancestor** path also applies to its descendants (`costs` →
+  `costs.amount`);
+- the **most specific** rule wins attribute by attribute (`costs.amount` beats
+  `costs`); every rule always defines all attributes, so a specific rule must
+  set `is_required` explicitly when it needs it;
+- **role overrides are applied after every base rule** of the chain, so a role
+  override on an ancestor beats a more specific base rule (an admin can be
+  granted access to a nested column whose parent is locked);
+- a path with no matching rule is **unconfigured**: `null`, treated as visible
+  and editable by the callers (never as denied).
+
+```php
+$service = app(WorkflowFieldPermissionsService::class);
+
+$service->permissionFor($order, 'costs.amount', $user);
+// ['visible' => true, 'readonly' => false, 'locked' => false, 'required' => false, 'validation' => null]
+
+// Flat map of the configured rules (top-level keys only)
+$service->getFieldPermissions($order, $user);
+
+// Convenience helpers on the model — they accept dotted paths too
+$order->isFieldVisible('costs.amount', $user);
+$order->isFieldReadonly('costs.amount', $user);
+$service->getHiddenFields($order, $user);
+$service->getReadonlyFields($order, $user);
+```
+
 ## Database-Configured Access Rules
 
 Access rules can be configured in the database via the `workflow_state_access_rules` table, providing dynamic access control without code changes.
@@ -294,6 +358,37 @@ $canTransition = $service->canTransition($order, $user);
 $query = Order::query();
 $service->scopeAccessible($query, $user, 'view');
 $accessibleOrders = $query->get();
+```
+
+## Role Resolution
+
+Access rules and field permissions resolve roles through the same configured
+resolver (`filament-flow.state_access.role_resolver`), so a host that keeps roles
+outside Spatie (per-tenant memberships, for example) only has to implement one
+class:
+
+```php
+'state_access' => [
+    'role_resolver' => App\Support\TenantAwareRoleResolver::class,
+],
+```
+
+`DefaultRoleResolver::hasAnyRole()` / `hasAllRoles()` always read the roles from
+`getRoles()`, so a resolver that *adds* roles is honoured instead of being
+shadowed by the model's own role checker. Without a configured resolver the
+resolver falls back to Spatie Permission, a `getRoles()` method, a `roles`
+relation and finally a plain `role` attribute.
+
+## Create Access for a Specific Owner
+
+`canCreate()` accepts the owner of the scoped workflow, so a host with one
+workflow per owner (a call for proposals per company) can ask whether a user may
+start a record for that owner:
+
+```php
+$service = app(WorkflowStateAccessService::class);
+
+$service->canCreate(Application::class, $user, tenantId: $scheme->id);
 ```
 
 ## Configuration
@@ -529,3 +624,24 @@ The package includes default resolvers that support:
 - **Spatie Permission** package (if installed)
 - Laravel's built-in `Gate` for permissions
 - Custom `getRoles()` method on user models
+
+
+## Definition SDK
+
+Access rules are part of the typed
+[`State`](/workflows/definition-sdk#access-rules) definition, so they are planned
+and applied together with the rest of the workflow:
+
+```php
+use RoBYCoNTe\FilamentFlow\Definition\AccessRule;
+use RoBYCoNTe\FilamentFlow\Definition\State;
+
+State::make('under_review', 'Under review')
+    ->accessRule(AccessRule::view(AccessRule::ANY))
+    ->accessRule(AccessRule::transition(AccessRule::role('reviewer')))
+    ->accessRule(AccessRule::edit(AccessRule::permission('edit-orders'))->and()->priority(10));
+```
+
+Removing an access rule is a **breaking** change (it may widen access), so it is
+snapshotted as a revision and requires `PlanOptions::make()->force()` on a
+published scheme.

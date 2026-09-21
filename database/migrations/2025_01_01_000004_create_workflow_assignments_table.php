@@ -11,7 +11,9 @@ return new class extends Migration
         Schema::create('workflow_assignments', function (Blueprint $table) {
             $table->id();
 
-            $table->morphs('assignable');
+            $table->string('assignable_type');
+            $table->string('assignable_id', 36);
+            $table->index(['assignable_type', 'assignable_id']);
 
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 

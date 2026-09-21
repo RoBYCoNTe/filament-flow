@@ -1,0 +1,103 @@
+.ff-vars-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0;
+    transition: color 0.15s;
+}
+.ff-vars-toggle:hover { color: var(--primary-500, #6366f1); }
+.ff-vars-toggle svg { width: 0.65rem; height: 0.65rem; transition: transform 0.15s; }
+.ff-vars-toggle.open svg { transform: rotate(90deg); }
+
+.ff-vars-panel {
+    margin-top: 0.375rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / .06);
+    font-size: 0.72rem;
+}
+.dark .ff-vars-panel { border-color: #374151; background: #111827; }
+
+.ff-var-row {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+.dark .ff-var-row { border-bottom-color: #1f2937; }
+.ff-var-row:last-child { border-bottom: none; }
+
+.ff-var-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.ff-var-name {
+    font-family: ui-monospace, monospace;
+    font-weight: 600;
+    font-size: 0.72rem;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+}
+.dark .ff-var-name { color: #a5b4fc; background: rgba(99,102,241,.15); }
+
+.ff-var-type {
+    font-family: ui-monospace, monospace;
+    font-size: 0.65rem;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 0.05rem 0.3rem;
+    border-radius: 0.2rem;
+}
+.dark .ff-var-type { background: #1f2937; color: #6b7280; }
+
+.ff-var-desc {
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+.dark .ff-var-desc { color: #9ca3af; }
+
+.ff-var-members {
+    margin-top: 0.375rem;
+    padding-left: 0.625rem;
+    border-left: 2px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+.dark .ff-var-members { border-left-color: #374151; }
+
+.ff-member-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ff-prop-name {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    color: #374151;
+}
+.dark .ff-prop-name { color: #d1d5db; }
+
+.ff-method-name {
+    font-family: ui-monospace, monospace;
+    font-size: 0.7rem;
+    color: #2563eb;
+}
+.dark .ff-method-name { color: #60a5fa; }
+
+.ff-member-desc {
+    font-size: 0.68rem;
+    color: #9ca3af;
+}

@@ -13,12 +13,12 @@ class StateService
      * Get all states for a model (PHP classes + database states)
      * Returns array of ['state_key' => 'State Label']
      */
-    public function getAllStatesForModel(string $modelClass, string $stateColumn = 'state'): array
+    public function getAllStatesForModel(string $modelClass, string $stateColumn = 'state', ?int $tenantId = null): array
     {
         $states = [];
 
         if (config('filament-flow.enabled', true)) {
-            $states = $this->getDatabaseStates($modelClass, $stateColumn);
+            $states = $this->getDatabaseStates($modelClass, $stateColumn, $tenantId);
         }
 
         try {
@@ -42,21 +42,29 @@ class StateService
     /**
      * Get states defined in database
      */
-    protected function getDatabaseStates(string $modelClass, string $stateColumn): array
+    protected function getDatabaseStates(string $modelClass, string $stateColumn, ?int $tenantId = null): array
     {
-        $workflow = Workflow::findForModel($modelClass, $stateColumn);
+        // Hosts may keep one workflow per owner (a workflow per scheme, for
+        // example): without the tenant only the global workflow would be found.
+        $workflow = Workflow::findForModel($modelClass, $stateColumn, $tenantId);
 
         if (! $workflow) {
             return [];
         }
 
         $cache = new WorkflowCacheManager;
-        $cacheKey = "states:{$modelClass}:{$stateColumn}";
+        $cacheKey = "states:{$modelClass}:{$stateColumn}:{$tenantId}";
 
         $ttl = config('filament-flow.cache.safety_ttl', 86400);
 
         return $cache->remember($cacheKey, $ttl, function () use ($workflow) {
-            $workflowStates = WorkflowState::where('workflow_id', $workflow->id)->get();
+            // The order the workflow declares, with the name as a tiebreaker: the
+            // list of states is rendered as it is, and a database is free to hand
+            // the rows back in any order.
+            $workflowStates = WorkflowState::where('workflow_id', $workflow->id)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
 
             $states = [];
             foreach ($workflowStates as $workflowState) {
@@ -74,9 +82,9 @@ class StateService
     /**
      * Get state metadata (color, icon, description) for a given state
      */
-    public function getStateMetadata(string $modelClass, string $stateName, string $stateColumn = 'state'): ?array
+    public function getStateMetadata(string $modelClass, string $stateName, string $stateColumn = 'state', ?int $tenantId = null): ?array
     {
-        $workflow = Workflow::findForModel($modelClass, $stateColumn);
+        $workflow = Workflow::findForModel($modelClass, $stateColumn, $tenantId);
 
         if (! $workflow) {
             return null;

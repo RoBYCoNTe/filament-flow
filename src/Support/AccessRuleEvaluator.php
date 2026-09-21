@@ -132,8 +132,8 @@ class AccessRuleEvaluator
             $assignmentType = $parts[1] ?? null;
 
             if ($assignmentType) {
-                /** @noinspection PhpUndefinedMethodInspection */
-                return $record->hasAssignmentType($user, $assignmentType);
+                return method_exists($record, 'hasAssignmentType')
+                    && $record->hasAssignmentType($user, $assignmentType);
             }
         }
 

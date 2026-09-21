@@ -37,8 +37,9 @@ class StateSelectColumn extends SelectColumn
         }
 
         // Otherwise, use the first default state attribute
-        if (method_exists($model, 'getDefaultStates')) {
-            $defaultStates = $model::getDefaultStates();
+        if ($model instanceof Model && method_exists($model, 'getDefaultStates')) {
+            $class = $model::class;
+            $defaultStates = $class::getDefaultStates();
             if ($defaultStates && ! $defaultStates->isEmpty()) {
                 return (string) array_key_first($defaultStates->toArray());
             }

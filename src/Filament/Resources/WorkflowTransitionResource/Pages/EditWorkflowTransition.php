@@ -8,7 +8,11 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowTransitionResource;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 
+/**
+ * @property WorkflowTransition $record
+ */
 class EditWorkflowTransition extends EditRecord
 {
     protected static string $resource = WorkflowTransitionResource::class;
@@ -25,8 +29,8 @@ class EditWorkflowTransition extends EditRecord
 
     public function getSubheading(): ?string
     {
-        $from = $this->record->fromState?->label ?? __('Any');
-        $to = $this->record->toState?->label ?? __('Action');
+        $from = $this->record->fromState->label ?? __('Any');
+        $to = $this->record->toState->label ?? __('Action');
 
         return $this->record->to_state_id
             ? "{$from} → {$to}"

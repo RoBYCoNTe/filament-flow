@@ -9,7 +9,11 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use RoBYCoNTe\FilamentFlow\Exceptions\StateDeletionException;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowStateResource;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 
+/**
+ * @property WorkflowState $record
+ */
 class EditWorkflowState extends EditRecord
 {
     protected static string $resource = WorkflowStateResource::class;

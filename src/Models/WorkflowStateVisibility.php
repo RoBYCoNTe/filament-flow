@@ -19,6 +19,7 @@ class WorkflowStateVisibility extends Model
         'allow_admin_override' => 'boolean',
     ];
 
+    /** @return BelongsTo<WorkflowState, $this> */
     public function state(): BelongsTo
     {
         return $this->belongsTo(WorkflowState::class, 'state_id');

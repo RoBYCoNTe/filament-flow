@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
+use RoBYCoNTe\FilamentFlow\Support\UserModel;
 
 /**
  * Livewire component for managing workflow assignments with access overrides.
@@ -208,7 +209,7 @@ class AssignmentManager extends Component implements HasForms
         $this->showAddForm = ! $this->showAddForm;
 
         if ($this->showAddForm) {
-            $this->addForm->fill([
+            $this->getSchema('addForm')?->fill([
                 'selectedUserId' => null,
                 'assignmentType' => 'primary',
                 'overrideView' => true,
@@ -224,7 +225,7 @@ class AssignmentManager extends Component implements HasForms
             return;
         }
 
-        $data = $this->addForm->getState();
+        $data = $this->getSchema('addForm')?->getState() ?? [];
 
         if (empty($data['selectedUserId'])) {
             return;
@@ -250,8 +251,9 @@ class AssignmentManager extends Component implements HasForms
             ]);
         }
 
+        // View access is mandatory for an assignment; edit/transition are optional.
         $overrides = [
-            'view' => $data['overrideView'] ? true : null,
+            'view' => true,
             'edit' => $data['overrideEdit'] ? true : null,
             'transition' => $data['overrideTransition'] ? true : null,
         ];
@@ -346,13 +348,15 @@ class AssignmentManager extends Component implements HasForms
 
     private function getUserModelClass(): string
     {
-        return config('filament-flow.user_model')
-            ?? config('auth.providers.users.model', 'App\\Models\\User');
+        return UserModel::resolve();
     }
 
     public function render(): View
     {
-        return view('filament-flow::livewire.assignment-manager', [
+        /** @var view-string $view */
+        $view = 'filament-flow::livewire.assignment-manager';
+
+        return view($view, [
             'assignments' => $this->getAssignments(),
             'canManage' => $this->canManageAssignments(),
             'typeConfig' => AssignmentTypeConfig::all(),

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification as WorkflowNotificationConfig;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationLog;
 use RoBYCoNTe\FilamentFlow\Services\NotificationService;
+use RoBYCoNTe\FilamentFlow\Support\UserModel;
 
 /**
  * Job for sending workflow notifications asynchronously.
@@ -36,12 +37,26 @@ class SendWorkflowNotification implements ShouldQueue
     public int $backoff = 60;
 
     public function __construct(
-        protected int $notificationConfigId,
+        protected ?int $notificationConfigId,
         protected string $recordType,
         protected int|string $recordId,
         protected array $recipientIds,
         protected array $notificationData
-    ) {}
+    ) {
+        $this->tries = (int) config('filament-flow.notifications.retry_attempts', 3);
+        $this->backoff = (int) config('filament-flow.notifications.retry_backoff', 60);
+
+        $connection = config('filament-flow.notifications.queue_connection');
+        $queue = config('filament-flow.notifications.queue_name');
+
+        if (filled($connection)) {
+            $this->onConnection((string) $connection);
+        }
+
+        if (filled($queue)) {
+            $this->onQueue((string) $queue);
+        }
+    }
 
     /**
      * Execute the job.
@@ -50,10 +65,12 @@ class SendWorkflowNotification implements ShouldQueue
      */
     public function handle(NotificationService $notificationService): void
     {
-        // Load the notification config
-        $config = WorkflowNotificationConfig::find($this->notificationConfigId);
+        // Load the notification config (code-first notifications have none)
+        $config = $this->notificationConfigId !== null
+            ? WorkflowNotificationConfig::find($this->notificationConfigId)
+            : null;
 
-        if (! $config) {
+        if ($config === null && $this->notificationConfigId !== null) {
             Log::warning('WorkflowNotification config not found', [
                 'config_id' => $this->notificationConfigId,
             ]);
@@ -74,9 +91,7 @@ class SendWorkflowNotification implements ShouldQueue
         }
 
         // Load recipients
-        $userModel = config('filament-flow.user_model')
-            ?? config('auth.providers.users.model')
-            ?? 'App\\Models\\User';
+        $userModel = UserModel::resolve();
 
         $recipients = $userModel::whereIn('id', $this->recipientIds)->get();
 
@@ -96,13 +111,13 @@ class SendWorkflowNotification implements ShouldQueue
             ->whereIn('user_id', $this->recipientIds)
             ->update(['status' => 'processing']);
 
-        // Send the notification
-        $notificationService->sendNotification(
-            $config,
-            $record,
-            $recipients,
-            $this->notificationData
-        );
+        // Send the notification: code-first notifications carry their data and
+        // have no configuration row, so they go through the plain dispatcher.
+        if ($config !== null) {
+            $notificationService->sendNotification($config, $record, $recipients, $this->notificationData);
+        } else {
+            $notificationService->sendPreparedNotification($record, $recipients, $this->notificationData);
+        }
     }
 
     /**

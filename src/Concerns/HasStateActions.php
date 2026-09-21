@@ -39,12 +39,7 @@ trait HasStateActions
             return $toState;
         }
 
-        // If it's already a State instance, return it
-        if ($toState instanceof State) {
-            return $toState;
-        }
-
-        // Otherwise, instantiate the State class
+        // Instantiate the State class
         if (class_exists($toState)) {
             return $this->evaluate(new $toState($this->getModel()));
         }

@@ -70,7 +70,8 @@ class StateActionGroup extends ActionGroup
         }
 
         try {
-            $workflow = Workflow::findForModel(get_class($record), $columnName);
+            $tenantId = method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null;
+            $workflow = Workflow::findForModel(get_class($record), $columnName, $tenantId);
 
             if (! $workflow) {
                 return $actions;

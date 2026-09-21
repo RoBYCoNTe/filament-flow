@@ -11,15 +11,17 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Support\RuleOptions;
 
 class AccessRulesRelationManager extends RelationManager
 {
+    use HasRelationManagerForm;
+
     protected static string $relationship = 'accessRules';
 
     protected static ?string $title = 'Access Rules';
@@ -90,13 +92,6 @@ class AccessRulesRelationManager extends RelationManager
         ];
     }
 
-    public function form(Schema $schema): Schema
-    {
-        return $schema
-            ->schema(static::getFormSchema())
-            ->columns(1);
-    }
-
     public function table(Table $table): Table
     {
         return $table
@@ -145,19 +140,19 @@ class AccessRulesRelationManager extends RelationManager
                     Action::make('edit')
                         ->label(__('Edit'))
                         ->icon(Heroicon::OutlinedPencil)
-                        ->fillForm(fn (Model $record) => $record->toArray())
+                        ->fillForm(fn (WorkflowStateAccessRule $record) => $record->toArray())
                         ->schema(static::getFormSchema())
                         ->modalWidth('3xl')
-                        ->modalHeading(fn (Model $record) => $record->access_type.' — '.$record->rule)
+                        ->modalHeading(fn (WorkflowStateAccessRule $record) => $record->access_type.' — '.$record->rule)
                         ->modalSubmitActionLabel(__('Save'))
-                        ->action(fn (Model $record, array $data) => $record->update($data)),
+                        ->action(fn (WorkflowStateAccessRule $record, array $data) => $record->update($data)),
 
                     Action::make('delete')
                         ->label(__('Delete'))
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
-                        ->action(fn (Model $record) => $record->delete()),
+                        ->action(fn (WorkflowStateAccessRule $record) => $record->delete()),
                 ]),
             ])
             ->toolbarActions([

@@ -47,6 +47,32 @@ class StateServiceTest extends TestCase
         $this->assertEquals('Pending', $states['pending']);
     }
 
+    /**
+     * The list of states is rendered as it comes: it has to come in the order the
+     * workflow declares, not in the one a database happens to return.
+     */
+    public function test_get_all_states_follows_the_declared_order(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        // Created scrambled on purpose.
+        foreach ([['shipped', 'Shipped', 3], ['pending', 'Pending', 1], ['processing', 'Processing', 2]] as [$name, $label, $sortOrder]) {
+            WorkflowState::create([
+                'workflow_id' => $workflow->id,
+                'name' => $name,
+                'label' => $label,
+                'color' => 'primary',
+                'sort_order' => $sortOrder,
+                'class_name' => null,
+            ]);
+        }
+
+        $this->assertSame(
+            ['pending' => 'Pending', 'processing' => 'Processing', 'shipped' => 'Shipped'],
+            $this->service->getAllStatesForModel(Order::class),
+        );
+    }
+
     public function test_get_all_states_returns_array_without_matching_workflow(): void
     {
         $states = $this->service->getAllStatesForModel(Order::class, 'nonexistent_column');

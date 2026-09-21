@@ -102,7 +102,6 @@ When `log_transition_notes` is `true`, the value of the field named by `transiti
  * Use the advanced FormBuilderHelper for building forms.
  * Set to false to use basic form building in HasWorkflowCreation trait.
  */
-'use_form_builder_helper' => true,
 ```
 
 **Use Case:** The `FormBuilderHelper` provides advanced form building capabilities for database-configured workflows. Set to `false` if you want simpler form generation.

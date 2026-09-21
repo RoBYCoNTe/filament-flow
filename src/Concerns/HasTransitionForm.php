@@ -12,7 +12,7 @@ trait HasTransitionForm
         $this->schema(function () {
             // Transition class takes priority over database configuration
             try {
-                if (method_exists($this, 'hasTransitionClass') && $this->hasTransitionClass()) {
+                if ($this->hasTransitionClass()) {
                     $transitionClass = $this->getTransitionClass();
                     $modelClass = $this->getModel();
 
@@ -63,7 +63,7 @@ trait HasTransitionForm
                 $modelClass,
                 $this->getFromStateClass(),
                 is_string($toState) ? $toState : get_class($toState),
-                method_exists($this, 'getTransitionClass') ? $this->getTransitionClass() : null,
+                $this->getTransitionClass(),
             );
 
             return $transitionConfig && $transitionConfig->hasValidationRules();
@@ -77,10 +77,6 @@ trait HasTransitionForm
     protected function shouldHaveTransitionForm(): bool
     {
         try {
-            if (! method_exists($this, 'hasTransitionClass')) {
-                return true;
-            }
-
             if ($this->hasTransitionClass()) {
                 $transitionClass = $this->getTransitionClass();
                 $modelClass = $this->getModel();
@@ -116,7 +112,7 @@ trait HasTransitionForm
                 $modelClass,
                 $this->getFromStateClass(),
                 is_string($toState) ? $toState : get_class($toState),
-                method_exists($this, 'getTransitionClass') ? $this->getTransitionClass() : null,
+                $this->getTransitionClass(),
             );
 
             return $transitionConfig && $transitionConfig->fields()->count() > 0;
@@ -149,9 +145,7 @@ trait HasTransitionForm
             }
 
             $toStateClass = is_string($toState) ? $toState : get_class($toState);
-            $transitionClass = method_exists($this, 'getTransitionClass')
-                ? $this->getTransitionClass()
-                : null;
+            $transitionClass = $this->getTransitionClass();
         } catch (Exception $e) {
             report($e);
 

@@ -1,9 +1,16 @@
 includes:
     - vendor/larastan/larastan/extension.neon
-    - phpstan-baseline.neon
 
 parameters:
-    level: 1
+    level: 5
     paths:
         - src/
     treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        # The traits in src/Concerns are public API for host applications (their
+        # models use them); the package itself only consumes the contracts, so
+        # static analysis sees them as unused.
+        - identifier: trait.unused
+          paths:
+              - src/Concerns/*

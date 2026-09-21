@@ -26,6 +26,7 @@ class WorkflowTransitionMetadata extends Model
         'custom_data' => 'array',
     ];
 
+    /** @return BelongsTo<WorkflowStateTransition, $this> */
     public function transition(): BelongsTo
     {
         return $this->belongsTo(WorkflowStateTransition::class, 'transition_history_id');

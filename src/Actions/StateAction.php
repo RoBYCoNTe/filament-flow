@@ -9,7 +9,8 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\MessageBag;
+use Illuminate\Support\ViewErrorBag;
 use Illuminate\Validation\ValidationException;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateActions;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateAttributes;
@@ -20,7 +21,9 @@ use RoBYCoNTe\FilamentFlow\Contracts\HasStateAttributes as HasStateAttributesCon
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
+use RoBYCoNTe\FilamentFlow\Services\WorkflowValidationService;
 use Spatie\ModelStates\State;
+use Throwable;
 
 class StateAction extends Action implements HasStateAction, HasStateAttributesContract
 {
@@ -152,17 +155,27 @@ class StateAction extends Action implements HasStateAction, HasStateAttributesCo
         $this->after(function ($record, $livewire) {
             $record->refresh();
 
-            // Force a full page reload so the form, actions,
-            // and field permissions reflect the new workflow state.
-            if (method_exists($livewire, 'js')) {
-                $livewire->js('setTimeout(() => window.location.reload(), 100)');
+            // A Livewire refresh rebuilds the schema, the actions and the field
+            // permissions of the new state without losing the page (errors,
+            // scroll position, open panels). A full reload stays available for
+            // hosts that need it.
+            if (! method_exists($livewire, 'js')) {
+                return;
             }
+
+            if (config('filament-flow.ui.reload_after_transition', false)) {
+                $livewire->js('setTimeout(() => window.location.reload(), 100)');
+
+                return;
+            }
+
+            $livewire->js('setTimeout(() => $wire.$refresh(), 100)');
         });
     }
 
     private function hasTransitionClassForm(): bool
     {
-        if (! method_exists($this, 'hasTransitionClass') || ! $this->hasTransitionClass()) {
+        if (! $this->hasTransitionClass()) {
             return false;
         }
 
@@ -189,12 +202,14 @@ class StateAction extends Action implements HasStateAction, HasStateAttributesCo
     {
         $currentState = $record->{$this->getAttribute()};
         $currentStateClass = is_string($currentState) ? $currentState : get_class($currentState);
+        $tenantId = method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null;
 
         return app(TransitionFormService::class)->getTransitionConfig(
             get_class($record),
             $currentStateClass,
             $this->getToStateClass(),
-            $this->getTransitionClass()
+            $this->getTransitionClass(),
+            $tenantId
         );
     }
 
@@ -204,68 +219,135 @@ class StateAction extends Action implements HasStateAction, HasStateAttributesCo
 
         return match (true) {
             $livewire instanceof EditRecord => $livewire->form,
-            $livewire instanceof ListRecords => $livewire->getMountedActionSchema(),
-            default => $livewire,
+            $livewire instanceof ListRecords => $this->mountedActionSchema($livewire),
+            default => $livewire->getSchema('form') ?? Schema::make($livewire),
         };
     }
 
     /**
+     * Schema of the action mounted on a list page, through the public API
+     * (`getMountedActionSchema()` is protected in Filament).
+     */
+    private function mountedActionSchema(ListRecords $livewire): Schema
+    {
+        $name = $livewire->getMountedActionSchemaName();
+
+        return ($name !== null ? $livewire->getSchema($name) : null) ?? Schema::make($livewire);
+    }
+
+    /**
+     * Validates the form through the workflow validation engine, so the rules
+     * the action enforces are exactly the ones the engine enforces when the
+     * transition is run from code (states, transitions, host fields, formulas).
+     *
+     * The messages are attached to the matching components; the ones that have
+     * no component (virtual keys) are listed in the notification, because
+     * otherwise they would be invisible.
+     *
      * @throws ValidationException
      */
     protected function validateMainFormIfNeeded(Action $action, Model $record): void
     {
+        file_put_contents('/tmp/x.log', 'VALIDATE called action='.$this->getName().PHP_EOL, FILE_APPEND);
         if ($this->hasTransitionClassForm()) {
             return;
         }
 
-        $transition = $this->getTransition($record);
-        if (! $transition) {
+        if (! config('filament-flow.validation.enabled', true)) {
             return;
         }
 
-        $validationRules = $transition->getValidationRules();
-        $validationMessages = $transition->getValidationMessages();
+        [$formData, $statePath] = $this->rawFormState($action);
 
-        if (! $validationRules) {
+        $result = app(WorkflowValidationService::class)->validatePayload(
+            $record,
+            auth()->user(),
+            $formData,
+            $this->getTransition($record),
+        );
+
+        if ($result->isEmpty()) {
             return;
         }
 
-        $form = $this->getActionForm($action);
-        $formData = $form->getRawState();
-        $statePath = $form->getStatePath();
+        $this->failWithValidationResult($action, $result->errors(), $result->messages(), $statePath);
+    }
 
-        if (! is_array($formData)) {
-            return;
+    /**
+     * Raw state of the form the action belongs to, and its state path.
+     *
+     * A table action on a page without a form has nothing to validate: the stored
+     * record is the data space, so an empty state is returned instead of trying
+     * to resolve a form that does not exist.
+     *
+     * @return array{0: array<string,mixed>, 1: string}
+     */
+    private function rawFormState(Action $action): array
+    {
+        try {
+            $form = $this->getActionForm($action);
+            $state = $form->getRawState();
+            $statePath = (string) $form->getStatePath();
+        } catch (Throwable) {
+            return [[], ''];
         }
 
-        $validator = Validator::make($formData, $validationRules, $validationMessages);
+        return [is_array($state) ? $state : [], $statePath];
+    }
 
-        if ($validator->passes()) {
-            return;
-        }
+    /**
+     * @param  array<string, list<string>>  $errors
+     * @param  list<array{path:string,label:string,message:string}>  $summary
+     *
+     * @throws ValidationException
+     */
+    protected function failWithValidationResult(Action $action, array $errors, array $summary, string $statePath): void
+    {
+        $prefixedErrors = [];
 
-        $prefixedErrors = collect($validator->errors()->messages())
-            ->mapWithKeys(fn (array $messages, string $field) => ["{$statePath}.{$field}" => $messages])
-            ->all();
+        foreach ($errors as $path => $messages) {
+            $key = $statePath === '' ? (string) $path : $statePath.'.'.$path;
 
-        $livewire = $action->getLivewire();
-        if ($livewire) {
-            foreach ($prefixedErrors as $field => $messages) {
-                foreach ($messages as $message) {
-                    $livewire->addError($field, $message);
+            foreach ($messages as $message) {
+                $livewire = $action->getLivewire();
+
+                if ($livewire) {
+                    $livewire->addError($key, $message);
                 }
-            }
 
-            if (method_exists($livewire, 'unmountAction')) {
-                $livewire->unmountAction(false);
+                $prefixedErrors[$key][] = $message;
             }
         }
 
+        // Paths without a form component would be invisible: the notification is
+        // what makes them actionable.
         Notification::make()
             ->danger()
             ->title(__('Validation Failed'))
-            ->body(__('Please correct the errors in the form before proceeding.'))
+            ->body(collect($summary)
+                ->map(static fn (array $error): string => $error['label'].': '.$error['message'])
+                ->implode('\n'))
             ->send();
+
+        $livewire = $action->getLivewire();
+
+        if ($livewire && method_exists($livewire, 'unmountAction')) {
+            $livewire->unmountAction(false);
+        }
+
+        // A refused transition must leave the form showing its errors. Livewire
+        // does not re-render the page on this exception, so the errors are
+        // flashed and the page comes back with them: the fields, the tabs and any
+        // summary can then be painted from the error bag.
+        if ($livewire !== null && config('filament-flow.ui.reload_form_on_validation_failure', true)) {
+            $bag = new ViewErrorBag;
+            $bag->put('default', new MessageBag($prefixedErrors));
+            session()->flash('errors', $bag);
+
+            $livewire->redirect(request()->fullUrl(), navigate: false);
+        }
+
+        file_put_contents('/tmp/x.log', 'FAIL action='.$this->getName().' errors='.json_encode($prefixedErrors).PHP_EOL, FILE_APPEND);
 
         throw ValidationException::withMessages($prefixedErrors);
     }
