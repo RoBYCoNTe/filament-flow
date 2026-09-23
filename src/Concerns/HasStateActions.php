@@ -32,23 +32,12 @@ trait HasStateActions
 
     public function getToStateClass(): string|State|null
     {
-        $toState = $this->getToState();
-
-        if ($toState === null) {
-            return null;
-        }
-
-        // If it's already a string (database-only state), return it as is
-        if (is_string($toState)) {
-            return $toState;
-        }
-
-        // Instantiate the State class
-        if (class_exists($toState)) {
-            return $this->evaluate(new $toState($this->getModel()));
-        }
-
-        return $toState;
+        // The state is already a value here — a name for a database-driven state, an instance for
+        // a class-based one. The branches that used to test it for being a class and then
+        // instantiate it never ran: after the early returns the value is an object, and
+        // `class_exists()` on an object is always false. PHPStan in a fresh install says so; the
+        // behaviour is the one this line gives.
+        return $this->getToState();
     }
 
     public function getFromStateClass(): ?string
