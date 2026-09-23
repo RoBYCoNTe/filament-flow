@@ -20,6 +20,9 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Who may take this transition.
+ */
 class TransitionPermissionsRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

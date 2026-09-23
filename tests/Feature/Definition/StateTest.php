@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Definition\State;
 use RoBYCoNTe\FilamentFlow\Definition\StateField;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * A state: the flags that mark it as the first or a final one, and the field rules it carries
+ * with their visibility and their mutability.
+ */
 class StateTest extends TestCase
 {
     public function test_initial_and_final_flags(): void

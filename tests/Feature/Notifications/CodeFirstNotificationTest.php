@@ -17,6 +17,11 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Transitions\NotifyingToProcessingTrans
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 use Throwable;
 
+/**
+ * A notification declared in code: the builder setting every property and turning into the
+ * shape that is stored, the immediate timing, and the shortcuts the resolver understands — the
+ * owner of the record, a role by its prefix.
+ */
 class CodeFirstNotificationTest extends TestCase
 {
     protected User $owner;

@@ -12,6 +12,9 @@ use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowStateResource\RelationMana
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 
+/**
+ * The states of the workflows, in the administration.
+ */
 class WorkflowStateResource extends Resource
 {
     protected static ?string $parentResource = WorkflowResource::class;

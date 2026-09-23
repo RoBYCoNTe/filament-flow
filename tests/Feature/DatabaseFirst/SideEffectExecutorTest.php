@@ -7,6 +7,11 @@ use RoBYCoNTe\FilamentFlow\Services\SideEffectExecutor;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The effects of a transition: writing a field with an expression or with the value of another
+ * field, doing nothing when the expression is empty, and the timestamps — now, now by default,
+ * or the value an expression computes.
+ */
 class SideEffectExecutorTest extends TestCase
 {
     private SideEffectExecutor $executor;

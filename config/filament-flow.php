@@ -264,9 +264,9 @@ return [
         'default_template_engine' => 'plain',
 
         /**
-         * Custom recipient resolver class.
-         * Must implement RoBYCoNTe\FilamentFlow\Contracts\RecipientResolverInterface.
-         * Set to null to use the default resolver.
+         * A custom recipient resolver: the name of a class extending
+         * RoBYCoNTe\FilamentFlow\Services\RecipientResolver.
+         * Null uses the resolver of the package.
          */
         'recipient_resolver' => null,
     ],

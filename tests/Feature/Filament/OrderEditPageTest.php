@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Tests\FilamentTestCase;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Resources\OrderResource\Pages\EditOrder;
 
+/**
+ * An edit page on a record: the fields it shows, and the same field behaving differently in
+ * each state — hidden, editable, read-only.
+ */
 class OrderEditPageTest extends FilamentTestCase
 {
     private array $workflowData;

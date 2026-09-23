@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The column that shows who holds a record: its defaults, how many faces it draws, and how they
+ * are drawn.
+ */
 class AssignmentSummaryColumnTest extends TestCase
 {
     protected Order $order;

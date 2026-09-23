@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\DatabaseFirst;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use RoBYCoNTe\FilamentFlow\Actions\StateActionGroup;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
 use RoBYCoNTe\FilamentFlow\Services\NotificationService;
@@ -309,5 +310,95 @@ class MultiScopeWorkflowTest extends TestCase
             'scope-1 record must resolve scope-1 workflow');
         $this->assertSame('scope-2-workflow', $wf2->name,
             'scope-2 record must resolve scope-2 workflow');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // WorkflowStateAccessService – scopeAccessible
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * The scope is what an application list is built on: it has to apply the rules of the
+     * workflow of the scope it is asked about. Without knowing that scope, no workflow is
+     * found for a per-owner workflow — and the query comes back unfiltered, silently
+     * showing records the state rules never allowed.
+     */
+    public function test_the_scope_applies_the_rules_of_the_workflow_of_the_given_scope(): void
+    {
+        ['draft' => $draft] = $this->buildScopedWorkflow(1, 'field_scope_1');
+
+        $this->createAccessRule($draft->id, 'view', 'role:reviewer');
+
+        ScopedOrder::create(['state' => 'draft', 'scope_id' => 1]);
+
+        $outsider = $this->createTestUser();
+
+        $visible = $this->stateAccess
+            ->scopeAccessible(ScopedOrder::query(), $outsider, 'view', 1)
+            ->count();
+
+        $this->assertSame(0, $visible,
+            'Chi non ha il ruolo richiesto dalla regola di vista non deve vedere la riga.');
+    }
+
+    /** And the same for editing: the scope answers for the access type it was asked about. */
+    public function test_the_scope_applies_the_edit_rules_of_the_given_scope(): void
+    {
+        ['draft' => $draft] = $this->buildScopedWorkflow(1, 'field_scope_1');
+
+        $this->createAccessRule($draft->id, 'edit', 'role:reviewer');
+
+        ScopedOrder::create(['state' => 'draft', 'scope_id' => 1]);
+
+        $outsider = $this->createTestUser();
+
+        $editable = $this->stateAccess
+            ->scopeAccessible(ScopedOrder::query(), $outsider, 'edit', 1)
+            ->count();
+
+        $this->assertSame(0, $editable,
+            'Le regole di modifica dello scope richiesto valgono anche nella query.');
+    }
+
+    /**
+     * The boundary of the scope, documented: the query narrows by **state** — it includes the
+     * states where the rule exists — while the exact ownership (`@owner`) and the assignment
+     * are verified **on the row**, with `canBeViewedBy()`. Whoever builds a list does both: the
+     * scope for the query, the per-row check for certainty.
+     */
+    public function test_the_scope_narrows_by_state_and_the_record_check_decides_the_owner(): void
+    {
+        ['draft' => $draft] = $this->buildScopedWorkflow(1, 'field_scope_1');
+
+        $this->createAccessRule($draft->id, 'view', '@owner');
+
+        $owner = $this->createTestUser();
+        $mine = ScopedOrder::create(['state' => 'draft', 'scope_id' => 1]);
+        $mine->forceFill(['user_id' => $owner->getKey()])->save();
+
+        $theirs = ScopedOrder::create(['state' => 'draft', 'scope_id' => 1]);
+        $theirs->forceFill(['user_id' => $this->createTestUser(['email' => 'altro@example.com', 'name' => 'Altro Utente'])->getKey()])->save();
+
+        // The query: the state is allowed, so both rows pass.
+        $this->assertSame(
+            2,
+            $this->stateAccess->scopeAccessible(ScopedOrder::query(), $owner, 'view', 1)->count(),
+            'Lo scope è per stato: non conosce la proprietà della singola riga.'
+        );
+
+        // The row: the ownership decides (the check the trait of the model exposes).
+        $this->assertTrue($this->stateAccess->canView($mine->refresh(), $owner), 'La propria riga si vede.');
+        $this->assertFalse($this->stateAccess->canView($theirs->refresh(), $owner), 'Quella di un altro no.');
+    }
+
+    private function createAccessRule(int $stateId, string $accessType, string $rule): void
+    {
+        WorkflowStateAccessRule::create([
+            'state_id' => $stateId,
+            'access_type' => $accessType,
+            'rule' => $rule,
+            'operator' => WorkflowStateAccessRule::OPERATOR_OR,
+            'priority' => 0,
+            'is_active' => true,
+        ]);
     }
 }

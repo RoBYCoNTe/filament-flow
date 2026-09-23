@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Support;
 use RoBYCoNTe\FilamentFlow\Support\RuleOptions;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * What may be offered where: the access rules include the general ones and the relationships,
+ * while a field override leaves the general ones out — an override is about a relationship.
+ */
 class RuleOptionsTest extends TestCase
 {
     public function test_for_access_rules_includes_general(): void

@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\Auth;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 
+/**
+ * The timeline of the states a record has been through: when it moved, from which state to
+ * which, and by whom.
+ *
+ * How much of it is shown is a choice of the host, and an administrator may be allowed to see
+ * the whole history at every state.
+ */
 class TransitionTimeline extends Entry
 {
     protected string $view = 'filament-flow::infolists.transition-timeline';

@@ -10,6 +10,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use Spatie\ModelStates\State;
 use Throwable;
 
+/**
+ * The command that reads the state classes of a host and writes their rows, so a workflow
+ * declared in code also exists in the database.
+ */
 class SyncStatesCommand extends Command
 {
     protected $signature = 'filament-flow:sync-states

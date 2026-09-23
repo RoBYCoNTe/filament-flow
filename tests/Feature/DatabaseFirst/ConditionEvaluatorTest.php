@@ -6,6 +6,10 @@ use RoBYCoNTe\FilamentFlow\Services\ConditionEvaluator;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The conditions as a declaration writes them: absent or empty ones pass, and every operator
+ * does what it says — equals, not equals, in, not in — against the record.
+ */
 class ConditionEvaluatorTest extends TestCase
 {
     private ConditionEvaluator $evaluator;

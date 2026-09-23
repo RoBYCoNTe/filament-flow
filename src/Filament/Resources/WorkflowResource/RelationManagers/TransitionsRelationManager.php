@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowTransitionResource;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
+/**
+ * The transitions of a workflow, managed from the page of the workflow.
+ */
 class TransitionsRelationManager extends RelationManager
 {
     /** Owner record of this relation manager, with its concrete type. */

@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Definition;
 use RoBYCoNTe\FilamentFlow\Definition\Enums\MutationClass;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The classes of mutation: every case backed by its string, each carrying a label that can be
+ * translated — and translated for real.
+ */
 class MutationClassTest extends TestCase
 {
     public function test_the_cases_are_backed_by_their_string_value(): void

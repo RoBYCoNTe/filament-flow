@@ -74,9 +74,10 @@ trait EvaluatesAccessRules
     /**
      * Check Code-First access rules (defined in PHP State class)
      *
-     * Supports two approaches:
-     * 1. HasAccessRules interface (recommended): getCreateAccessRules(), getViewAccessRules(), getEditAccessRules(), getTransitionAccessRules()
-     * 2. Legacy accessRules() method: returns array with 'create', 'view', 'edit', 'transition' keys
+     * Supports two approaches: 1. HasAccessRules interface (recommended):
+     * getCreateAccessRules(), getViewAccessRules(), getEditAccessRules(),
+     * getTransitionAccessRules() 2. Legacy accessRules() method: returns array with 'create',
+     * 'view', 'edit', 'transition' keys
      */
     protected function checkCodeFirstRules(State $state, ?Model $user, string $accessType, Model $record): ?bool
     {

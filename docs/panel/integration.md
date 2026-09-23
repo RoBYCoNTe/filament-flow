@@ -69,6 +69,24 @@ FilamentFlowPlugin::make()
     ->withoutWorkflowResource(),
 ```
 
+## What the resources are
+
+Four resources make a workflow browsable from the panel, and each one carries its relation
+managers:
+
+| Resource | What it holds |
+|---|---|
+| `WorkflowResource` | States (`StatesRelationManager`), transitions (`TransitionsRelationManager`), scheduled checks (`ScheduledChecksRelationManager`), notifications (`NotificationsRelationManager`), the history of a record (`TransitionHistoryRelationManager`) and the notifications that were sent (`NotificationLogsRelationManager`) |
+| `WorkflowStateResource` | The access rules of a state (`AccessRulesRelationManager`) and what it allows on each field (`FieldPermissionsRelationManager`) |
+| `WorkflowTransitionResource` | The values it asks for (`TransitionFieldsRelationManager`), who may take it (`TransitionPermissionsRelationManager`), what it writes (`SideEffectsRelationManager`) and the rules it applies (`ValidationRulesRelationManager`) |
+| `WorkflowNotificationResource` | The channels it goes through (`ChannelsRelationManager`) and who it reaches (`RecipientsRelationManager`) |
+
+Each resource comes with its pages: `ListWorkflows`, `CreateWorkflow` and `EditWorkflow` for the
+first, `CreateWorkflowState` and `EditWorkflowState` for the second, `EditWorkflowTransition` for
+the third, `EditWorkflowNotification` for the fourth.
+
+None of them is needed when the workflows are declared in code: see below.
+
 ## Disabling the Workflow Resource
 
 If you only want to use Filament Flow programmatically without the admin interface:

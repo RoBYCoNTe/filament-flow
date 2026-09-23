@@ -6,6 +6,9 @@ use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Schema;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowStateResource;
 
+/**
+ * The page that creates a state from the panel.
+ */
 class CreateWorkflowState extends CreateRecord
 {
     protected static string $resource = WorkflowStateResource::class;

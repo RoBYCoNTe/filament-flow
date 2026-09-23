@@ -2,6 +2,13 @@
 
 namespace RoBYCoNTe\FilamentFlow\Definition;
 
+/**
+ * A rule a transition applies to a field, together with the message a person reads when it
+ * fails.
+ *
+ * The same declaration also builds the dialog: the rules with fields are the form a transition
+ * asks for before it proceeds, which is why a rule may also say how its value is filled in.
+ */
 final class ValidationRule
 {
     public const TYPE_LARAVEL = 'laravel';
@@ -25,6 +32,9 @@ final class ValidationRule
     /** Human readable label of the target field, used by the error summary. */
     private ?string $label = null;
 
+    /** How this value is filled in: a text, a date, a number, a textarea. */
+    private ?string $fieldType = null;
+
     private function __construct(private readonly string $fieldName) {}
 
     public static function make(string $fieldName): self
@@ -41,7 +51,10 @@ final class ValidationRule
             ->sort((int) ($data['sort_order'] ?? 0))
             ->type((string) ($data['rule_type'] ?? self::TYPE_LARAVEL))
             ->when($data['condition'] ?? null)
-            ->label($data['label'] ?? null);
+            ->label($data['label'] ?? null)
+            // The export -> import round trip has to bring back how the value is filled in too:
+            // without it the field loses its control and becomes a line of text.
+            ->fieldType((string) ($data['field_type'] ?? ''));
     }
 
     /** @param list<string>|string $rules */
@@ -98,6 +111,18 @@ final class ValidationRule
     }
 
     /** Label shown next to the field in the error summary. */
+    public function fieldType(?string $type): self
+    {
+        $this->fieldType = $type !== null && $type !== '' ? $type : null;
+
+        return $this;
+    }
+
+    public function getFieldType(): ?string
+    {
+        return $this->fieldType;
+    }
+
     public function label(?string $label): self
     {
         $this->label = $label;
@@ -151,6 +176,7 @@ final class ValidationRule
             'sort_order' => $this->sort,
             'rule_type' => $this->type,
             'condition' => $this->condition,
+            'field_type' => $this->fieldType,
             'label' => $this->label,
         ];
     }

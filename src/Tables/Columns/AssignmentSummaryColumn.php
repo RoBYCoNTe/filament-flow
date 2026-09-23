@@ -6,6 +6,10 @@ use Closure;
 use Filament\Tables\Columns\Column;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * The column that shows who holds a record: the faces of the people assigned, and how many of
+ * them fit.
+ */
 class AssignmentSummaryColumn extends Column
 {
     protected string $view = 'filament-flow::tables.columns.assignment-summary-column';

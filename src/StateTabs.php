@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 
+/**
+ * The tabs of a table that group the records by state: the attribute they read, the badge they
+ * draw, and the query behind each tab.
+ */
 class StateTabs
 {
     protected ?string $attribute = null;

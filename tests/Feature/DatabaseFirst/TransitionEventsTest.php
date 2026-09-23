@@ -10,6 +10,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The three events a transition raises — the state left, the state entered, the transition
+ * completed — carrying the metadata where it belongs, and the same for an action that stays
+ * where it is.
+ */
 class TransitionEventsTest extends TestCase
 {
     public function test_state_exited_event_dispatched(): void

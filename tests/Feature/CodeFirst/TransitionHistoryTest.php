@@ -13,8 +13,8 @@ use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 /**
  * Test transition history logging and tracking
  *
- * Tests that transitions are logged even with Code-First approach (Spatie).
- * With Code-First: workflow_id and transition_id will be null, but transition info is still logged.
+ * Tests that transitions are logged even with Code-First approach (Spatie). With Code-First:
+ * workflow_id and transition_id will be null, but transition info is still logged.
  */
 class TransitionHistoryTest extends TestCase
 {

@@ -25,6 +25,16 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowValidationService;
 use Spatie\ModelStates\State;
 use Throwable;
 
+/**
+ * A Filament action that moves a record: the state it comes from, the one it goes to, and the
+ * transition behind it — so its label, its colour and its confirmation come from the
+ * declaration.
+ *
+ * A note for a host that wraps it: the dialog of the action is the form of its transition,
+ * built from the fields of its rules. Replacing the submit action of the modal
+ * (`modalSubmitAction`) breaks it — the form then submits natively, with a GET on the Livewire
+ * endpoint. The application of a call builds its own action for exactly this reason.
+ */
 class StateAction extends Action implements HasStateAction, HasStateAttributesContract
 {
     use HasStateActions {
@@ -248,7 +258,6 @@ class StateAction extends Action implements HasStateAction, HasStateAttributesCo
      */
     protected function validateMainFormIfNeeded(Action $action, Model $record): void
     {
-        file_put_contents('/tmp/x.log', 'VALIDATE called action='.$this->getName().PHP_EOL, FILE_APPEND);
         if ($this->hasTransitionClassForm()) {
             return;
         }
@@ -346,8 +355,6 @@ class StateAction extends Action implements HasStateAction, HasStateAttributesCo
 
             $livewire->redirect(request()->fullUrl(), navigate: false);
         }
-
-        file_put_contents('/tmp/x.log', 'FAIL action='.$this->getName().' errors='.json_encode($prefixedErrors).PHP_EOL, FILE_APPEND);
 
         throw ValidationException::withMessages($prefixedErrors);
     }

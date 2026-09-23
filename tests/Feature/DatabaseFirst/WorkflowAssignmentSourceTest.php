@@ -6,6 +6,11 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The metadata of an assignment: read when it is there, `null` when it is not or when the key
+ * is absent, all of it when no key is asked — and stored when somebody is assigned with
+ * overrides.
+ */
 class WorkflowAssignmentSourceTest extends TestCase
 {
     private Order $order;

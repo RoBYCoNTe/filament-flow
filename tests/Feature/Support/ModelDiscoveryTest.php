@@ -6,6 +6,10 @@ use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Reading the columns of a model: the options of one, an empty answer for a model that does not
+ * exist, and the ones of a given type.
+ */
 class ModelDiscoveryTest extends TestCase
 {
     public function test_get_column_options_returns_columns(): void

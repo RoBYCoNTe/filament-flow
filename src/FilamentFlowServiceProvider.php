@@ -6,6 +6,8 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Foundation\Application;
+use InvalidArgumentException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use ReflectionException;
@@ -24,6 +26,7 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Observers\WorkflowCacheObserver;
+use RoBYCoNTe\FilamentFlow\Services\RecipientResolver;
 use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\ValidationRuleRegistry;
@@ -33,6 +36,11 @@ use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
+/**
+ * The provider of the package: it publishes the configuration, loads the migrations and the
+ * translations, and registers the services, the commands and the formula completions the engine
+ * resolves by name.
+ */
 class FilamentFlowServiceProvider extends PackageServiceProvider
 {
     public static string $name = 'filament-flow';
@@ -75,6 +83,9 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
             });
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function packageRegistered(): void
     {
         // Register JSON translations early so they are available before any
@@ -93,6 +104,29 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
         // Named validation rules: shared by every rule declaration (state field
         // rules, transition rules, host field rules).
         $this->app->singleton(ValidationRuleRegistry::class, fn () => new ValidationRuleRegistry);
+
+        // The custom resolver the configuration has always promised. A class that cannot do the
+        // job raises instead of being ignored: a setting nobody reads is worse than no setting.
+        /**
+         * @throws InvalidArgumentException
+         */
+        $this->app->bind(RecipientResolver::class, function (Application $app) {
+            $class = config('filament-flow.notifications.recipient_resolver');
+
+            if ($class === null) {
+                return new RecipientResolver;
+            }
+
+            if (! is_string($class) || ! class_exists($class) || ! is_subclass_of($class, RecipientResolver::class)) {
+                throw new InvalidArgumentException(sprintf(
+                    'filament-flow.notifications.recipient_resolver must name a class extending %s, %s given.',
+                    RecipientResolver::class,
+                    is_string($class) ? $class : get_debug_type($class),
+                ));
+            }
+
+            return $app->make($class);
+        });
     }
 
     /**

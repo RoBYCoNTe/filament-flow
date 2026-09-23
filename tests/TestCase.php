@@ -39,18 +39,20 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Ensure a clean cache state between tests (array cache persists across RefreshDatabase)
+        // Ensure a clean cache state between tests (array cache persists across
+        // RefreshDatabase)
         Cache::flush();
 
         // In-memory static caches from caching optimizations
         WorkflowStateMemoryCache::flush();
         StateColumn::flushMetadataCache();
 
-        // Filament's SupportServiceProvider calls app()->bind(DataStore::class, DataStoreOverride::class),
-        // which internally calls dropStaleInstances() and removes Livewire's singleton registration.
-        // This causes every app(DataStore::class) call to create a new instance, breaking the WeakMap
-        // that Livewire uses to store per-component state (like the error bag).
-        // Re-registering the instance after boot ensures a stable singleton for tests.
+        // Filament's SupportServiceProvider calls app()->bind(DataStore::class,
+        // DataStoreOverride::class), which internally calls dropStaleInstances() and removes
+        // Livewire's singleton registration. This causes every app(DataStore::class) call to
+        // create a new instance, breaking the WeakMap that Livewire uses to store per-component
+        // state (like the error bag). Re-registering the instance after boot ensures a stable
+        // singleton for tests.
         $this->app->instance(
             DataStore::class,
             $this->app->make(DataStore::class)

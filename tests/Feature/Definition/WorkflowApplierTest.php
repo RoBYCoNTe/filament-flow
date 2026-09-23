@@ -15,6 +15,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Applying a workflow: the rows scoped by tenant, the same definition applied twice writing
+ * nothing, a breaking change snapshotted — at the revision it is given, not at a version of its
+ * own — and a conflict rolled back.
+ */
 class WorkflowApplierTest extends TestCase
 {
     private const TENANT = 7;

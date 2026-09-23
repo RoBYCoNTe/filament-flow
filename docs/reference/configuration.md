@@ -224,9 +224,9 @@ When `log_transition_notes` is `true`, the value of the field named by `transiti
     'default_template_engine' => 'plain',
 
     /**
-     * Custom recipient resolver class.
-     * Must implement RoBYCoNTe\FilamentFlow\Contracts\RecipientResolverInterface.
-     * Set to null to use the default resolver.
+     * A custom recipient resolver: the name of a class extending
+     * RoBYCoNTe\FilamentFlow\Services\RecipientResolver.
+     * Null uses the resolver of the package.
      */
     'recipient_resolver' => null,
 ],
@@ -238,7 +238,7 @@ When `log_transition_notes` is `true`, the value of the field named by `transiti
 
 **`channels`** — Enable or disable individual channels globally. Per-notification channels can still be toggled via `workflow_notification_channels.is_active`.
 
-**`recipient_resolver`** — Provide a custom class to override how recipients are resolved. Useful when your user model or recipient logic differs from the defaults.
+**`recipient_resolver`** — The name of a class extending `RoBYCoNTe\FilamentFlow\Services\RecipientResolver`, to change how recipients are resolved. `null` uses the resolver of the package. A class that does not extend it raises rather than being silently ignored — which is what a setting nobody reads deserves.
 
 ## Scheduling
 

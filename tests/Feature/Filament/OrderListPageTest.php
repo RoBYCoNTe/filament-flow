@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Tests\FilamentTestCase;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Resources\OrderResource\Pages\ListOrders;
 
+/**
+ * A list that knows about its workflow: it renders its records and its columns, a column
+ * appears when at least one state shows it, and with no workflow every column is shown.
+ */
 class OrderListPageTest extends FilamentTestCase
 {
     private array $workflowData;

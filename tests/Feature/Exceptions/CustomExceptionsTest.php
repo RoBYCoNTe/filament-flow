@@ -16,6 +16,11 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowCreationService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The exceptions of the package and what they carry: the one that asks for authentication, with
+ * and without a message of its own, the workflow that is not found, the invalid state, and the
+ * missing initial state.
+ */
 class CustomExceptionsTest extends TestCase
 {
     // --- Unit tests: message + properties ---

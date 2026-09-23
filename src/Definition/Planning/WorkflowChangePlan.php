@@ -6,6 +6,14 @@ use RoBYCoNTe\FilamentFlow\Definition\Enums\MutationClass;
 use RoBYCoNTe\FilamentFlow\Definition\WorkflowDefinition;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
+/**
+ * What applying a definition would do: the changes, the conflicts, and whether it may be
+ * applied at all.
+ *
+ * A clean plan — `isClean()` — means the database already matches the declaration. That is what
+ * makes applying the same definition twice harmless, and why a second run reporting "0 changes"
+ * is a statement about the database rather than about the work done.
+ */
 final class WorkflowChangePlan
 {
     /**

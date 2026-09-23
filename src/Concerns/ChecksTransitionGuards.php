@@ -75,7 +75,6 @@ trait ChecksTransitionGuards
             $transition,
         );
 
-
         if ($result->isNotEmpty()) {
             throw new WorkflowValidationException($result);
         }
@@ -105,6 +104,9 @@ trait ChecksTransitionGuards
         return $transition?->validationLevel()?->requiresWorkflowRules() ?? true;
     }
 
+    /**
+     * @throws UnauthorizedTransitionException
+     */
     protected function enforceTransitionAccess(string|State $toState): void
     {
         // Check if enforcement is enabled

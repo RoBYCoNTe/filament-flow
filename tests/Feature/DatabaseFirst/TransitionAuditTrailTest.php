@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionMetadata;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * What a transition leaves behind: the state of the record before and after it, the metadata,
+ * the absence of metadata when nothing was passed, and the history scoped to the record.
+ */
 class TransitionAuditTrailTest extends TestCase
 {
     public function test_transition_creates_before_snapshot(): void

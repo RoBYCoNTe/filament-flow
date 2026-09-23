@@ -14,6 +14,10 @@ use RoBYCoNTe\FilamentFlow\Tests\FilamentTestCase;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 
+/**
+ * The administration pages of a workflow: list, create and edit render, a workflow can be
+ * created, and it can be switched off from the list.
+ */
 class WorkflowResourcePagesTest extends FilamentTestCase
 {
     private User $user;

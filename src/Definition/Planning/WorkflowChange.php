@@ -4,6 +4,10 @@ namespace RoBYCoNTe\FilamentFlow\Definition\Planning;
 
 use RoBYCoNTe\FilamentFlow\Definition\Enums\MutationClass;
 
+/**
+ * One difference between the workflow stored in the database and the one the declaration asks
+ * for: what changed, on which key, and how serious it is.
+ */
 final class WorkflowChange
 {
     public function __construct(

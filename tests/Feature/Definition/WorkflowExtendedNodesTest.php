@@ -22,6 +22,11 @@ use RoBYCoNTe\FilamentFlow\Definition\WorkflowDefinition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The nodes of the extended declaration through a round trip: access rules and their stable
+ * key, scheduled checks, notifications with recipients, channels and template, the trigger
+ * event of an attachment, and the default channel.
+ */
 class WorkflowExtendedNodesTest extends TestCase
 {
     public function test_access_rules_round_trip(): void

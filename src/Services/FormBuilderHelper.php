@@ -15,6 +15,10 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use RoBYCoNTe\FilamentFlow\Exceptions\InvalidComponentException;
 
+/**
+ * Building the controls of a transition from the declaration of its fields: one component per
+ * type, or inferred from the name of the field when the declaration does not say which.
+ */
 class FormBuilderHelper
 {
     /**

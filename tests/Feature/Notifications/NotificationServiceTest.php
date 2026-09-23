@@ -22,6 +22,11 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ProcessingState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 use Throwable;
 
+/**
+ * Sending the notifications of a transition: they are found, they are not sent when the package
+ * is switched off or the configuration inactive, one without recipients is skipped, and so is
+ * one whose channels are all off.
+ */
 class NotificationServiceTest extends TestCase
 {
     protected Workflow $workflow;

@@ -4,6 +4,13 @@ namespace RoBYCoNTe\FilamentFlow\Definition;
 
 use RoBYCoNTe\FilamentFlow\Definition\Enums\NotificationTrigger;
 
+/**
+ * A state of a workflow: its label, its colour, its icon, whether it is the first or a final
+ * one, and the rules it sets on the fields of the record.
+ *
+ * A field the state does not name keeps whatever the declaration said about it elsewhere: a
+ * state describes what it changes, not the whole form.
+ */
 final class State
 {
     private ?string $label = null;

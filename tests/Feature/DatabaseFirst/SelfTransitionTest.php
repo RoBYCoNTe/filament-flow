@@ -7,6 +7,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * An action that stays in its state: it runs without moving anything, leaves a trace, executes
+ * its side effects, accepts values, appears among the available actions — and is not offered
+ * from another state.
+ */
 class SelfTransitionTest extends TestCase
 {
     public function test_execute_action_does_not_change_state(): void

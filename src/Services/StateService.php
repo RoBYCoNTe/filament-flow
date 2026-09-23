@@ -7,6 +7,14 @@ use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
+/**
+ * The states of a model as the workflow of its tenant declares them: the stack in order, the
+ * metadata of one, and the initial state.
+ *
+ * Every method takes the tenant, and the reason is the same everywhere: a workflow scoped to an
+ * owner is found only when the lookup says which owner, and when it is missing the answer is
+ * `null` or an empty stack — in silence.
+ */
 class StateService
 {
     /**
@@ -119,9 +127,9 @@ class StateService
     /**
      * Get the initial state for a model from the workflow definition
      */
-    public function getInitialState(string $modelClass, string $stateColumn = 'state'): ?string
+    public function getInitialState(string $modelClass, string $stateColumn = 'state', ?int $tenantId = null): ?string
     {
-        $workflow = Workflow::findForModel($modelClass, $stateColumn);
+        $workflow = Workflow::findForModel($modelClass, $stateColumn, $tenantId);
 
         if (! $workflow) {
             return null;

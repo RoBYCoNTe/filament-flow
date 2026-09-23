@@ -175,8 +175,9 @@ class WorkflowNotification extends Notification implements ShouldQueue
             'from_state' => $this->context['from_state'] ?? '',
             'to_state' => $this->context['to_state'] ?? '',
 
-            // State labels — prefer values already resolved in context (e.g. by NotificationService),
-            // fall back to getStateLabel() for code-first notifications that bypass DB enrichment.
+            // State labels — prefer values already resolved in context (e.g. by
+            // NotificationService), fall back to getStateLabel() for code-first notifications
+            // that bypass DB enrichment.
             'from_state_label' => $this->context['from_state_label'] ?? $this->getStateLabel($this->context['from_state'] ?? ''),
             'to_state_label' => $this->context['to_state_label'] ?? $this->getStateLabel($this->context['to_state'] ?? ''),
             'transition_label' => $this->context['transition_label'] ?? '',

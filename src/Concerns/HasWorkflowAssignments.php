@@ -10,6 +10,10 @@ use Illuminate\Support\Collection;
 use RoBYCoNTe\FilamentFlow\Events\WorkflowAssigned;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowAssignment;
 
+/**
+ * Who holds a record: the assignments with the kind each one carries, and the questions and the
+ * commands around them — is this person assigned, assign them, take them off, list them.
+ */
 trait HasWorkflowAssignments
 {
     public function assignments(): MorphMany

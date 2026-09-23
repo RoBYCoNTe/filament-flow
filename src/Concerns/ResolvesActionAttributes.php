@@ -10,6 +10,10 @@ use Filament\Support\Contracts\HasLabel;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 use Spatie\ModelStates\State;
 
+/**
+ * Where a state action takes its look from: the row in the database first, then the state
+ * class, then the transition — so a label written once is found wherever it was written.
+ */
 trait ResolvesActionAttributes
 {
     private function resolveFromTransitionOrState(

@@ -13,6 +13,9 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 
+/**
+ * The notifications of the workflows, in the administration.
+ */
 class WorkflowNotificationResource extends Resource
 {
     protected static ?string $parentResource = WorkflowResource::class;

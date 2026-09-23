@@ -6,6 +6,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The command that reads the states from the classes of the host: nothing to do without
+ * workflows, a name that is not found reported, states created and updated from the classes,
+ * and a model that does not exist skipped.
+ */
 class SyncStatesCommandTest extends TestCase
 {
     public function test_sync_with_no_workflows(): void

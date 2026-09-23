@@ -14,6 +14,10 @@ use RoBYCoNTe\FilamentFlow\Contracts\HasStateAction;
 use RoBYCoNTe\FilamentFlow\Contracts\HasStateAttributes as HasStateAttributesContract;
 use Spatie\ModelStates\State;
 
+/**
+ * The same step taken by many records at once: the state they leave, the one they arrive at,
+ * and the transition that carries them.
+ */
 class StateBulkAction extends BulkAction implements HasStateAction, HasStateAttributesContract
 {
     use HasStateActions;
@@ -38,7 +42,8 @@ class StateBulkAction extends BulkAction implements HasStateAction, HasStateAttr
                 $currentState = $record->{$this->getAttribute()};
                 $fromState = $this->getFromState();
 
-                // Check if current state matches the "from" state (handle both State objects and strings)
+                // Check if current state matches the "from" state (handle both State objects
+                // and strings)
                 $isMatchingState = false;
                 if (is_string($currentState) && is_string($fromState)) {
                     $isMatchingState = $currentState === $fromState;
@@ -88,7 +93,8 @@ class StateBulkAction extends BulkAction implements HasStateAction, HasStateAttr
                                 report($e);
                             }
                         } elseif ($currentState instanceof State) {
-                            // Fallback to Spatie's default (only if current state is a State object)
+                            // Fallback to Spatie's default (only if current state is a State
+                            // object)
                             try {
                                 if (empty($data)) {
                                     $currentState->transitionTo($this->getToStateClass());

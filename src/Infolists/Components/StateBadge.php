@@ -7,6 +7,13 @@ use Filament\Infolists\Components\Entry;
 use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 
+/**
+ * The badge of the state of a record: its label, its colour and its icon, read from the
+ * workflow.
+ *
+ * The tenant of the row is part of the question — a workflow scoped to an owner is found only
+ * when the owner is named — and without it the badge comes out empty, in silence.
+ */
 class StateBadge extends Entry
 {
     protected string $view = 'filament-flow::infolists.state-badge';
@@ -45,10 +52,14 @@ class StateBadge extends Entry
             return null;
         }
 
+        // The tenant of the row has to be passed: the workflow of a call lives under its
+        // scheme, and without it the service does not find the states to take label, colour and
+        // icon from — which is how a badge comes out empty.
         return app(StateService::class)->getStateMetadata(
             get_class($record),
             $stateValue,
             $attribute,
+            method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null,
         );
     }
 

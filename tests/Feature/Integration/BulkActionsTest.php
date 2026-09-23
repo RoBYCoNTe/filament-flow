@@ -216,7 +216,8 @@ class BulkActionsTest extends TestCase
     {
         $user = $this->createTestUser(['role' => 'manager']);
 
-        // Create orders in ProcessingState with processed_at set (required by ToShippedTransition)
+        // Create orders in ProcessingState with processed_at set (required by
+        // ToShippedTransition)
         $orders = new Collection;
         for ($i = 0; $i < 3; $i++) {
             $order = Order::create([

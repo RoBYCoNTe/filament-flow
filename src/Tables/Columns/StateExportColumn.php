@@ -97,7 +97,8 @@ class StateExportColumn extends ExportColumn
             $metadata = $stateService->getStateMetadata(
                 get_class($record),
                 $stateValue,
-                $this->getStateAttribute()
+                $this->getStateAttribute(),
+                method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null,
             );
 
             if ($metadata && isset($metadata['label'])) {

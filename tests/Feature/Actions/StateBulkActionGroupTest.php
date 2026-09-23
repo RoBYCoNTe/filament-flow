@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Actions\StateBulkActionGroup;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\OrderState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The bulk actions of a table: one per transition of the current state, gathered in a group
+ * that carries a label, and nothing at all when the call has no workflow or is switched off.
+ */
 class StateBulkActionGroupTest extends TestCase
 {
     public function test_make_returns_array(): void

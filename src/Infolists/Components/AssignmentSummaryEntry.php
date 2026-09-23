@@ -13,6 +13,14 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
 use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
 
+/**
+ * The entry that shows who holds a record: the people assigned, the kind of assignment each one
+ * carries, and what they are allowed to do — all of it read from the engine rather than from
+ * the record.
+ *
+ * The tenant of the row has to be passed: without it the entry reads the workflow of somebody
+ * else, and the permissions it shows are the wrong ones.
+ */
 class AssignmentSummaryEntry extends Entry
 {
     protected string $view = 'filament-flow::infolists.assignment-summary';
@@ -48,7 +56,8 @@ class AssignmentSummaryEntry extends Entry
     /**
      * Get assigned users with their effective permissions for the current state.
      *
-     * @return Collection<int, array{user: Model, assignment_type: string, can_view: bool, can_edit: bool, can_transition: bool}>
+     * @return Collection<int, array{user: Model, assignment_type: string, can_view: bool,
+     * can_edit: bool, can_transition: bool}>
      */
     public function getAssignedUsersWithPermissions(): Collection
     {
@@ -101,7 +110,13 @@ class AssignmentSummaryEntry extends Entry
             return ['view' => [], 'edit' => [], 'transition' => []];
         }
 
-        $workflow = Workflow::findForModel(get_class($record), $this->stateColumn);
+        // The tenant of the row: with one workflow per owner, without it one reads the workflow
+        // of somebody else — and the permissions shown would be the wrong ones.
+        $workflow = Workflow::findForModel(
+            get_class($record),
+            $this->stateColumn,
+            method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null,
+        );
         if (! $workflow) {
             return ['view' => [], 'edit' => [], 'transition' => []];
         }

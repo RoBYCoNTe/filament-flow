@@ -2,6 +2,10 @@
 
 namespace RoBYCoNTe\FilamentFlow\Support;
 
+/**
+ * The kinds of assignment the package understands — primary, secondary, viewer — with the label
+ * and the meaning each one carries.
+ */
 class AssignmentTypeConfig
 {
     /**

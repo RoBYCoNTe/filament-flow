@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Jobs\SendWorkflowNotification;
 use RoBYCoNTe\FilamentFlow\Services\NotificationService;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The job that sends a notification: it is queueable, it retries as declared, it carries its
+ * tags, and it returns quietly when the configuration it refers to is no longer there.
+ */
 class SendWorkflowNotificationJobTest extends TestCase
 {
     public function test_job_is_queueable(): void

@@ -7,6 +7,11 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\ModelStates\State;
 
+/**
+ * What a state looks like in the panel — its label, its colour, its icon and its description —
+ * taken from the class of the state first, and from the row of the workflow when the class says
+ * nothing.
+ */
 trait HasStateMetadata
 {
     /**
@@ -49,7 +54,8 @@ trait HasStateMetadata
             /** @param class-string<State> $stateClass */
             function (string $stateClass) use ($model) {
                 $instance = new $stateClass($model);
-                // Check if the class implements HasDescription interface before calling getDescription
+                // Check if the class implements HasDescription interface before calling
+                // getDescription
                 if (method_exists($instance, 'getDescription')) {
                     return [$stateClass::getMorphClass() => $instance->getDescription()];
                 }

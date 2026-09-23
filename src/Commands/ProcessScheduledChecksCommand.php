@@ -6,6 +6,10 @@ use Illuminate\Console\Command;
 use RoBYCoNTe\FilamentFlow\Services\ScheduledCheckRunner;
 use Throwable;
 
+/**
+ * The command a schedule runs: it hands the checks that are due to the runner and reports what
+ * the run did.
+ */
 class ProcessScheduledChecksCommand extends Command
 {
     protected $signature = 'workflow:process-schedules';

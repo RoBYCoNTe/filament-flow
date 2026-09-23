@@ -2,6 +2,10 @@
 
 namespace RoBYCoNTe\FilamentFlow\Definition\Enums;
 
+/**
+ * What makes a notification leave: a transition, entering or leaving a state, an assignment, or
+ * a change in a field.
+ */
 enum NotificationTrigger: string
 {
     case OnTransition = 'on_transition';

@@ -7,6 +7,11 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowCreationService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Creating a record through the engine: who may, by an access rule or by a role, the default
+ * when the declaration says nothing, the initial state it starts in, and the creator assigned
+ * automatically when the workflow asks for it.
+ */
 class WorkflowCreationServiceTest extends TestCase
 {
     private WorkflowCreationService $service;

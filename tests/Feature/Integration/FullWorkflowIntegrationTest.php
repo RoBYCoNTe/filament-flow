@@ -702,7 +702,8 @@ class FullWorkflowIntegrationTest extends TestCase
     {
         $order = $this->createOrder(['state' => 'pending']);
 
-        // Operator should not be able to transition from pending (access rule: role:manager,admin)
+        // Operator should not be able to transition from pending (access rule:
+        // role:manager,admin)
         $this->expectException(UnauthorizedTransitionException::class);
         $order->asUser($this->operator)->transitionTo('processing');
     }

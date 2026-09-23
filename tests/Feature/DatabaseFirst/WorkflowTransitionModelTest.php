@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The predicates of a transition: is it an action, is it global, does it move the state — each
+ * one in both directions, so a mistake shows up here.
+ */
 class WorkflowTransitionModelTest extends TestCase
 {
     public function test_is_action(): void

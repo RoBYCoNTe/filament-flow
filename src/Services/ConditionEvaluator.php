@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Exceptions\FormulaConditionFailedException;
 use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
 use Throwable;
 
+/**
+ * The conditions declared on a transition, evaluated against a record: comparisons on its
+ * fields, and formulas delegated to the provider the host registered.
+ */
 class ConditionEvaluator
 {
     /**
@@ -15,8 +19,9 @@ class ConditionEvaluator
      *
      * @param  array|null  $conditions  JSON-decoded conditions array
      *
-     * Field condition: {"field": "assignmentType.name", "operator": "in", "value": ["Compatibilità"]}
-     * Formula condition: {"type": "formula", "expression": "amount > 0", "message_template": "Amount must be positive."}
+     * Field condition: {"field": "assignmentType.name", "operator": "in", "value":
+     * ["Compatibilità"]} Formula condition: {"type": "formula", "expression": "amount > 0",
+     * "message_template": "Amount must be positive."}
      *
      * Supported operators: =, !=, in, not_in, >, <, >=, <=, is_null, is_not_null, contains
      *

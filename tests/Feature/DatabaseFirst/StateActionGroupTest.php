@@ -8,6 +8,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The actions a record offers: nothing without a workflow or with the package switched off, one
+ * action per transition — the in-state ones included — and only the ones whose conditions hold,
+ * global transitions included.
+ */
 class StateActionGroupTest extends TestCase
 {
     public function test_for_database_record_returns_empty_without_workflow(): void

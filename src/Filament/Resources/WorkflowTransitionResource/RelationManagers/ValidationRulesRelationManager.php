@@ -17,6 +17,9 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 
+/**
+ * The rules this transition applies to the values it is given.
+ */
 class ValidationRulesRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

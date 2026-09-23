@@ -7,6 +7,11 @@ use RoBYCoNTe\FilamentFlow\Services\ScheduledCheckRunner;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Running the scheduled checks: the statistics of a run, a condition on a date that fires when
+ * it is due and skips when it is not, a condition comparing two fields, and the flag that stops
+ * the same check running twice over the same record.
+ */
 class ScheduledCheckRunnerTest extends TestCase
 {
     private ScheduledCheckRunner $runner;

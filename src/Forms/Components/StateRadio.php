@@ -7,6 +7,9 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasStateAttributes;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateOptions;
 use RoBYCoNTe\FilamentFlow\Contracts\HasStateAttributes as HasStateAttributesContract;
 
+/**
+ * The control that picks a state, drawn as a group of radios.
+ */
 class StateRadio extends Radio implements HasStateAttributesContract
 {
     use HasStateAttributes;

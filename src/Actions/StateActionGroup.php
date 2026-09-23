@@ -16,6 +16,10 @@ use RoBYCoNTe\FilamentFlow\Services\ConditionEvaluator;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 use Spatie\ModelStates\State;
 
+/**
+ * The actions of a record: for a model class or for one record, the transitions available from
+ * the state it is in, gathered into one group.
+ */
 class StateActionGroup extends ActionGroup
 {
     use HasName;
@@ -202,7 +206,8 @@ class StateActionGroup extends ActionGroup
                 ? $currentState
                 : get_class($currentState);
 
-            // Get the namespace and find workflow (PHP filter avoids SQLite LIKE backslash issues)
+            // Get the namespace and find workflow (PHP filter avoids SQLite LIKE backslash
+            // issues)
             $stateClassNamespace = (new ReflectionClass($stateClass))->getNamespaceName();
 
             $workflow = Workflow::where('state_column', $columnName)

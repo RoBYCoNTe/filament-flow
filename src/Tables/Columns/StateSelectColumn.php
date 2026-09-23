@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateOptions;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateSorting;
 
+/**
+ * The same column with a select on it, to move the record to another state from the table.
+ */
 class StateSelectColumn extends SelectColumn
 {
     use HasStateOptions, HasStateSorting {

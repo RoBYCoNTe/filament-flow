@@ -36,6 +36,7 @@ export default defineConfig({
         items: [
           { text: 'Admin Panel Setup', link: '/guide/admin-panel' },
           { text: 'Testing', link: '/guide/testing' },
+          { text: 'Code conventions', link: '/guide/conventions' },
           { text: 'Commands', link: '/guide/commands' },
           { text: 'Performance', link: '/guide/performance' },
           { text: 'Security', link: '/guide/security' },
@@ -72,6 +73,7 @@ export default defineConfig({
           { text: 'Actions', link: '/ui/actions' },
           { text: 'Infolist Components', link: '/ui/infolist-components' },
           { text: 'Assignment Management', link: '/ui/assignments' },
+          { text: 'Formula Editor', link: '/ui/formula-editor' },
         ],
       },
       {

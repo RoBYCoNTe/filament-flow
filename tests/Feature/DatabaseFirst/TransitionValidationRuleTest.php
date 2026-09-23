@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\DatabaseFirst;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The validation rules of a transition as the model reads them: the relation, the cast to an
+ * array, the rules, the messages, and whether the transition has any at all.
+ */
 class TransitionValidationRuleTest extends TestCase
 {
     public function test_validation_rule_belongs_to_transition(): void

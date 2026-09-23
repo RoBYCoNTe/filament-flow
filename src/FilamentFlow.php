@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Services\NotificationService;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
 
+/**
+ * The entry point the host uses: the workflow of a model — with the tenant it belongs to — and
+ * the services of the package, resolved by name.
+ */
 class FilamentFlow
 {
     /**
@@ -21,9 +25,9 @@ class FilamentFlow
     /**
      * Get the workflow configured for a given model class.
      */
-    public static function getWorkflow(string $modelClass, string $stateColumn = 'state'): ?Workflow
+    public static function getWorkflow(string $modelClass, string $stateColumn = 'state', ?int $tenantId = null): ?Workflow
     {
-        return Workflow::findForModel($modelClass, $stateColumn);
+        return Workflow::findForModel($modelClass, $stateColumn, $tenantId);
     }
 
     /**

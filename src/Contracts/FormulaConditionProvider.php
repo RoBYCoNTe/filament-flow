@@ -4,6 +4,10 @@ namespace RoBYCoNTe\FilamentFlow\Contracts;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * What a host implements to evaluate the formulas of a condition: given the record and the
+ * expression, it answers whether the condition holds and with which message.
+ */
 interface FormulaConditionProvider
 {
     /**

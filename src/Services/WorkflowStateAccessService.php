@@ -7,6 +7,7 @@ use RoBYCoNTe\FilamentFlow\Contracts\HasAccessRules;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Support\AccessibleStates;
 use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 use Spatie\ModelStates\State;
 use Spatie\ModelStates\StateConfig;
@@ -30,8 +31,38 @@ class WorkflowStateAccessService
     }
 
     /**
-     * Check if access control is enabled
+     * The states of a model that a user may see, split by **how** they get there — opened by
+     * their role, or as the owner or an assignee — inside an outcome that also says what it
+     * means when there are none: the administrator is not filtered, whoever has no workflow
+     * sees nothing.
      */
+    public function categorizedAccessibleStates(
+        string $modelClass,
+        ?Model $user = null,
+        string $accessType = 'view',
+        ?int $tenantId = null,
+    ): AccessibleStates {
+        $user ??= auth()->user();
+
+        if ($user === null || ! $this->isEnabled()) {
+            return AccessibleStates::none();
+        }
+
+        if ($this->evaluator->isSuperAdmin($user)) {
+            return AccessibleStates::unrestricted();
+        }
+
+        $workflow = Workflow::findForModel($modelClass, 'state', $tenantId);
+
+        if ($workflow === null) {
+            return AccessibleStates::none();
+        }
+
+        $categorized = $this->categorizeAccessibleStates($workflow, $user, $accessType);
+
+        return AccessibleStates::of($categorized['free'], $categorized['assigned']);
+    }
+
     public function isEnabled(): bool
     {
         return config('filament-flow.state_access.enabled', true);
@@ -175,19 +206,13 @@ class WorkflowStateAccessService
     }
 
     /**
-     * Check if user can create a record of a given model class
+     * Whether a user may create a record of a given model: the create access rules on the
+     * **initial** state of the workflow, or the configured default when no workflow exists.
      *
-     * This checks the create access rules on the INITIAL state of the workflow.
-     * If no workflow exists, falls back to config defaults.
-     *
-     * @param  string  $modelClass  The fully qualified class name of the model
-     * @param  Model|null  $user  The user to check (defaults to authenticated user)
-     */
-    /**
-     * @param  string  $modelClass  The model to create (used to resolve the workflow)
-     * @param  Model|null  $user  The user to check (defaults to the authenticated user)
-     * @param  int|null  $tenantId  Owner of the scoped workflow (e.g. the scheme of a bando);
-     *                              when omitted the global/current-tenant workflow is used
+     * @param  string  $modelClass  the model to create (used to resolve the workflow)
+     * @param  Model|null  $user  the user to check (defaults to the authenticated user)
+     * @param  int|null  $tenantId  the owner of the scoped workflow (the scheme of a call);
+     *                              when omitted, the global/current-tenant workflow is used
      */
     public function canCreate(string $modelClass, ?Model $user = null, ?int $tenantId = null): bool
     {
@@ -227,7 +252,8 @@ class WorkflowStateAccessService
         if ($initialState->class_name && class_exists($initialState->class_name)) {
             $stateClass = $initialState->class_name;
 
-            // Check if the state class implements HasAccessRules (using is_subclass_of for static check)
+            // Check if the state class implements HasAccessRules (using is_subclass_of for
+            // static check)
             if (is_subclass_of($stateClass, HasAccessRules::class)) {
                 $accessRules = $stateClass::getCreateAccessRules();
                 if (! empty($accessRules)) {

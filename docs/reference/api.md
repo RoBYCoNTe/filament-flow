@@ -13,6 +13,17 @@
 | `StateSelectFilter` | `RoBYCoNTe\FilamentFlow\Tables\Filters` | Table filter for states |
 | `StateGroup` | `RoBYCoNTe\FilamentFlow\Tables\Grouping` | Group table records by state |
 
+## Infolist components
+
+| Component | Namespace | Description |
+|---|---|---|
+| `AssignmentSummaryEntry` | `RoBYCoNTe\FilamentFlow\Infolists\Components` | Who holds the record, with the kind of each assignment |
+| `StateBadge` | `RoBYCoNTe\FilamentFlow\Infolists\Components` | The label, colour and icon of the state of a record |
+| `TransitionTimeline` | `RoBYCoNTe\FilamentFlow\Infolists\Components` | When the record moved, from which state to which, and by whom |
+
+The three read the workflow, so they need the tenant of the record: without it a workflow scoped
+to an owner is not found, and they draw themselves empty.
+
 ## Actions
 
 | Action | Namespace | Description |
@@ -20,21 +31,23 @@
 | `StateAction` | `RoBYCoNTe\FilamentFlow\Actions` | Single record state transition |
 | `StateActionGroup` | `RoBYCoNTe\FilamentFlow\Actions` | Auto-generated action group |
 | `StateBulkAction` | `RoBYCoNTe\FilamentFlow\Actions` | Bulk state transition |
+| `StateBulkActionGroup` | `RoBYCoNTe\FilamentFlow\Actions` | The bulk actions of a table, one per transition |
 
 ## Utilities
 
 | Utility | Namespace | Description |
 |---|---|---|
-| `StateTabs` | `RoBYCoNTe\FilamentFlow` | Generate tabs for listing pages |
+| `StateTabs` | `RoBYCoNTe\FilamentFlow` | Tabs that group the records by state, with a badge and a query each |
+| `FilamentFlow` | `RoBYCoNTe\FilamentFlow` | The entry point of the package: the workflow of a model, and the services, resolved by name |
 
 ## Interfaces
 
 | Interface | Methods | Description |
 |---|---|---|
-| `HasLabel` | `getLabel(): string` | Display name for the state |
-| `HasIcon` | `getIcon(): string` | Icon for the state |
-| `HasColor` | `getColor(): string\|array` | Color for the state |
-| `HasDescription` | `getDescription(): string` | Description text for the state |
+| `HasLabel` | `getLabel(): string` | Display name for the state — **Filament's** `Filament\Support\Contracts\HasLabel` |
+| `HasIcon` | `getIcon(): string` | Icon for the state — `Filament\Support\Contracts\HasIcon` |
+| `HasColor` | `getColor(): string\|array` | Colour for the state — `Filament\Support\Contracts\HasColor` |
+| `HasDescription` | `getDescription(): string` | Description of the state — `Filament\Support\Contracts\HasDescription` |
 | `HasStateMetadata` | Combines all metadata interfaces | Full state metadata contract |
 | `HasStateSortOrder` | `getSortOrder(): int` | Custom sort position for state |
 | `HasAccessRules` | `getCreateAccessRules()`, `getViewAccessRules()`, `getEditAccessRules()`, `getTransitionAccessRules()` | Code-First state access rules |
@@ -42,6 +55,12 @@
 | `PermissionResolver` | `hasPermission()` | Permission resolution for access control |
 | `HasStateNotifications` | `onEnterNotifications()`, `onExitNotifications()` | Notifications on state enter/exit |
 | `HasTransitionNotifications` | `notifications()` | Notifications on transition |
+| `HasStateAction` | `withTransitionClass()`, `getTransitionClass()` | A class that is a state action: the state it works on, the transition it runs |
+| `HasStateAttributes` | `getAttribute()`, `attribute()` | Whatever carries a state attribute: which column holds it |
+| `HasFieldLabels` | `getFieldLabels()` | Labels a host gives to the fields of a transition |
+| `FieldListProviderInterface` | `getFields(): array` | Which fields a formula may name, for a context |
+| `FormulaCompletionProvider` | `getCompletions(): CompletionPayload` | The variables and functions of one formula scope |
+| `FormulaConditionProvider` | — | Evaluates the formulas of a condition for the host |
 
 ## Traits
 
@@ -61,6 +80,16 @@
 | `HasWorkflowAssignments` | `RoBYCoNTe\FilamentFlow\Concerns` | Workflow assignment management |
 | `HasWorkflowForm` | `RoBYCoNTe\FilamentFlow\Concerns` | Form building for workflow configuration |
 | `ResolvesActionAttributes` | `RoBYCoNTe\FilamentFlow\Concerns` | Resolves state attributes for actions |
+| `ChecksTransitionGuards` | `RoBYCoNTe\FilamentFlow\Concerns` | The guards and the conditions of a transition |
+| `ChecksTransitionPermissions` | `RoBYCoNTe\FilamentFlow\Concerns` | Who may take a transition |
+| `LogsTransitionHistory` | `RoBYCoNTe\FilamentFlow\Concerns` | The history of the transitions of a record |
+| `ParsesStateCast` | `RoBYCoNTe\FilamentFlow\Concerns` | Reading the state out of the model's cast |
+| `ResolvesUserModel` | `RoBYCoNTe\FilamentFlow\Concerns` | Which model is the user of this application |
+| `ResolvesWorkflowActions` | `RoBYCoNTe\FilamentFlow\Concerns` | The actions a record offers |
+| `ResolvesWorkflowStates` | `RoBYCoNTe\FilamentFlow\Concerns` | The states of a record |
+| `TriggersTransitionNotifications` | `RoBYCoNTe\FilamentFlow\Concerns` | Notifications raised by a transition |
+| `HasRelationManagerForm` | `RoBYCoNTe\FilamentFlow\Concerns` | The form of a relation manager |
+| `HasWorkflowTable` | `RoBYCoNTe\FilamentFlow\Concerns` | The table of a workflow resource |
 
 ## Models (Database-Driven Workflows)
 
@@ -71,7 +100,8 @@
 | `WorkflowTransition` | `RoBYCoNTe\FilamentFlow\Models` | Transition configurations |
 | `WorkflowTransitionField` | `RoBYCoNTe\FilamentFlow\Models` | Fields to show in transition forms |
 | `WorkflowStateField` | `RoBYCoNTe\FilamentFlow\Models` | Field permissions per state |
-| `WorkflowFieldPermission` | `RoBYCoNTe\FilamentFlow\Models` | Field-level permissions |
+| `WorkflowStateFieldRole` | `RoBYCoNTe\FilamentFlow\Models` | What a role may do on a field of a state |
+| `WorkflowStateVisibility` | `RoBYCoNTe\FilamentFlow\Models` | A visibility rule of a state |
 | `WorkflowAssignment` | `RoBYCoNTe\FilamentFlow\Models` | User/team assignments to workflows |
 | `WorkflowNotification` | `RoBYCoNTe\FilamentFlow\Models` | Notification configurations |
 | `WorkflowNotificationRecipient` | `RoBYCoNTe\FilamentFlow\Models` | Notification recipient strategies |
@@ -80,6 +110,12 @@
 | `WorkflowNotificationLog` | `RoBYCoNTe\FilamentFlow\Models` | Notification delivery audit logs |
 | `WorkflowUserInvolvement` | `RoBYCoNTe\FilamentFlow\Models` | User involvement tracking |
 | `WorkflowTransitionSnapshot` | `RoBYCoNTe\FilamentFlow\Models` | Audit trail for transitions |
+| `WorkflowStateTransition` | `RoBYCoNTe\FilamentFlow\Models` | The transitions a state takes part in |
+| `WorkflowTransitionPermission` | `RoBYCoNTe\FilamentFlow\Models` | Who may take a transition |
+| `WorkflowTransitionSideEffect` | `RoBYCoNTe\FilamentFlow\Models` | What a transition writes when it runs |
+| `WorkflowTransitionValidationRule` | `RoBYCoNTe\FilamentFlow\Models` | The rules a transition applies, and the fields its dialog asks for |
+| `WorkflowScheduledCheck` | `RoBYCoNTe\FilamentFlow\Models` | A check the engine runs on a schedule |
+| `WorkflowScheduledCheckLog` | `RoBYCoNTe\FilamentFlow\Models` | When a scheduled check last ran, and what it did |
 | `WorkflowTransitionMetadata` | `RoBYCoNTe\FilamentFlow\Models` | Additional metadata for transitions |
 | `WorkflowStateAccessRule` | `RoBYCoNTe\FilamentFlow\Models` | State-based access control rules |
 
@@ -95,12 +131,34 @@
 | `NotificationService` | `RoBYCoNTe\FilamentFlow\Services` | Orchestrates workflow notifications |
 | `RecipientResolver` | `RoBYCoNTe\FilamentFlow\Services` | Resolves notification recipients |
 | `FormBuilderHelper` | `RoBYCoNTe\FilamentFlow\Services` | Advanced form building utilities |
+| `ConditionEvaluator` | `RoBYCoNTe\FilamentFlow\Services` | The conditions of a transition, evaluated against a record |
+| `ScheduledCheckRunner` | `RoBYCoNTe\FilamentFlow\Services` | The engine of the scheduled checks |
+| `SideEffectExecutor` | `RoBYCoNTe\FilamentFlow\Services` | The effects a transition writes |
+| `WorkflowValidationService` | `RoBYCoNTe\FilamentFlow\Services` | Validating a transition and the values it is given |
+| `EvaluatesAccessRules` | `RoBYCoNTe\FilamentFlow\Services` | Reading the access rules of a state |
+| `ScopesAccessibleRecords` | `RoBYCoNTe\FilamentFlow\Services` | Narrowing a query to what a user may see |
+| `ReadsFieldPermissions` | `RoBYCoNTe\FilamentFlow\Services` | What a state allows on each field |
+| `ReadsCreationAndColumnPermissions` | `RoBYCoNTe\FilamentFlow\Services` | The permissions of creating a record, and of the columns of a list |
+| `ResolvesFieldPermissionContext` | `RoBYCoNTe\FilamentFlow\Services` | The state, the user and the tenant a permission is read for |
+| `AppliesValidationRules` | `RoBYCoNTe\FilamentFlow\Services` | Applying the rules of a transition to the values |
+| `EvaluatesValidationValues` | `RoBYCoNTe\FilamentFlow\Services` | Evaluating a value against the rules of its field |
+| `ResolvesValidationContext` | `RoBYCoNTe\FilamentFlow\Services` | The context a rule is evaluated in |
+| `FindsNotificationTargets` | `RoBYCoNTe\FilamentFlow\Services` | Who a notification reaches |
+| `DeliversNotifications` | `RoBYCoNTe\FilamentFlow\Services` | Sending a notification through its channels |
 
 ## Casts
 
 | Cast | Namespace | Description |
 |---|---|---|
 | `FlexibleStateCast` | `RoBYCoNTe\FilamentFlow\Casts` | Custom cast for PHP + database-only states |
+
+## Jobs and validation
+
+| Class | Namespace | Description |
+|---|---|---|
+| `SendWorkflowNotification` | `RoBYCoNTe\FilamentFlow\Jobs` | The queued job that sends one notification |
+| `ValidationResult` | `RoBYCoNTe\FilamentFlow\Validation` | What a validation pass found: the problems, with the field each one belongs to |
+| `ValidationLevel` | `RoBYCoNTe\FilamentFlow\Definition\Enums` | How much a transition validates: nothing, the fields, or everything |
 
 ## Support Classes
 
@@ -109,6 +167,18 @@
 | `DefaultRoleResolver` | `RoBYCoNTe\FilamentFlow\Support` | Default role resolver (supports Spatie Permission) |
 | `DefaultPermissionResolver` | `RoBYCoNTe\FilamentFlow\Support` | Default permission resolver (supports Gates) |
 | `AccessRuleEvaluator` | `RoBYCoNTe\FilamentFlow\Support` | Evaluates access rule tokens against users/records |
+| `AccessibleStates` | `RoBYCoNTe\FilamentFlow\Support` | The states a user may see, and what it means when there are none |
+| `CanonicalJson` | `RoBYCoNTe\FilamentFlow\Support` | The canonical form of a value: the order of the keys does not count, the order of a list does |
+| `CompletionPayload` | `RoBYCoNTe\FilamentFlow\Support` | The variables and functions of a formula scope, as the editor reads them |
+| `FormulaCompletionRegistry` | `RoBYCoNTe\FilamentFlow\Support` | The scopes of the formula editor, registered by name |
+| `FormulaConditionRegistry` | `RoBYCoNTe\FilamentFlow\Support` | The hosts able to evaluate a formula condition |
+| `WorkflowFormulaScope` | `RoBYCoNTe\FilamentFlow\Support` | The `workflow` scope of the formula editor |
+| `ModelDiscovery` | `RoBYCoNTe\FilamentFlow\Support` | Reading the columns of a model |
+| `FieldPermissionApplier` | `RoBYCoNTe\FilamentFlow\Support` | Applying the permissions of a state to a component |
+| `ComponentIdentifier` | `RoBYCoNTe\FilamentFlow\Support` | The name a component was made with |
+| `RuleOptions` | `RoBYCoNTe\FilamentFlow\Support` | The access-rule tokens and relationships offered where they make sense |
+| `UserModel` | `RoBYCoNTe\FilamentFlow\Support` | Which class is the user of the application |
+| `AssignmentTypeConfig` | `RoBYCoNTe\FilamentFlow\Support` | The kinds of assignment, with their labels |
 
 ## Exceptions
 
@@ -125,6 +195,8 @@ All exceptions live in the `RoBYCoNTe\FilamentFlow\Exceptions` namespace.
 | `StateDeletionException` | Cannot delete a state because transitions reference it | — |
 | `InvalidStateException` | The state field value is not a valid State instance | — |
 | `InvalidComponentException` | A Filament form component does not support readonly/disabled | `$fieldName` property |
+| `UnknownValidationRuleException` | A declaration names a validation rule nobody registered | `$ruleName` property |
+| `FormulaConditionFailedException` | A formula condition refused, with the message the host gave it | `getMessage()` |
 
 `UnauthorizedTransitionException` exposes:
 - `getMessage()` — Human-readable error message

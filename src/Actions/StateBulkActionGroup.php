@@ -180,7 +180,8 @@ class StateBulkActionGroup
             // Get the namespace of the state class to match against
             $stateClassNamespace = (new ReflectionClass($stateClass))->getNamespaceName();
 
-            // Find workflow by loading candidates and filtering in PHP (avoids SQLite LIKE backslash issues)
+            // Find workflow by loading candidates and filtering in PHP (avoids SQLite LIKE
+            // backslash issues)
             $workflow = Workflow::where('state_column', $attribute)
                 ->where('is_active', true)
                 ->with('states')
@@ -228,8 +229,9 @@ class StateBulkActionGroup
                 $toIcon = $toState->icon;
                 $toColor = $toState->color;
 
-                // Create label: add "from" state only if there are multiple transitions to the same destination
-                // Example: "Processing" (unique) vs "Cancelled (from Pending)" (duplicate)
+                // Create label: add "from" state only if there are multiple transitions to the
+                // same destination Example: "Processing" (unique) vs "Cancelled (from Pending)"
+                // (duplicate)
                 $hasDuplicateDestination = count($transitionsByToState[$toState->id]) > 1;
                 $toLabel = $hasDuplicateDestination
                     ? $toState->label.' ('.__('from').' '.$fromState->label.')'
@@ -248,7 +250,8 @@ class StateBulkActionGroup
                         foreach ($records as $record) {
                             $currentState = $record->{$attribute};
 
-                            // Check if current state matches the "from" state (handle both State objects and strings)
+                            // Check if current state matches the "from" state (handle both
+                            // State objects and strings)
                             $isMatchingState = false;
                             if (is_string($currentState) && is_string($fromStateIdentifier)) {
                                 $isMatchingState = $currentState === $fromStateIdentifier;

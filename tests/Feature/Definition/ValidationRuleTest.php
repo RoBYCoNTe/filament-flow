@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Definition;
 use RoBYCoNTe\FilamentFlow\Definition\ValidationRule;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * A validation rule: its rules and its message, and the convenience of one rule written as a
+ * plain string.
+ */
 class ValidationRuleTest extends TestCase
 {
     public function test_rules_and_message(): void

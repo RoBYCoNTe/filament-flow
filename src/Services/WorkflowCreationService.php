@@ -11,6 +11,11 @@ use RoBYCoNTe\FilamentFlow\Exceptions\WorkflowNotFoundException;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use Throwable;
 
+/**
+ * Creating a record through the workflow: whether this user may (the create rules of the
+ * initial state, or the configured default), and the record itself — created in its initial
+ * state, with its creator assigned when the workflow asks for that.
+ */
 class WorkflowCreationService
 {
     /**
@@ -27,6 +32,9 @@ class WorkflowCreationService
      *
      * @throws Exception
      * @throws Throwable
+     * @throws WorkflowNotFoundException
+     * @throws UnauthorizedTransitionException
+     * @throws InitialStateNotFoundException
      */
     public function createRecord(string $modelType, array $data, Model $user): Model
     {

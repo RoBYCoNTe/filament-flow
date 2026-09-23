@@ -17,6 +17,9 @@ use Filament\Tables\Table;
 use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationChannel;
 
+/**
+ * The channels a notification goes through, with their configuration.
+ */
 class ChannelsRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

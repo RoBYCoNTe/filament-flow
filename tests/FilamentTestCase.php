@@ -28,7 +28,8 @@ abstract class FilamentTestCase extends TestCase
         $panel = $provider->panel(Panel::make());
         app(PanelRegistry::class)->register($panel);
 
-        // Manually register routes for the test panel (routes were loaded during boot, before this panel existed)
+        // Manually register routes for the test panel (routes were loaded during boot, before
+        // this panel existed)
         $this->registerPanelRoutes($panel);
 
         // Set the current Filament panel

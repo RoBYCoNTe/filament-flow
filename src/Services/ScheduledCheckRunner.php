@@ -11,6 +11,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheckLog;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use Throwable;
 
+/**
+ * The engine of the scheduled checks: it takes the ones that are due, walks the records of
+ * their model, evaluates the condition — an offset from a date, a comparison between fields —
+ * and runs the action. When a check asks for it, it runs at most once over the same record.
+ */
 class ScheduledCheckRunner
 {
     protected int $processed = 0;

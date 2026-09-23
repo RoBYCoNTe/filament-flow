@@ -9,6 +9,13 @@ return [
     'no_history_yet' => 'Nessuna cronologia.',
     'count_more_entries' => 'Altre :count voci',
     'access_overrides' => 'Override accesso',
+    'help_select_user' => 'Chi lavorerà questa domanda: le comparirà fra le sue.',
+    'help_assignment_type' => 'Il ruolo di questa persona nella lavorazione — responsabile, collaboratore o osservatore. Non cambia quello che può fare.',
+    'help_access_overrides' => 'Permessi che vanno oltre le regole del bando. Lasciali spenti per far decidere il bando, come sempre.',
+    'help_override_view' => 'Può aprire la domanda anche negli stati che non gliela mostrerebbero.',
+    'help_override_edit' => 'Può modificarla anche dove per il suo ruolo è di sola lettura.',
+    'help_override_transition' => 'Può farla avanzare anche quando il suo ruolo non è quello previsto.',
+
     'override' => 'Override',
     'add_assignment' => 'Aggiungi assegnazione',
     'remove' => 'Rimuovi',

@@ -13,6 +13,10 @@ use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The form a transition asks for: built from the transition between two named states, `null`
+ * when there is no workflow or the states are not there, and one control per type of field.
+ */
 class TransitionFormServiceTest extends TestCase
 {
     private TransitionFormService $service;

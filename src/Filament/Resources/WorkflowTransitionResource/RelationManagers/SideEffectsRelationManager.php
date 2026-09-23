@@ -19,6 +19,9 @@ use Filament\Tables\Table;
 use RoBYCoNTe\FilamentFlow\Forms\Components\FormulaEditorComponent;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 
+/**
+ * What this transition writes on the record when it runs.
+ */
 class SideEffectsRelationManager extends RelationManager
 {
     /** Effect type of the record being edited, as a plain string. */

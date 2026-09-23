@@ -13,6 +13,10 @@ use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowStateResource;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowTransitionResource;
 use UnitEnum;
 
+/**
+ * The plugin that registers the package with a panel: its id, its resources and its pages, and
+ * the switch that leaves the administration resources out when the host does not want them.
+ */
 class FilamentFlowPlugin implements Plugin
 {
     protected bool $hasWorkflowResource = true;

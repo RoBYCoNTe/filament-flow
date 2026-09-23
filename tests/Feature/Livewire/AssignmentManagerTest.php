@@ -8,6 +8,11 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The panel that hands out the work: somebody already assigned is not offered, somebody
+ * unassigned is, adding the same person twice is refused, and the panel opens with the right to
+ * view already ticked.
+ */
 class AssignmentManagerTest extends TestCase
 {
     protected Order $order;

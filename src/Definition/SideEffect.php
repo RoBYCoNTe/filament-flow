@@ -4,6 +4,10 @@ namespace RoBYCoNTe\FilamentFlow\Definition;
 
 use RoBYCoNTe\FilamentFlow\Definition\Enums\SideEffectType;
 
+/**
+ * Something a transition writes when it runs: a field, a timestamp, an increment, a cleared
+ * value, a child application, or a class the host owns.
+ */
 final class SideEffect
 {
     private ?string $fieldName = null;

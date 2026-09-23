@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Contracts;
 use Spatie\ModelStates\State;
 use Spatie\ModelStates\Transition;
 
+/**
+ * The contract of a class that is a state action: the state it works on, and the transition it
+ * runs.
+ */
 interface HasStateAction
 {
     public function transitionTo(string|State|null $state): static;

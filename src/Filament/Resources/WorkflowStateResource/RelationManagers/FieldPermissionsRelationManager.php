@@ -19,6 +19,9 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use RoBYCoNTe\FilamentFlow\Support\RuleOptions;
 
+/**
+ * What this state allows on each field of the record.
+ */
 class FieldPermissionsRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

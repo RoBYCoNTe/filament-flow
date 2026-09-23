@@ -17,6 +17,9 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowNotificationResource;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
+/**
+ * The notifications a workflow sends.
+ */
 class NotificationsRelationManager extends RelationManager
 {
     /** Owner record of this relation manager, with its concrete type. */

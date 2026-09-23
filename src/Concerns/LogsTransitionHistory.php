@@ -33,7 +33,8 @@ trait LogsTransitionHistory
             $fromStateClass = is_string($fromState) ? $fromState : get_class($fromState);
             $toStateClass = is_string($toState) ? $toState : get_class($toState);
 
-            // Try to get workflow for this model (Database-First approach, with tenant fallback)
+            // Try to get workflow for this model (Database-First approach, with tenant
+            // fallback)
             $workflow = Workflow::findForModel(static::class, $field, $this->getWorkflowTenantId());
 
             // Initialize variables for workflow-related data

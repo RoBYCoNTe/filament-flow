@@ -26,7 +26,8 @@ trait ChecksTransitionPermissions
      * Check if a transition is allowed to a specific state
      * This extends Spatie's canTransitionTo to also check database-configured transitions
      *
-     * Formula conditions that fail are silenced to false (they propagate as exceptions only during execution).
+     * Formula conditions that fail are silenced to false (they propagate as exceptions only
+     * during execution).
      */
     public function canTransitionTo(string|State $state, string $field = 'state'): bool
     {

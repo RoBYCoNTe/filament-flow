@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * A visibility rule of a state as it is stored: the rule, and the state it belongs to. The rows
+ * carry the states of a workflow as much as the states themselves do.
+ */
 class WorkflowStateVisibility extends Model
 {
     protected $fillable = [

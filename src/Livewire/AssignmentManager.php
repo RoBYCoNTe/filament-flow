@@ -9,6 +9,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Fieldset;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -35,8 +36,12 @@ class AssignmentManager extends Component implements HasForms
 {
     use InteractsWithForms;
 
+    /**
+     * The key of the record, which is not always a number: hosts that use ULIDs or UUIDs
+     * have string keys, and casting one to int points at a record that does not exist.
+     */
     #[Locked]
-    public ?int $recordId = null;
+    public int|string|null $recordId = null;
 
     #[Locked]
     public ?string $recordType = null;
@@ -54,11 +59,33 @@ class AssignmentManager extends Component implements HasForms
 
     public bool $showAddForm = false;
 
-    public function mount(?Model $record = null): void
+    /**
+     * The record may arrive in several shapes, because it comes from where the component is
+     * embedded: a Filament schema hands over a model that has been through the wire and come
+     * back as an array, a Blade mount hands over the model itself, and a host may simply know
+     * the id. All of them are accepted; what cannot be understood is ignored.
+     *
+     * @param  Model|array<string,mixed>|int|string|null  $record
+     */
+    public function mount(Model|array|int|string|null $record = null, ?string $recordType = null): void
     {
-        if ($record) {
+        if ($record instanceof Model) {
             $this->recordId = $record->getKey();
             $this->recordType = $record::class;
+
+            return;
+        }
+
+        if (is_array($record)) {
+            $this->recordId = $record['id'] ?? null;
+            $this->recordType = $recordType ?? (isset($record['class']) ? (string) $record['class'] : null);
+
+            return;
+        }
+
+        if ($record !== null && $record !== '') {
+            $this->recordId = $record;
+            $this->recordType = $recordType;
         }
     }
 
@@ -76,33 +103,42 @@ class AssignmentManager extends Component implements HasForms
         return $form
             ->statePath('addFormData')
             ->schema([
-                Select::make('selectedUserId')
-                    ->label(__('filament-flow::messages.select_user'))
-                    ->options(fn (): array => $this->getAvailableUsers())
-                    ->searchable()
-                    ->preload()
-                    ->required()
-                    ->live(),
+                // Chi, e con che ruolo: due cose distinte, dette una per volta.
+                Grid::make(2)->schema([
+                    Select::make('selectedUserId')
+                        ->label(__('filament-flow::messages.select_user'))
+                        ->helperText(__('filament-flow::messages.help_select_user'))
+                        ->options(fn (): array => $this->getAvailableUsers())
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->live(),
 
-                Select::make('assignmentType')
-                    ->label(__('filament-flow::messages.assignment_type_label'))
-                    ->options(AssignmentTypeConfig::options())
-                    ->default('primary')
-                    ->required(),
+                    Select::make('assignmentType')
+                        ->label(__('filament-flow::messages.assignment_type_label'))
+                        ->helperText(__('filament-flow::messages.help_assignment_type'))
+                        ->options(AssignmentTypeConfig::options())
+                        ->default('primary')
+                        ->required(),
+                ]),
 
+                // And what they may do: permissions that override the rules of the call.
+                // The explanation of the permissions lives in the panel, above the form: the
+                // Fieldset of Filament only takes the label.
                 Fieldset::make(__('filament-flow::messages.access_overrides'))
                     ->schema([
                         Checkbox::make('overrideView')
                             ->label(__('filament-flow::messages.view'))
-                            ->inline()
-                            ->default(true),
+                            ->helperText(__('filament-flow::messages.help_override_view')),
                         Checkbox::make('overrideEdit')
                             ->label(__('filament-flow::messages.edit'))
-                            ->inline(),
+                            ->helperText(__('filament-flow::messages.help_override_edit')),
                         Checkbox::make('overrideTransition')
                             ->label(__('filament-flow::messages.transition'))
-                            ->inline(),
+                            ->helperText(__('filament-flow::messages.help_override_transition')),
                     ])
+                    // The three checkboxes on one line: the permissions are read together, and
+                    // the panel stays as tall as it needs to be.
                     ->columns(3),
             ]);
     }

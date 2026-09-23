@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Definition\WorkflowDefinition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The definition of a workflow: it builds its states and its transitions, and survives a round
+ * trip through an array.
+ */
 class WorkflowDefinitionTest extends TestCase
 {
     public function test_builds_states_and_transitions(): void

@@ -2,6 +2,11 @@
 
 namespace RoBYCoNTe\FilamentFlow\Definition\Enums;
 
+/**
+ * Who receives a notification: a role, a person, whoever triggered it, the people assigned, the
+ * owner of the record, the actors of a state, everyone involved — or whoever the host answers
+ * with, through a field, a query or a class of its own.
+ */
 enum RecipientType: string
 {
     case Role = 'role';

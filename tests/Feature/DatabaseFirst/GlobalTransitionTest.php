@@ -6,6 +6,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * A transition declared with no source state: available from anywhere, the specific one
+ * preferred when both exist, recorded like any other, and offered in the list of what a user
+ * may do.
+ */
 class GlobalTransitionTest extends TestCase
 {
     public function test_global_transition_from_any_state(): void

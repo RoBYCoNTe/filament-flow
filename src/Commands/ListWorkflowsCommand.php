@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Commands;
 use Illuminate\Console\Command;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
+/**
+ * The command that lists the workflows of the host: their name, their model, the column that
+ * holds the state, and whether they are active.
+ */
 class ListWorkflowsCommand extends Command
 {
     protected $signature = 'filament-flow:list';

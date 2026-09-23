@@ -6,6 +6,11 @@ use Filament\Forms\Components\TextInput;
 use RoBYCoNTe\FilamentFlow\Support\FieldPermissionApplier;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The permissions of a state applied to a form: locked becomes hidden, invisible becomes
+ * hidden, read-only becomes disabled, required stays required, and a field nobody said anything
+ * about is left as it was.
+ */
 class FieldPermissionApplierTest extends TestCase
 {
     /**

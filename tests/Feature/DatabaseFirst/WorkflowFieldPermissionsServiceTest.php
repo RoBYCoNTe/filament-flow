@@ -8,6 +8,11 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowFieldPermissionsService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * What a state allows on every field: nothing without a workflow, the rules of the state, a
+ * locked field, an override that changes what a role sees, and the fields that come out
+ * read-only or hidden.
+ */
 class WorkflowFieldPermissionsServiceTest extends TestCase
 {
     private WorkflowFieldPermissionsService $service;

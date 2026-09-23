@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\PendingState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The column that exports a state: its name by default, the attribute it reads, and the label
+ * taken from the state of the workflow.
+ */
 class StateExportColumnTest extends TestCase
 {
     public function test_make_creates_instance(): void

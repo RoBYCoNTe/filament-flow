@@ -12,6 +12,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\PendingState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Who gets notified: the people named one by one, the ones holding a role, the owner of the
+ * record — and an empty collection, quietly, when the list is empty.
+ */
 class RecipientResolverTest extends TestCase
 {
     protected RecipientResolver $resolver;

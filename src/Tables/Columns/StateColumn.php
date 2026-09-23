@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateSorting;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 
+/**
+ * The column that shows the state of a record, reading the attribute the workflow uses.
+ */
 class StateColumn extends TextColumn
 {
     use HasStateSorting;

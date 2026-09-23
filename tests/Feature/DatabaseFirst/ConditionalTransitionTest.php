@@ -6,6 +6,11 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 use Spatie\ModelStates\Exceptions\TransitionNotFound;
 
+/**
+ * The conditions of a transition: it passes when they hold and is refused when they do not,
+ * several conditions all have to hold, and the steps offered to a user leave out the ones whose
+ * conditions fail.
+ */
 class ConditionalTransitionTest extends TestCase
 {
     public function test_transition_allowed_when_conditions_pass(): void

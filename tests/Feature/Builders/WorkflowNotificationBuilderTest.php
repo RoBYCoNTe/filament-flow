@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Builders;
 use RoBYCoNTe\FilamentFlow\Builders\WorkflowNotificationBuilder;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The fluent builder of a notification: its defaults, its setters, the channels with their
+ * configuration, and the recipients.
+ */
 class WorkflowNotificationBuilderTest extends TestCase
 {
     public function test_make_creates_instance(): void

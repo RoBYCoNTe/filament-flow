@@ -15,7 +15,11 @@ use RuntimeException;
  */
 final class UserModel
 {
-    /** @return class-string<Model> */
+    /**
+     * @return class-string<Model>
+     *
+     * @throws RuntimeException
+     */
     public static function resolve(): string
     {
         $model = config('filament-flow.user_model') ?? config('auth.providers.users.model');

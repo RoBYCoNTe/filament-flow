@@ -181,7 +181,8 @@ trait ResolvesWorkflowStates
      * Set the transition instance for notes extraction.
      * Can be called manually if needed, but auto-detection is preferred.
      *
-     * @deprecated Use autoDetectTransitionInstance instead. This method is kept for backwards compatibility.
+     * @deprecated Use autoDetectTransitionInstance instead. This method is kept for backwards
+     * compatibility.
      */
     public function setTransitionInstance(object $transition): void
     {

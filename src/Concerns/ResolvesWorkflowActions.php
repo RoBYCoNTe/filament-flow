@@ -41,6 +41,10 @@ trait ResolvesWorkflowActions
      *
      * @throws Exception
      * @throws Throwable
+     * @throws WorkflowNotFoundException
+     * @throws ActionNotFoundException
+     * @throws UnauthorizedTransitionException
+     * @throws ConditionNotMetException
      */
     public function executeAction(string $transitionName, array $data = [], string $field = 'state'): static
     {

@@ -5,6 +5,12 @@ namespace RoBYCoNTe\FilamentFlow\Definition;
 use RoBYCoNTe\FilamentFlow\Definition\Enums\NotificationTrigger;
 use RoBYCoNTe\FilamentFlow\Definition\Enums\ValidationLevel;
 
+/**
+ * A step between two states: what it requires (conditions, validation rules), what it writes
+ * (its side effects), and how it is presented (label, colour, confirmation, reason).
+ *
+ * A transition with no arrival state is an action that stays where it is.
+ */
 final class Transition
 {
     private ?string $label = null;

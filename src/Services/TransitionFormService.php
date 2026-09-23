@@ -17,16 +17,25 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
+/**
+ * The form of a transition: it finds the transition between two states — tenant included —
+ * builds the schema of its fields from the same declaration that validates them, and writes the
+ * values a person filled in back onto the record.
+ *
+ * One declaration, two uses: the rules a transition validates with are the fields its dialog
+ * asks for.
+ */
 class TransitionFormService
 {
     /**
-     * Get transition configuration from database
-     * Supports both class names (e.g., App\States\Order\PendingState) and state names (e.g., 'refunded')
+     * Get transition configuration from database Supports both class names (e.g.,
+     * App\States\Order\PendingState) and state names (e.g., 'refunded')
      *
      * @param  string  $modelClass  The model class
-     * @param  string  $fromStateClass  The from state class or name
-     * @param  string  $toStateClass  The to state class or name
-     * @param  string|null  $transitionClass  Optional transition class to filter by (when multiple transitions exist for same from/to states)
+     * @param  string  $fromStateClass  The from state
+     *                                  class or name @param string $toStateClass The to state class or name @param string|null
+     *                                  $transitionClass Optional transition class to filter by (when multiple transitions exist
+     *                                  for same from/to states)
      */
     /**
      * @param  string|null  $transitionClass  Optional transition class for disambiguation.
@@ -125,7 +134,10 @@ class TransitionFormService
 
         // Apply label
         if ($field->label) {
-            $component->label($field->label);
+            // The labels of the call arrive already translated from the sync and stay as they
+            // are; the ones of the package are keys, and they are translated here, where they
+            // are drawn.
+            $component->label(__($field->label));
         }
 
         // Apply required

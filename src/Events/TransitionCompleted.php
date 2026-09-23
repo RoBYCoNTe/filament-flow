@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Raised when a transition has completed: the record, the states it moved between, and the
+ * metadata of the step.
+ */
 class TransitionCompleted
 {
     use Dispatchable;

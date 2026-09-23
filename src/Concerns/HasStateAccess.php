@@ -96,9 +96,9 @@ trait HasStateAccess
      *
      * @param  Model|null  $user  The user to check (defaults to authenticated user)
      */
-    public function scopeVisibleTo(Builder $query, ?Model $user = null): Builder
+    public function scopeVisibleTo(Builder $query, ?Model $user = null, ?int $tenantId = null): Builder
     {
-        return static::getAccessService()->scopeAccessible($query, $user);
+        return static::getAccessService()->scopeAccessible($query, $user, 'view', $tenantId);
     }
 
     /**
@@ -106,9 +106,9 @@ trait HasStateAccess
      *
      * @param  Model|null  $user  The user to check (defaults to authenticated user)
      */
-    public function scopeEditableBy(Builder $query, ?Model $user = null): Builder
+    public function scopeEditableBy(Builder $query, ?Model $user = null, ?int $tenantId = null): Builder
     {
-        return static::getAccessService()->scopeAccessible($query, $user, 'edit');
+        return static::getAccessService()->scopeAccessible($query, $user, 'edit', $tenantId);
     }
 
     /**
@@ -116,9 +116,9 @@ trait HasStateAccess
      *
      * @param  Model|null  $user  The user to check (defaults to authenticated user)
      */
-    public function scopeTransitionableBy(Builder $query, ?Model $user = null): Builder
+    public function scopeTransitionableBy(Builder $query, ?Model $user = null, ?int $tenantId = null): Builder
     {
-        return static::getAccessService()->scopeAccessible($query, $user, 'transition');
+        return static::getAccessService()->scopeAccessible($query, $user, 'transition', $tenantId);
     }
 
     /**

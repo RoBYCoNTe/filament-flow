@@ -58,6 +58,9 @@ class Workflow extends Model
         'metadata' => 'array',
     ];
 
+    /**
+     * @throws RuntimeException
+     */
     public function tenant(): BelongsTo
     {
         $tenantModel = config('filament-flow.tenant_model');
@@ -90,7 +93,8 @@ class Workflow extends Model
      */
     public static function findForModel(string $modelClass, string $stateColumn = 'state', ?int $tenantId = null): ?static
     {
-        // Explicit tenantId always wins; auto-detect from Filament only when multi-tenancy is configured.
+        // Explicit tenantId always wins; auto-detect from Filament only when multi-tenancy is
+        // configured.
         if ($tenantId !== null) {
             $effectiveTenantId = $tenantId;
         } elseif (static::isMultiTenancyEnabled()) {

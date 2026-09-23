@@ -11,6 +11,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\PendingState;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ProcessingState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The notification the engine sends: the channels it declares, an unknown channel falling back
+ * to the database, the default channel, and the variables of its template filled in.
+ */
 class WorkflowNotificationTest extends TestCase
 {
     protected Order $order;

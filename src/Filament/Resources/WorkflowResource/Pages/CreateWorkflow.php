@@ -5,6 +5,9 @@ namespace RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowResource\Pages;
 use Filament\Resources\Pages\CreateRecord;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowResource;
 
+/**
+ * The page that creates a workflow from the panel.
+ */
 class CreateWorkflow extends CreateRecord
 {
     protected static string $resource = WorkflowResource::class;

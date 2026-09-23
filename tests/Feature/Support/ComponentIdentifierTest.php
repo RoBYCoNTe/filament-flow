@@ -6,6 +6,9 @@ use Filament\Forms\Components\TextInput;
 use RoBYCoNTe\FilamentFlow\Support\ComponentIdentifier;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The identifier a component carries: the name of its field, including when the two differ.
+ */
 class ComponentIdentifierTest extends TestCase
 {
     public function test_resolve_field_returns_name(): void

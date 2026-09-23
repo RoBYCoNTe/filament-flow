@@ -6,6 +6,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionPermission;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Who may make a transition: with no permission declared anybody may, then one role or several,
+ * an assignment, several permissions combined with OR — or all of them required together.
+ */
 class TransitionPermissionsTest extends TestCase
 {
     public function test_transition_without_permissions_is_allowed(): void

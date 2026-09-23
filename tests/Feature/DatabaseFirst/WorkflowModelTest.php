@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Finding a workflow: by model and state column, `null` when there is none, only the active
+ * ones — and the initial state of one, `null` when it declares none.
+ */
 class WorkflowModelTest extends TestCase
 {
     public function test_find_for_model(): void

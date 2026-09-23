@@ -2,6 +2,10 @@
 
 namespace RoBYCoNTe\FilamentFlow\Support;
 
+/**
+ * Applying the permissions of a state to a component: what is locked or invisible becomes
+ * hidden, what is read-only becomes disabled, and what is required stays required.
+ */
 class FieldPermissionApplier
 {
     /**

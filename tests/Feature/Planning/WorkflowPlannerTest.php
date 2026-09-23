@@ -14,6 +14,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The plan of a workflow: nothing to do when nothing changed, an added state as additive, an
+ * unknown state refused, the removal of a state that transitions still point at as a conflict —
+ * and the force that allows it anyway.
+ */
 class WorkflowPlannerTest extends TestCase
 {
     private function definition(): WorkflowDefinition

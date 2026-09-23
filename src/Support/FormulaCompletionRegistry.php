@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Support;
 use InvalidArgumentException;
 use RoBYCoNTe\FilamentFlow\Contracts\FormulaCompletionProvider;
 
+/**
+ * The registry of the formula scopes: a scope is registered under a name, and it is asked for
+ * the completions of the context the editor is working on.
+ */
 final class FormulaCompletionRegistry
 {
     /** @var array<string, FormulaCompletionProvider> */
@@ -15,6 +19,9 @@ final class FormulaCompletionRegistry
         $this->providers[$scope] = $provider;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function resolve(string $scope): FormulaCompletionProvider
     {
         if (! isset($this->providers[$scope])) {

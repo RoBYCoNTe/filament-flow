@@ -2,6 +2,9 @@
 
 namespace RoBYCoNTe\FilamentFlow\Definition\Enums;
 
+/**
+ * How often a scheduled check is looked at: from every minute to every week.
+ */
 enum ScheduledCheckFrequency: string
 {
     case EveryMinute = 'every_minute';

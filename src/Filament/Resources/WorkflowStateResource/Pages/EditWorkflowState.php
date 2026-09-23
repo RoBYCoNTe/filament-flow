@@ -52,6 +52,9 @@ class EditWorkflowState extends EditRecord
         ];
     }
 
+    /**
+     * @throws StateDeletionException
+     */
     protected function getHeaderActions(): array
     {
         return [
@@ -76,6 +79,9 @@ class EditWorkflowState extends EditRecord
                 }),
 
             Actions\DeleteAction::make()
+                /**
+                 * @throws StateDeletionException
+                 */
                 ->before(function () {
                     if ($this->record->transitionsFrom()->exists() || $this->record->transitionsTo()->exists()) {
                         throw new StateDeletionException;

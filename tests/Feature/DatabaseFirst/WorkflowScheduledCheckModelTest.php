@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheckLog;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * When a scheduled check is due: before it has ever run, and then every minute, every hour,
+ * every day, every week — each one measured against the moment it last ran.
+ */
 class WorkflowScheduledCheckModelTest extends TestCase
 {
     public function test_is_due_when_never_checked(): void

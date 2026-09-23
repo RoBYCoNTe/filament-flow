@@ -5,6 +5,11 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Support;
 use RoBYCoNTe\FilamentFlow\Support\CanonicalJson;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The canonical form of a value: the order of the keys does not change the result, nested
+ * objects are sorted at every level, the order of a list **does** count, and scalars are left
+ * alone — the rule that makes a plan comparable and a drift check honest.
+ */
 class CanonicalJsonTest extends TestCase
 {
     public function test_the_key_order_does_not_change_the_encoding(): void

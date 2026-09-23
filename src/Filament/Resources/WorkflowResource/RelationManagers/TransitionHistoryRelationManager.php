@@ -10,6 +10,9 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 
+/**
+ * The transitions a record has been through, in order.
+ */
 class TransitionHistoryRelationManager extends RelationManager
 {
     /** Owner record of this relation manager, with its concrete type. */

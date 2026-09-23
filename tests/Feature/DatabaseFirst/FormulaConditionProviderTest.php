@@ -11,6 +11,12 @@ use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The formula of a condition, delegated to the host: it passes when the provider says yes and
+ * refuses when it says no, it does not block a host that registered no provider, the message is
+ * interpolated through the provider, and field conditions and a formula all have to hold
+ * together.
+ */
 class FormulaConditionProviderTest extends TestCase
 {
     private FormulaConditionRegistry $registry;
@@ -103,7 +109,8 @@ class FormulaConditionProviderTest extends TestCase
 
     public function test_field_condition_fails_before_formula_is_evaluated(): void
     {
-        // Provider returns true, but field condition fails first → evaluate() returns false (no exception)
+        // Provider returns true, but field condition fails first → evaluate() returns false (no
+        // exception)
         $this->registry->register($this->makeProvider(true));
         $order = $this->createOrder(['state' => 'processing']);
 

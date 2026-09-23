@@ -11,6 +11,9 @@ use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowTransitionResource\Relatio
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 
+/**
+ * The transitions of the workflows, in the administration.
+ */
 class WorkflowTransitionResource extends Resource
 {
     protected static ?string $parentResource = WorkflowResource::class;

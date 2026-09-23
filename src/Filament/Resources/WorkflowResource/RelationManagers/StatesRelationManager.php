@@ -17,6 +17,9 @@ use RoBYCoNTe\FilamentFlow\Exceptions\StateDeletionException;
 use RoBYCoNTe\FilamentFlow\Filament\Resources\WorkflowStateResource;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 
+/**
+ * The states of a workflow, managed from the page of the workflow itself.
+ */
 class StatesRelationManager extends RelationManager
 {
     protected static string $relationship = 'states';
@@ -37,7 +40,11 @@ class StatesRelationManager extends RelationManager
             ->columns(3);
     }
 
-    /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+    /**
+     * @noinspection PhpPossiblePolymorphicInvocationInspection
+     *
+     * @throws StateDeletionException
+     */
     public function table(Table $table): Table
     {
         return $table
@@ -133,6 +140,9 @@ class StatesRelationManager extends RelationManager
                         ->icon(Heroicon::OutlinedTrash)
                         ->color('danger')
                         ->requiresConfirmation()
+                        /**
+                         * @throws StateDeletionException
+                         */
                         ->action(function (WorkflowState $record) {
                             if ($record->transitionsFrom()->exists() || $record->transitionsTo()->exists()) {
                                 throw new StateDeletionException;

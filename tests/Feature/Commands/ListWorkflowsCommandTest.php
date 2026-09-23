@@ -4,6 +4,10 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Commands;
 
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The command that lists the workflows: an empty table when there are none, and a row per
+ * workflow when there are.
+ */
 class ListWorkflowsCommandTest extends TestCase
 {
     public function test_list_workflows_when_empty(): void

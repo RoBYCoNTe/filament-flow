@@ -21,6 +21,9 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use Spatie\Permission\Models\Role;
 
+/**
+ * Who a notification reaches.
+ */
 class RecipientsRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

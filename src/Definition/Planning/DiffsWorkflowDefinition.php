@@ -266,12 +266,14 @@ trait DiffsWorkflowDefinition
         $existingRules = WorkflowTransitionValidationRule::query()
             ->where('transition_id', $row->id)
             ->get()
-            ->map(fn (WorkflowTransitionValidationRule $r): array => $this->clean($r->toArray(), ['id', 'transition_id', 'created_at', 'updated_at', 'sort_order']))
+            // The field type belongs to the form, not to the rule: the table of rules does not
+            // keep it, and comparing it would be an eternal drift.
+            ->map(fn (WorkflowTransitionValidationRule $r): array => $this->clean($r->toArray(), ['id', 'transition_id', 'created_at', 'updated_at', 'sort_order', 'field_type']))
             ->sortBy('field_name')
             ->values()
             ->all();
 
-        $desiredRules = array_map(fn ($r): array => $this->clean($r->toArray(), ['sort_order']), $transition->rules());
+        $desiredRules = array_map(fn ($r): array => $this->clean($r->toArray(), ['sort_order', 'field_type']), $transition->rules());
         usort($desiredRules, static fn ($a, $b) => $a['field_name'] <=> $b['field_name']);
 
         return $this->encode($existingRules) !== $this->encode($desiredRules);

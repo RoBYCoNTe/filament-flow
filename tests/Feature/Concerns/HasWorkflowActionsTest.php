@@ -9,6 +9,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Resources\OrderResource\Pages\EditOrder;
 
+/**
+ * The actions of a page that carries a workflow: an edit page without one draws anyway, with
+ * one it draws the transitions, and with the package switched off it draws none.
+ */
 class HasWorkflowActionsTest extends FilamentTestCase
 {
     private User $user;

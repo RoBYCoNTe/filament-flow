@@ -194,6 +194,24 @@ class ApproveOrderTransition extends Transition implements HasTransitionNotifica
 }
 ```
 
+## Implement to feed the formula editor
+
+| Contract | What it gives the editor |
+|---|---|
+| `FieldListProviderInterface` | Which fields a formula may name, for a given context |
+| `FormulaCompletionProvider` | The variables and the functions of one scope, as the editor reads them |
+| `FormulaConditionProvider` | Whether a formula condition holds for a record, and with which message |
+
+The first two are what makes the completions appear while a person types: see
+[the formula editor](/ui/formula-editor). The third one is how a host keeps the evaluation of its
+own formulas, instead of letting the package guess.
+
+## Contracts of the package itself
+
+`HasStateAction`, `HasStateAttributes` and `HasFieldLabels` are implemented by the package's own
+classes — an action, something that carries a state attribute, a relation manager — rather than by
+the states of a host. They are listed in the [API reference](/reference/api).
+
 ## Implement for custom integration
 
 ### RoleResolver

@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Concerns;
 use Spatie\ModelStates\State;
 use Spatie\ModelStates\Transition;
 
+/**
+ * The old state-action API: a class declares the states it moves between and its transition,
+ * and the action reads them from the class instead of being told.
+ */
 trait HasStateActions
 {
     protected string|State|null $toState = null;

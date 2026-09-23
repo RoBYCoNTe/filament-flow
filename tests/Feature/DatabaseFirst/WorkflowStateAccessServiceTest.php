@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The switch of the access control, and the three questions the service answers — may this user
+ * view, edit, transition? — with the default when a state declares no rule of its own.
+ */
 class WorkflowStateAccessServiceTest extends TestCase
 {
     private WorkflowStateAccessService $service;

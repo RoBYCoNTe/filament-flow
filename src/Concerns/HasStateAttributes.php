@@ -4,6 +4,9 @@ namespace RoBYCoNTe\FilamentFlow\Concerns;
 
 use Closure;
 
+/**
+ * The attribute a state action works on: `state` unless the class names another column.
+ */
 trait HasStateAttributes
 {
     protected Closure|string|null $attribute = null;

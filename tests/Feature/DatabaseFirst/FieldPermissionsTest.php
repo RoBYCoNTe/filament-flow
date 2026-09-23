@@ -10,7 +10,8 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ProcessingState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
 /**
- * Test WorkflowFieldPermissionsService for field visibility, mutability, and validation per state
+ * Test WorkflowFieldPermissionsService for field visibility, mutability, and validation per
+ * state
  */
 class FieldPermissionsTest extends TestCase
 {

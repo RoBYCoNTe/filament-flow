@@ -8,6 +8,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Resources\OrderResource\Pages\CreateOrder;
 
+/**
+ * A create page driven by a workflow: it renders with all of its fields, a locked field is
+ * hidden, a read-only one is drawn disabled, and the rest are visible.
+ */
 class OrderCreatePageTest extends FilamentTestCase
 {
     private array $workflowData;

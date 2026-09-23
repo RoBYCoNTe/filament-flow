@@ -6,6 +6,10 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The command of the scheduled checks: it runs, it processes the checks that are due, and it
+ * reports the ones that break instead of dying with them.
+ */
 class ProcessScheduledChecksCommandTest extends TestCase
 {
     public function test_command_runs_successfully(): void

@@ -8,6 +8,11 @@ use RoBYCoNTe\FilamentFlow\Tests\FilamentTestCase;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Resources\OrderResource\Pages\EditOrder;
 
+/**
+ * The actions of a transition on a page: they exist, they move the record, they are offered
+ * only from the states that allow them, and one can follow another until the record has moved
+ * all the way through.
+ */
 class TransitionActionTest extends FilamentTestCase
 {
     private array $workflowData;

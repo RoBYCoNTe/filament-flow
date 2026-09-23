@@ -18,6 +18,7 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateFieldRole;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSideEffect;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
 use RoBYCoNTe\FilamentFlow\Revision\WorkflowSnapshotService;
@@ -31,6 +32,57 @@ final class WorkflowApplier
 {
     public function __construct(private readonly WorkflowPlanner $planner) {}
 
+    /**
+     * How the value of a transition is filled in: what the declaration says, or what its rules
+     * let one infer (a date is a date, a long text is a textarea).
+     *
+     * @param  array<string,mixed>  $attributes
+     * @param  list<string>  $rules
+     */
+    private function formFieldType(array $attributes, array $rules): string
+    {
+        if (is_string($attributes['field_type'] ?? null) && $attributes['field_type'] !== '') {
+            return $attributes['field_type'];
+        }
+
+        foreach ($rules as $rule) {
+            $rule = (string) $rule;
+
+            if ($rule === 'email') {
+                return 'email';
+            }
+
+            if (str_starts_with($rule, 'numeric') || str_starts_with($rule, 'integer')) {
+                return 'number';
+            }
+
+            if ($rule === 'date') {
+                return 'date';
+            }
+
+            if ($rule === 'datetime') {
+                return 'datetime';
+            }
+
+            if ($rule === 'boolean' || $rule === 'accepted') {
+                return 'toggle';
+            }
+
+            if (str_starts_with($rule, 'min:') && (int) substr($rule, 4) >= 20) {
+                return 'textarea';
+            }
+
+            if (str_starts_with($rule, 'max:') && (int) substr($rule, 4) >= 200) {
+                return 'textarea';
+            }
+        }
+
+        return 'text';
+    }
+
+    /**
+     * @throws WorkflowConflictException
+     */
     public function apply(
         string $modelType,
         ?int $tenantId,
@@ -187,8 +239,56 @@ final class WorkflowApplier
             foreach ($transition->rules() as $ruleIndex => $rule) {
                 $attributes = $rule->toArray();
                 $attributes['sort_order'] = $ruleIndex;
+                // The field type concerns the form, not the rule: the table of rules has no
+                // such column and must not have one.
+                unset($attributes['field_type']);
 
                 WorkflowTransitionValidationRule::create($attributes + ['transition_id' => $row->id]);
+            }
+
+            // The same rules are also the **form fields** of the transition: the dialog that
+            // asks for the values before going on is born here. Formula rules stay out: nobody
+            // types a formula.
+            WorkflowTransitionField::query()->where('transition_id', $row->id)->delete();
+
+            $fieldIndex = 0;
+
+            foreach ($transition->rules() as $rule) {
+                $attributes = $rule->toArray();
+
+                if (($attributes['rule_type'] ?? null) === 'expression') {
+                    continue;
+                }
+
+                $rules = (array) ($attributes['rules'] ?? []);
+
+                WorkflowTransitionField::create([
+                    'transition_id' => $row->id,
+                    'field_name' => (string) $attributes['field_name'],
+                    'field_type' => $this->formFieldType($attributes, $rules),
+                    'label' => (string) ($attributes['label'] ?? $attributes['field_name']),
+                    'is_required' => in_array('required', $rules, true),
+                    'validation_rules' => $rules,
+                    'sort_order' => $fieldIndex++,
+                    'save_to_model' => false,
+                ]);
+            }
+
+            // A transition that wants a reason asks for it like the other values: it is the
+            // reason of the register, not a field of the application, but it has to be typed.
+            if ((bool) $row->requires_reason) {
+                WorkflowTransitionField::create([
+                    'transition_id' => $row->id,
+                    'field_name' => 'reason',
+                    'field_type' => 'textarea',
+                    // The key, not the translation: it is translated when it is drawn, so a
+                    // change of language does not leave the label in yesterday's language.
+                    'label' => 'Reason',
+                    'is_required' => true,
+                    'validation_rules' => ['required'],
+                    'sort_order' => $fieldIndex,
+                    'save_to_model' => false,
+                ]);
             }
 
             $this->syncNotifications($workflow, null, $row->id, $transition->transitionNotifications());

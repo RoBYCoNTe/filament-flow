@@ -41,10 +41,10 @@ class NotificationService
      * - Code-first: Notifications defined in State/Transition classes via interfaces
      *
      * @param  Model  $record  The record that transitioned
-     * @param  string  $fromState  The previous state class/name
-     * @param  string  $toState  The new state class/name
-     * @param  array  $transitionData  Additional data from the transition
-     * @param  object|null  $transitionInstance  Optional transition class instance for code-first
+     * @param  string  $fromState  The previous
+     *                             state class/name @param string $toState The new state class/name @param array
+     *                             $transitionData Additional data from the transition @param object|null
+     *                             $transitionInstance Optional transition class instance for code-first
      */
     public function triggerForTransition(
         Model $record,

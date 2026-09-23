@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Forms\Components;
 use Closure;
 use Filament\Forms\Components\Field;
 
+/**
+ * The editor of a formula: the scope it completes from, the context being edited, its height —
+ * and the variables and functions of that scope offered as the text is typed.
+ */
 class FormulaEditorComponent extends Field
 {
     protected string $view = 'filament-flow::forms.components.formula-editor';

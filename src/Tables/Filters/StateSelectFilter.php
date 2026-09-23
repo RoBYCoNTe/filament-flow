@@ -7,6 +7,10 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 
+/**
+ * The filter that narrows a table to one state — or to all of them — carrying the tenant,
+ * because a workflow per owner is found only when the owner is named.
+ */
 class StateSelectFilter extends SelectFilter
 {
     /** Owner of the scoped workflow (a scheme, for example). */

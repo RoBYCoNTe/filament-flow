@@ -20,6 +20,13 @@ use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 use UnitEnum;
 
+/**
+ * The administration of a workflow: its states, its transitions, its scheduled checks and its
+ * notifications, as Filament resources.
+ *
+ * A host that declares its workflows in code keeps them out of the panel with
+ * `FilamentFlowPlugin::withoutWorkflowResource()`.
+ */
 class WorkflowResource extends Resource
 {
     protected static ?string $model = Workflow::class;

@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Support\WorkflowFormulaScope;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The endpoint that feeds the formula editor: the completions of a registered scope, no states
+ * without a context, and nothing at all without authentication.
+ */
 class FormulaCompletionsControllerTest extends TestCase
 {
     protected function setUp(): void

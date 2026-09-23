@@ -6,6 +6,10 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Changing the kind of an assignment: to primary, to viewer, on an assignment that does not
+ * exist, over a conflict — and never touching the other people assigned.
+ */
 class AssignmentTypeChangeTest extends TestCase
 {
     private Order $order;

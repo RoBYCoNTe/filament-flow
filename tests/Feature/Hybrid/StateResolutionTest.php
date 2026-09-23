@@ -14,7 +14,8 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ShippedState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
 /**
- * Test state resolution logic - how the system resolves between PHP State classes and database strings
+ * Test state resolution logic - how the system resolves between PHP State classes and database
+ * strings
  */
 class StateResolutionTest extends TestCase
 {

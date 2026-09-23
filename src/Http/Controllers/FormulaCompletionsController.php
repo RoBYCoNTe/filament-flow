@@ -8,6 +8,11 @@ use InvalidArgumentException;
 use RoBYCoNTe\FilamentFlow\Support\CompletionPayload;
 use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 
+/**
+ * The endpoint the formula editor calls: it resolves the scope, asks it for the completions of
+ * the current context and answers as JSON, or with nothing when the caller is not
+ * authenticated.
+ */
 class FormulaCompletionsController
 {
     public function __invoke(Request $request, FormulaCompletionRegistry $registry): JsonResponse

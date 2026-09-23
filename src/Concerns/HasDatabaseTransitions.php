@@ -18,6 +18,15 @@ use Spatie\ModelStates\Exceptions\TransitionNotFound;
 use Spatie\ModelStates\State;
 use Throwable;
 
+/**
+ * The way a record moves: `transitionTo()` finds the transition declared between two states,
+ * checks whether this user may take it, runs it and writes what came out — the state column,
+ * the side effects, and the values the transition asked for.
+ *
+ * One method covers a state named as a string, a state class, and an action that stays where it
+ * is. The tenant is read from the record, because with one workflow per owner the lookup has to
+ * know **which** workflow it is asking.
+ */
 trait HasDatabaseTransitions
 {
     use ChecksTransitionGuards;
@@ -88,12 +97,13 @@ trait HasDatabaseTransitions
     /**
      * Override transitionTo to handle database transitions
      *
-     * @param  string|State  $state  Target state
-     * @param  mixed  ...$arguments  Transition data (first argument should be arrayed of form data)
+     * @param  string|State  $state  the state the record moves to
+     * @param  mixed  ...$arguments  the values the transition asks for, when it asks for any
      *
      * @throws Exception
      * @throws Throwable
-     * @throws UnauthorizedTransitionException If access control enforcement is enabled and user is not authorized
+     * @throws UnauthorizedTransitionException when the access rules of the state refuse this user
+     * @throws InvalidStateException when the target state is not part of the workflow
      */
     public function transitionTo(string|State $state, ...$arguments): static
     {
@@ -160,8 +170,9 @@ trait HasDatabaseTransitions
             return $this->executeDatabaseTransition($currentState, $state, $field, $arguments);
         }
 
-        // HYBRID APPROACH: Check if transition exists in database before trying Spatie
-        // This allows mixing Code-First (Spatie) and Database-First (database configured) transitions
+        // HYBRID APPROACH: Check if transition exists in database before trying Spatie This
+        // allows mixing Code-First (Spatie) and Database-First (database configured)
+        // transitions
         if (config('filament-flow.enabled', true) && $this->canTransitionToFromDatabase($currentState, $state, $field)) {
             return $this->executeDatabaseTransition($currentState, $state, $field, $arguments);
         }

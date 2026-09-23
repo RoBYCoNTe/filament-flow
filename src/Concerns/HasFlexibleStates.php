@@ -188,8 +188,9 @@ trait HasFlexibleStates
 
         $resolved = $stateClass::resolveStateClass($value);
 
-        // resolveStateClass returns: null (null input), a class name (matched), or the input string (no match)
-        // It's database-only if resolved is null OR resolved equals the input (no class found)
+        // resolveStateClass returns: null (null input), a class name (matched), or the input
+        // string (no match) It's database-only if resolved is null OR resolved equals the input
+        // (no class found)
         return $resolved === null || ! class_exists($resolved);
     }
 }

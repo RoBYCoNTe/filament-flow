@@ -27,6 +27,11 @@ use RoBYCoNTe\FilamentFlow\Services\SideEffectExecutor;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Applying the families that arrived later: scheduled checks pointing at a state that exists,
+ * access rules and notifications with their children, a second application that changes
+ * nothing, additions safe and removals breaking, and a snapshot that includes the new families.
+ */
 class WorkflowExtendedApplierTest extends TestCase
 {
     private const TENANT = 3;

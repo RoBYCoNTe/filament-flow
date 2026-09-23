@@ -5,6 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Support;
 use Filament\Forms\Components\Field;
 use Filament\Schemas\Components\Component;
 
+/**
+ * The name a Filament component was made with, kept so that the component can be found again
+ * once the schema has been built.
+ */
 class ComponentIdentifier
 {
     /**

@@ -6,6 +6,11 @@ use RoBYCoNTe\FilamentFlow\Services\StateService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Where an action takes its look from: the state in the database first — label, colour, icon,
+ * description — and then the name of the state, with a primary colour, when the state says
+ * nothing.
+ */
 class ResolvesActionAttributesTest extends TestCase
 {
     private StateService $stateService;

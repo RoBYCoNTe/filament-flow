@@ -18,6 +18,9 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Support\ModelDiscovery;
 
+/**
+ * The values this transition asks for before it proceeds — the dialog a person sees.
+ */
 class TransitionFieldsRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

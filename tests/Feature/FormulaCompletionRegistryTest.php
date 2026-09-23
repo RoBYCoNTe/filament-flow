@@ -7,6 +7,10 @@ use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowFormulaScope;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The registry of the formula scopes: a scope is registered and resolved, the package registers
+ * the one of a workflow, and an unknown scope raises instead of quietly answering nothing.
+ */
 class FormulaCompletionRegistryTest extends TestCase
 {
     public function test_registers_and_resolves_a_scope(): void

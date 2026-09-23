@@ -17,6 +17,9 @@ use Filament\Tables\Table;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 
+/**
+ * The scheduled checks of a workflow, and the moment each one last ran.
+ */
 class ScheduledChecksRelationManager extends RelationManager
 {
     /** Owner record of this relation manager, with its concrete type. */

@@ -9,6 +9,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+/**
+ * What a workflow has notified, and to whom: the log of the notifications that actually left.
+ */
 class NotificationLogsRelationManager extends RelationManager
 {
     protected static string $relationship = 'notificationLogs';

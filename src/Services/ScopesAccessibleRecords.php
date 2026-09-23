@@ -22,7 +22,13 @@ trait ScopesAccessibleRecords
     /**
      * Scope query to only include records accessible by user
      */
-    public function scopeAccessible(Builder $query, ?Model $user = null, string $accessType = 'view'): Builder
+    /**
+     * @param  int|null  $tenantId  the owner the workflow belongs to, when the host keeps one
+     *                              workflow per owner (a workflow per scheme, for example):
+     *                              without it no workflow is found and the query, instead of
+     *                              being narrowed, comes back as it was.
+     */
+    public function scopeAccessible(Builder $query, ?Model $user = null, string $accessType = 'view', ?int $tenantId = null): Builder
     {
         if (! $this->isEnabled()) {
             return $query;
@@ -41,7 +47,7 @@ trait ScopesAccessibleRecords
         $modelClass = $query->getModel()::class;
 
         // Find active workflow for this model (with tenant fallback support)
-        $workflow = Workflow::findForModel($modelClass);
+        $workflow = Workflow::findForModel($modelClass, 'state', $tenantId);
 
         if (! $workflow) {
             // No workflow = use default rules (allow authenticated)
@@ -72,7 +78,8 @@ trait ScopesAccessibleRecords
             return $query;
         }
 
-        // Build query: free states OR (assigned states AND user is assigned) OR (has access override)
+        // Build query: free states OR (assigned states AND user is assigned) OR (has access
+        // override)
         $query->where(function (Builder $q) use ($stateColumn, $categorized, $user, $accessType, $hasOverrideSupport) {
             $hasCondition = false;
 
@@ -113,7 +120,8 @@ trait ScopesAccessibleRecords
     }
 
     /**
-     * Categorize states into 'free' (accessible by role) and 'assigned' (only via @assigned rule).
+     * Categorize states into 'free' (accessible by role) and 'assigned' (only via @assigned
+     * rule).
      *
      * @return array{free: array<string>, assigned: array<string>}
      */

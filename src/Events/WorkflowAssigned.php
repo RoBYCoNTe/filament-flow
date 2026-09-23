@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Raised when somebody is assigned to a record.
+ */
 class WorkflowAssigned
 {
     use Dispatchable;

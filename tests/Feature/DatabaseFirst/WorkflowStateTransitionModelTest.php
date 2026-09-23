@@ -7,6 +7,11 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Telling the steps apart on the model: an action that stays in its state — also when it
+ * declares no arrival state — and the scopes by record, by arrival state, and by what a user
+ * may see.
+ */
 class WorkflowStateTransitionModelTest extends TestCase
 {
     public function test_is_action_when_same_state(): void

@@ -9,6 +9,13 @@ return [
     'no_history_yet' => 'No history yet.',
     'count_more_entries' => ':count more entries',
     'access_overrides' => 'Access overrides',
+    'help_select_user' => 'The person who will work on this application: it will appear among theirs.',
+    'help_assignment_type' => 'The role this person has in the work — responsible, collaborator or observer. It does not change what they are allowed to do.',
+    'help_access_overrides' => 'Permissions that go beyond the rules of the call. Leave them all off to let the call decide, as usual.',
+    'help_override_view' => 'Can open the application even in states that would not show it to them.',
+    'help_override_edit' => 'Can change it even where it is read-only for their role.',
+    'help_override_transition' => 'Can move it on even when their role is not the one expected.',
+
     'override' => 'Override',
     'add_assignment' => 'Add assignment',
     'remove' => 'Remove',

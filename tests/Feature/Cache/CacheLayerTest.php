@@ -10,6 +10,11 @@ use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The cache of the package: a workflow found once is found again, and the entry is dropped when
+ * a workflow is saved or deleted; with the cache switched off nothing is remembered, and the
+ * access rules and the field permissions go through it as well.
+ */
 class CacheLayerTest extends TestCase
 {
     protected function setUp(): void

@@ -11,6 +11,10 @@ use Filament\Forms\Components\Toggle;
 use RoBYCoNTe\FilamentFlow\Services\FormBuilderHelper;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * Building the control of a transition field from the type the declaration names: text, email,
+ * textarea, select, checkbox, date and the rest.
+ */
 class FormBuilderHelperTest extends TestCase
 {
     private FormBuilderHelper $helper;

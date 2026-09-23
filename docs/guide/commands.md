@@ -4,6 +4,8 @@ Filament Flow registers three Artisan commands. Two are prefixed with `filament-
 
 ## filament-flow:list
 
+`RoBYCoNTe\FilamentFlow\Commands\ListWorkflowsCommand`
+
 List all registered workflows with their state and transition counts.
 
 **Signature:**
@@ -82,6 +84,8 @@ It is safe to run repeatedly — records that have not changed are reported as u
 ---
 
 ## workflow:process-schedules
+
+`RoBYCoNTe\FilamentFlow\Commands\ProcessScheduledChecksCommand`
 
 Process all active, due workflow scheduled checks and trigger their configured actions.
 

@@ -6,6 +6,10 @@ use RoBYCoNTe\FilamentFlow\Definition\Enums\SideEffectType;
 use RoBYCoNTe\FilamentFlow\Definition\SideEffect;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * An effect: the factories build the type they promise, the array it becomes, and the flag that
+ * switches it off.
+ */
 class SideEffectTest extends TestCase
 {
     public function test_factories_produce_expected_type(): void

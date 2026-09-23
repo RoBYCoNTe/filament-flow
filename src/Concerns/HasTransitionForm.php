@@ -5,6 +5,14 @@ namespace RoBYCoNTe\FilamentFlow\Concerns;
 use Exception;
 use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
 
+/**
+ * The form a transition asks for, attached to an action: the fields declared by the rules of
+ * the transition, and the tenant that makes the lookup find them.
+ *
+ * A form appears only when the rules have fields to fill in: a transition that asks for values
+ * asks for them even when it also validates them, while formula rules stay out — nobody types a
+ * formula.
+ */
 trait HasTransitionForm
 {
     protected function setupTransitionForm(): void
@@ -50,6 +58,20 @@ trait HasTransitionForm
         });
     }
 
+    /**
+     * The tenant of the row: when a host keeps one workflow per owner (one per call, for
+     * example), without it the transition is not found — nor are its rules, nor its fields —
+     * and the dialog that should ask for the values never opens.
+     */
+    protected function getTransitionTenantId(): ?int
+    {
+        $record = $this->getRecord();
+
+        return $record !== null && method_exists($record, 'getWorkflowTenantId')
+            ? $record->getWorkflowTenantId()
+            : null;
+    }
+
     private function hasValidationRulesWithoutFields(): bool
     {
         $modelClass = $this->getModel();
@@ -64,9 +86,14 @@ trait HasTransitionForm
                 $this->getFromStateClass(),
                 is_string($toState) ? $toState : get_class($toState),
                 $this->getTransitionClass(),
+                $this->getTransitionTenantId(),
             );
 
-            return $transitionConfig && $transitionConfig->hasValidationRules();
+            // Skip the form only when the rules have **no** fields to fill in: a transition
+            // that asks for values asks for them, even when it only validates them.
+            return $transitionConfig
+                && $transitionConfig->hasValidationRules()
+                && $transitionConfig->fields()->count() === 0;
         } catch (Exception $e) {
             report($e);
 
@@ -113,6 +140,7 @@ trait HasTransitionForm
                 $this->getFromStateClass(),
                 is_string($toState) ? $toState : get_class($toState),
                 $this->getTransitionClass(),
+                $this->getTransitionTenantId(),
             );
 
             return $transitionConfig && $transitionConfig->fields()->count() > 0;
@@ -152,7 +180,13 @@ trait HasTransitionForm
             return [];
         }
 
-        $transitionConfig = $service->getTransitionConfig($modelClass, $fromStateClass, $toStateClass, $transitionClass);
+        $transitionConfig = $service->getTransitionConfig(
+            $modelClass,
+            $fromStateClass,
+            $toStateClass,
+            $transitionClass,
+            $this->getTransitionTenantId(),
+        );
 
         if (! $transitionConfig) {
             return [];

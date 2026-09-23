@@ -95,6 +95,7 @@ trait HasWorkflowForm
      * Override record creation to use WorkflowCreationService
      *
      * @throws Exception|Throwable
+     * @throws AuthenticationRequiredException
      */
     protected function handleRecordCreation(array $data): Model
     {

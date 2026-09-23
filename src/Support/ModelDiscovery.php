@@ -16,6 +16,10 @@ use ReflectionProperty;
 use Spatie\ModelStates\State;
 use Throwable;
 
+/**
+ * Reading the columns of a model — their names, their types, and the ones of a given type — for
+ * the places where the package offers a field to write something against.
+ */
 class ModelDiscovery
 {
     /**

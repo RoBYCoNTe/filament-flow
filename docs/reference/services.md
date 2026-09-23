@@ -24,16 +24,25 @@ $service->canTransition($order, $user, ProcessingState::class); // bool
 // Check if a user can create a new record (checks the initial state's rules)
 $service->canCreate(Order::class, $user); // bool
 
-// Scope a query to only records accessible by user
+// Scope a query to only records accessible by user, for one owner of the workflow
 $query = Order::query();
-$service->scopeAccessible($query, $user, 'view');  // scoped Builder
-$service->scopeAccessible($query, $user, 'edit');  // scoped Builder
+$service->scopeAccessible($query, $user, 'view');           // scoped Builder
+$service->scopeAccessible($query, $user, 'edit', $tenantId); // scoped Builder
+
+// The states behind that scope, and what their emptiness means
+$states = $service->categorizedAccessibleStates(Order::class, $user, 'view', $tenantId);
+$states->unrestricted;  // the platform administrator: nothing is filtered
+$states->isNone();      // no workflow to read: the caller is left with their own rows
+$states->free;          // states a role opens: everyone may see them
+$states->assigned;      // states that ask to be the owner or an assignee
 
 // Check whether access control is active
 $service->isEnabled(); // bool
 ```
 
-`scopeAccessible` builds an efficient single query. It categorises states into "free" (any matching role/rule) and "assigned" (only via `@assigned`/`@owner`), then applies `whereIn` plus `whereHas` conditions as needed. Super admins bypass all filters.
+`scopeAccessible` builds an efficient single query. It categorises states into "free" (any matching role/rule) and "assigned" (only via `@assigned`/`@owner`), then applies `whereIn` plus `whereHas` conditions as needed, and it narrows by **state**: the ownership of a single record is still decided per row, by the model's own check.
+
+**The tenant is part of every question.** When a host keeps one workflow per owner — one per scheme, for instance — the lookup finds the workflow only if the caller says which owner: without it the answer is `null` or an empty set, in silence. `categorizedAccessibleStates()` returns an `AccessibleStates`, which says **what it means** when there are no states: the administrator is not filtered at all, while a user with no workflow is left with their own rows.
 
 ## NotificationService
 
@@ -180,6 +189,45 @@ $initial = $service->getInitialState(Order::class, 'state'); // 'pending'
 ```
 
 `getAllStatesForModel` only includes database-only states (those without a matching PHP class). States that have a `class_name` pointing to a real PHP class are retrieved through Spatie's `getStatesLabel()` instead, so metadata always comes from the most authoritative source.
+
+## The other services
+
+| Service | What it answers |
+|---|---|
+| `TransitionFormService` | The transition between two states, the schema of the fields it asks for, and the values written back onto the record |
+| `ConditionEvaluator` | Whether the conditions of a transition hold for a record |
+| `ScheduledCheckRunner` | Which checks are due, run over the records of their model |
+| `SideEffectExecutor` | What a transition writes: a field, a timestamp, an increment, a cleared value |
+| `WorkflowValidationService` | Whether a transition may run, and whether the values it was given respect its rules |
+| `RecipientResolver` | Who a notification reaches: a role, a person, the owner of the record, the people assigned, a query, or a class of the host |
+
+## Behind these doors
+
+The services above are what a host calls. Underneath, the work is split into pieces that answer one
+question each: they are public because the engine asks them directly, and they are written down here
+so that a reader can follow a rule from the declaration to the answer.
+
+| Seam | The question it answers |
+|---|---|
+| `EvaluatesAccessRules` | Which rules a state declares, and whether one of them holds |
+| `ScopesAccessibleRecords` | How to narrow a query to the records a user may see |
+| `ReadsFieldPermissions` | What a state allows on one field |
+| `ReadsCreationAndColumnPermissions` | The permissions of creating a record, and the columns of a list |
+| `ResolvesFieldPermissionContext` | The state, the user and the tenant a permission is read for |
+| `AppliesValidationRules` | Applying the rules of a transition to the values it was given |
+| `EvaluatesValidationValues` | Whether a value respects the rules of its field |
+| `ResolvesValidationContext` | The context a rule is evaluated in |
+| `FindsNotificationTargets` | Who a notification reaches, before it is sent |
+| `DeliversNotifications` | Sending it through the channels it declares |
+| `DiffsWorkflowDefinition` | What changed between the stored workflow and the declaration |
+| `ProjectsWorkflowRows` | Writing the declaration into the rows, once the plan says what to do |
+
+The same is true of the traits a model uses: `HasDatabaseTransitions` is the door, and the questions
+behind it — which states, which guards, which permissions, which history, which notifications — are
+answered by `ResolvesWorkflowStates`, `ChecksTransitionGuards`, `ChecksTransitionPermissions`,
+`ResolvesWorkflowActions`, `ParsesStateCast`, `LogsTransitionHistory`,
+`TriggersTransitionNotifications` and the rest. None of them is meant to be called twice: they each
+exist because two callers asked the same question and the answer had to be written once.
 
 ## Workflow Definition SDK
 

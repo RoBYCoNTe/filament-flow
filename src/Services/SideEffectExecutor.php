@@ -7,6 +7,11 @@ use Illuminate\Support\Collection;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use Throwable;
 
+/**
+ * The effects of a transition: it walks the declared ones and applies each — a field written
+ * from an expression, a timestamp, a field cleared, an increment — and hands the ones it does
+ * not know to the host, which is where the domain effects live.
+ */
 class SideEffectExecutor
 {
     /**

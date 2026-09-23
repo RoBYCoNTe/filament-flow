@@ -8,6 +8,11 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\PendingState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * The states of a model as the service reads them: all of them in the declared order, an empty
+ * stack when no workflow matches, and the metadata of one — label, colour, icon — with `null`
+ * for a state that does not exist.
+ */
 class StateServiceTest extends TestCase
 {
     private StateService $service;

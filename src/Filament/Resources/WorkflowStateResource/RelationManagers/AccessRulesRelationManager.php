@@ -18,6 +18,9 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
 use RoBYCoNTe\FilamentFlow\Support\RuleOptions;
 
+/**
+ * Who may view, edit or move a record while it is in this state.
+ */
 class AccessRulesRelationManager extends RelationManager
 {
     use HasRelationManagerForm;

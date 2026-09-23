@@ -7,6 +7,9 @@ use RoBYCoNTe\FilamentFlow\Definition\Transition;
 use RoBYCoNTe\FilamentFlow\Definition\ValidationRule;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
+/**
+ * A transition: its formula condition, its side effects, and an action — which moves no state.
+ */
 class TransitionTest extends TestCase
 {
     public function test_formula_condition_and_side_effects(): void

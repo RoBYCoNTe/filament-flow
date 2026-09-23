@@ -7,6 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Services\StateService;
 use Spatie\ModelStates\State;
 
+/**
+ * The options of a select of states: where the list comes from, whether it respects the
+ * transitions the user may take, and the tenant the lookup needs.
+ *
+ * Without the tenant a workflow scoped to an owner is invisible to the service, and the select
+ * comes out **empty** — no error, nothing to read.
+ */
 trait HasStateOptions
 {
     use ParsesStateCast;
@@ -63,7 +70,14 @@ trait HasStateOptions
                 return $stateService->getAllStatesForModel($modelClass, $this->getAttribute());
             }
 
-            return $stateService->getAllStatesForModel($record::class, $this->getAttribute());
+            // The tenant of the row is part of the question: the workflow of a call lives under
+            // the scheme that owns it, and without the tenant the service does not find it —
+            // which is how a dropdown of states comes out empty.
+            return $stateService->getAllStatesForModel(
+                $record::class,
+                $this->getAttribute(),
+                method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null,
+            );
         });
 
         $this->disableOptionWhen(function (string $value, $record) {
