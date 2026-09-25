@@ -9,9 +9,12 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
+use RoBYCoNTe\FilamentFlow\Services\StateService;
 use RoBYCoNTe\FilamentFlow\Services\WorkflowStateAccessService;
 use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
+use RoBYCoNTe\FilamentFlow\Support\LocalizedDate;
+use RoBYCoNTe\FilamentFlow\Support\RoleLabel;
 
 /**
  * The entry that shows who holds a record: the people assigned, the kind of assignment each one
@@ -29,9 +32,22 @@ class AssignmentSummaryEntry extends Entry
 
     protected ?Closure $metadataBadgesCallback = null;
 
+    /**
+     * The words the host uses for its own roles: a name (`super_admin`) is a key, not a
+     * sentence, and only the host knows how to read it.
+     *
+     * @var array<string, string>
+     */
+    protected array $roleLabels = [];
+
+    protected ?Closure $roleLabelCallback = null;
+
     public static function make(?string $name = 'assignment-summary'): static
     {
-        return parent::make($name);
+        // A name humanised by the framework ("Flow assignment summary") says nothing: the
+        // label starts translated, and the host may still name it as it likes.
+        return parent::make($name)
+            ->label(__('filament-flow::messages.assignment_summary_label'));
     }
 
     public function metadataBadges(Closure $callback): static
@@ -39,6 +55,40 @@ class AssignmentSummaryEntry extends Entry
         $this->metadataBadgesCallback = $callback;
 
         return $this;
+    }
+
+    /**
+     * How the roles of the assigned people read: a map of names to labels, or a callback that
+     * answers one name at a time.
+     *
+     * @param  Closure(string): ?string|array<string, string>  $labels
+     */
+    public function roleLabels(Closure|array $labels): static
+    {
+        if ($labels instanceof Closure) {
+            $this->roleLabelCallback = $labels;
+        } else {
+            $this->roleLabels = $labels;
+        }
+
+        return $this;
+    }
+
+    /**
+     * The label of a role: what the host says, then the words of the package, then the name
+     * read as it is written — never the raw key, when something better exists.
+     */
+    public function getRoleLabel(string $role): string
+    {
+        if ($this->roleLabelCallback !== null) {
+            $label = ($this->roleLabelCallback)($role);
+
+            if (is_string($label) && trim($label) !== '') {
+                return $label;
+            }
+        }
+
+        return RoleLabel::for($role, $this->roleLabels);
     }
 
     public function stateColumn(string $column): static
@@ -53,33 +103,50 @@ class AssignmentSummaryEntry extends Entry
         return $this->stateColumn;
     }
 
+    /** The same rule the timeline follows: the locale decides, unless the host says otherwise. */
+    public function getDateTimeFormat(): string
+    {
+        return LocalizedDate::dateTime();
+    }
+
     /**
      * Get assigned users with their effective permissions for the current state.
      *
-     * @return Collection<int, array{user: Model, assignment_type: string, can_view: bool,
-     * can_edit: bool, can_transition: bool}>
+     * @return Collection<int, array{user: Model, assignment_type: string, roles: list<string>,
+     * assigned_at: mixed, assigned_by: string|null, can_view: bool, can_edit: bool,
+     * can_transition: bool, override_view: bool, override_edit: bool, override_transition: bool,
+     * has_overrides: bool, metadata: mixed, metadata_badges: array}>
      */
     public function getAssignedUsersWithPermissions(): Collection
     {
-        $record = $this->getRecord();
+        $record = $this->record();
 
-        if (! $record instanceof Model || ! method_exists($record, 'assignments')) {
+        if ($record === null || ! method_exists($record, 'assignments')) {
             return collect();
         }
 
         $accessService = app(WorkflowStateAccessService::class);
 
         return $record->assignments()
-            ->with('user')
+            ->with(['user', 'assignedBy'])
             ->get()
             ->filter(fn ($assignment) => $assignment->user !== null)
             ->map(function ($assignment) use ($accessService, $record) {
+                $user = $assignment->user;
+
                 $data = [
-                    'user' => $assignment->user,
+                    'user' => $user,
                     'assignment_type' => $assignment->assignment_type,
-                    'can_view' => $accessService->canView($record, $assignment->user),
-                    'can_edit' => $accessService->canEdit($record, $assignment->user),
-                    'can_transition' => $accessService->canTransition($record, $assignment->user),
+                    // The words the host uses for the roles of this person, not the names of
+                    // the roles as they are stored.
+                    'roles' => method_exists($user, 'getRoleNames')
+                        ? $user->getRoleNames()->map(fn ($role): string => $this->getRoleLabel((string) $role))->values()->all()
+                        : [],
+                    'assigned_at' => $assignment->assigned_at,
+                    'assigned_by' => $assignment->assignedBy?->name,
+                    'can_view' => $accessService->canView($record, $user),
+                    'can_edit' => $accessService->canEdit($record, $user),
+                    'can_transition' => $accessService->canTransition($record, $user),
                     'override_view' => $assignment->override_view === true,
                     'override_edit' => $assignment->override_edit === true,
                     'override_transition' => $assignment->override_transition === true,
@@ -93,7 +160,43 @@ class AssignmentSummaryEntry extends Entry
 
                 return $data;
             })
+            // Who holds the case first, then who helps, then who watches.
+            ->sortBy(static fn (array $row): int => (int) array_search($row['assignment_type'], ['primary', 'secondary', 'viewer'], true))
             ->values();
+    }
+
+    /**
+     * The state the permissions are read in: they change with it, so a summary that does not
+     * say which state it describes says something else.
+     */
+    public function getStateLabel(): ?string
+    {
+        $record = $this->record();
+
+        if ($record === null) {
+            return null;
+        }
+
+        $state = $record->{$this->stateColumn};
+
+        if ($state instanceof \Stringable) {
+            $state = (string) $state;
+        }
+
+        if (! is_string($state) || $state === '') {
+            return null;
+        }
+
+        $metadata = app(StateService::class)->getStateMetadata(
+            get_class($record),
+            $state,
+            $this->stateColumn,
+            method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null,
+        );
+
+        $label = $metadata['label'] ?? null;
+
+        return is_string($label) && trim($label) !== '' ? $label : null;
     }
 
     /**
@@ -104,9 +207,9 @@ class AssignmentSummaryEntry extends Entry
      */
     public function getRoleAccess(): array
     {
-        $record = $this->getRecord();
+        $record = $this->record();
 
-        if (! $record instanceof Model) {
+        if ($record === null) {
             return ['view' => [], 'edit' => [], 'transition' => []];
         }
 
@@ -154,6 +257,21 @@ class AssignmentSummaryEntry extends Entry
         }
 
         return $result;
+    }
+
+    /**
+     * The record this entry reads, when there is one: an entry asked outside a schema has no
+     * container to take it from, and answers nothing instead of failing.
+     */
+    protected function record(): ?Model
+    {
+        try {
+            $record = $this->getRecord();
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $record instanceof Model ? $record : null;
     }
 
     /**

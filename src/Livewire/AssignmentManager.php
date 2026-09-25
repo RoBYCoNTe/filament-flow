@@ -17,6 +17,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
+use RoBYCoNTe\FilamentFlow\Support\RoleLabel;
 use RoBYCoNTe\FilamentFlow\Support\UserModel;
 
 /**
@@ -49,6 +50,15 @@ class AssignmentManager extends Component implements HasForms
     #[Locked]
     public ?string $assignmentBadgesView = null;
 
+    /**
+     * How the roles of the assigned people read: the words of the host, keyed by role name.
+     * A name is a key, and a panel that shows it raw reads like a database.
+     *
+     * @var array<string, string>
+     */
+    #[Locked]
+    public array $roleLabels = [];
+
     public ?array $addFormData = [
         'selectedUserId' => null,
         'assignmentType' => 'primary',
@@ -67,8 +77,10 @@ class AssignmentManager extends Component implements HasForms
      *
      * @param  Model|array<string,mixed>|int|string|null  $record
      */
-    public function mount(Model|array|int|string|null $record = null, ?string $recordType = null): void
+    public function mount(Model|array|int|string|null $record = null, ?string $recordType = null, array $roleLabels = []): void
     {
+        $this->roleLabels = $roleLabels;
+
         if ($record instanceof Model) {
             $this->recordId = $record->getKey();
             $this->recordType = $record::class;
@@ -171,7 +183,13 @@ class AssignmentManager extends Component implements HasForms
                     'user_id' => $user->id,
                     'name' => $user->name,
                     'initials' => $initials,
-                    'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames()->implode(', ') : '',
+                    // The words the host uses for the roles of a person, not the names of the
+                    // roles as they are stored.
+                    'roles' => method_exists($user, 'getRoleNames')
+                        ? $user->getRoleNames()
+                            ->map(fn ($role): string => RoleLabel::for((string) $role, $this->roleLabels))
+                            ->implode(', ')
+                        : '',
                     'assignment_type' => $a->assignment_type,
                     'override_view' => (bool) $a->override_view,
                     'override_edit' => (bool) $a->override_edit,
@@ -219,8 +237,13 @@ class AssignmentManager extends Component implements HasForms
         return $users
             ->mapWithKeys(function ($user): array {
                 $label = $user->name;
+
                 if (isset($user->roles) && $user->roles->isNotEmpty()) {
-                    $label .= ' ('.$user->roles->pluck('name')->implode(', ').')';
+                    // A role name is a key: the person picking a colleague reads the words of
+                    // the office, not the names of the roles as they are stored.
+                    $label .= ' ('.$user->roles
+                        ->map(fn ($role): string => RoleLabel::for((string) $role->name, $this->roleLabels))
+                        ->implode(', ').')';
                 }
 
                 return [$user->id => $label];

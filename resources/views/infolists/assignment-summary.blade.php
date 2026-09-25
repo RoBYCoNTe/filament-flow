@@ -2,6 +2,8 @@
     @php
         $assignedUsers = $getAssignedUsersWithPermissions();
         $roleAccess = $getRoleAccess();
+        $stateLabel = $getStateLabel();
+        $dateFormat = $getDateTimeFormat();
 
         // Collect unique role names with full access info
         $roleLabels = collect();
@@ -15,112 +17,142 @@
         }
 
         $typeConfig = $getTypeConfig();
-        $colors = ['bg-primary-500', 'bg-success-500', 'bg-warning-500', 'bg-danger-500', 'bg-info-500'];
+
+        // What a person may do, in the order it is read: see, change, move on.
+        $permissionConfig = [
+            'view' => [
+                'label' => __('filament-flow::messages.view'),
+                'icon' => 'heroicon-m-eye',
+                'on' => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+            ],
+            'edit' => [
+                'label' => __('filament-flow::messages.edit'),
+                'icon' => 'heroicon-m-pencil-square',
+                'on' => 'bg-primary-50 text-primary-600 dark:bg-primary-400/10 dark:text-primary-400',
+            ],
+            'transition' => [
+                'label' => __('filament-flow::messages.transition'),
+                'icon' => 'heroicon-m-arrow-path',
+                'on' => 'bg-success-50 text-success-600 dark:bg-success-400/10 dark:text-success-400',
+            ],
+        ];
     @endphp
 
     <div class="space-y-3">
+        {{-- The permissions change with the state: the summary says which one it describes. --}}
+        @if($stateLabel !== null && $assignedUsers->isNotEmpty())
+            <p class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <x-filament::icon icon="heroicon-m-flag" class="h-3.5 w-3.5" aria-hidden="true" />
+                {{ __('filament-flow::messages.permissions_in_state', ['state' => $stateLabel]) }}
+            </p>
+        @endif
+
         {{-- Assigned users --}}
-        @forelse($assignedUsers as $entry)
+        @forelse($assignedUsers as $assignment)
             @php
-                $nameParts = explode(' ', trim($entry['user']->name));
+                $nameParts = explode(' ', trim($assignment['user']->name));
                 $initials = count($nameParts) >= 2
                     ? mb_strtoupper(mb_substr($nameParts[0], 0, 1) . mb_substr(end($nameParts), 0, 1))
-                    : mb_strtoupper(mb_substr($entry['user']->name, 0, 2));
-                $colorIndex = crc32($entry['user']->name) % count($colors);
-                $typeCfg = $typeConfig[$entry['assignment_type']] ?? $typeConfig['primary'];
+                    : mb_strtoupper(mb_substr($assignment['user']->name, 0, 2));
+                $typeCfg = $typeConfig[$assignment['assignment_type']] ?? $typeConfig['primary'];
             @endphp
-            <div class="flex items-center gap-3 rounded-lg border p-3
-                @if($entry['has_overrides'])
-                    border-warning-300 bg-warning-50 dark:border-warning-600 dark:bg-warning-900/20
-                @else
-                    border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800
-                @endif
-            ">
-                {{-- Avatar --}}
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $colors[$colorIndex] }} text-xs font-semibold text-white">
+            <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+                {{-- Avatar: the colour of the kind of assignment, not a colour of its own --}}
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full {{ $typeCfg['bg'] }} text-xs font-semibold">
                     {{ $initials }}
                 </div>
 
                 {{-- User info --}}
                 <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                         <span class="truncate text-sm font-medium text-gray-950 dark:text-white">
-                            {{ $entry['user']->name }}
+                            {{ $assignment['user']->name }}
                         </span>
-                        @if(method_exists($entry['user'], 'getRoleNames') && $entry['user']->getRoleNames()->isNotEmpty())
-                            <span class="truncate text-xs text-gray-500 dark:text-gray-400">
-                                {{ $entry['user']->getRoleNames()->implode(', ') }}
-                            </span>
-                        @endif
+                        @foreach($assignment['roles'] as $roleLabel)
+                            <span class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $roleLabel }}</span>
+                        @endforeach
                     </div>
+
                     <div class="mt-1 flex flex-wrap items-center gap-1.5">
                         {{-- Type badge --}}
                         <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {{ $typeCfg['bg'] }}">
-                            <x-filament::icon :icon="$typeCfg['icon']" class="h-3 w-3" />
+                            <x-filament::icon :icon="$typeCfg['icon']" class="h-3 w-3" aria-hidden="true" />
                             {{ $typeCfg['label'] }}
                         </span>
 
                         {{-- Custom metadata badges --}}
-                        @foreach($entry['metadata_badges'] as $badge)
+                        @foreach($assignment['metadata_badges'] as $badge)
                             <span class="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {{ $badge['class'] ?? '' }}">
                                 @if(!empty($badge['icon']))
-                                    <x-filament::icon :icon="$badge['icon']" class="h-3 w-3" />
+                                    <x-filament::icon :icon="$badge['icon']" class="h-3 w-3" aria-hidden="true" />
                                 @endif
                                 {{ $badge['label'] }}
                             </span>
                         @endforeach
 
-                        {{-- Override badge --}}
-                        @if($entry['has_overrides'])
-                            <span class="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold uppercase bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400">
-                                <x-filament::icon icon="heroicon-m-shield-exclamation" class="h-3 w-3" />
+                        {{-- Override badge: the access that goes beyond the rules of the call --}}
+                        @if($assignment['has_overrides'])
+                            <span
+                                class="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold uppercase bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400"
+                                title="{{ __('filament-flow::messages.help_access_overrides') }}"
+                            >
+                                <x-filament::icon icon="heroicon-m-shield-exclamation" class="h-3 w-3" aria-hidden="true" />
                                 {{ __('filament-flow::messages.override') }}
                             </span>
                         @endif
                     </div>
+
+                    {{-- When, and by whose hand --}}
+                    @if($assignment['assigned_at'] !== null || $assignment['assigned_by'] !== null)
+                        <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-gray-500 dark:text-gray-400">
+                            @if($assignment['assigned_at'] !== null)
+                                <span class="inline-flex items-center gap-1">
+                                    <x-filament::icon icon="heroicon-m-calendar-days" class="h-3.5 w-3.5" aria-hidden="true" />
+                                    {{ __('filament-flow::messages.assigned_at', ['date' => $assignment['assigned_at']->translatedFormat($dateFormat)]) }}
+                                </span>
+                            @endif
+                            @if($assignment['assigned_by'] !== null)
+                                <span class="inline-flex items-center gap-1">
+                                    <x-filament::icon icon="heroicon-m-user-circle" class="h-3.5 w-3.5" aria-hidden="true" />
+                                    {{ __('filament-flow::messages.assigned_by', ['name' => $assignment['assigned_by']]) }}
+                                </span>
+                            @endif
+                        </p>
+                    @endif
                 </div>
 
-                {{-- Permission badges --}}
+                {{-- What this person may do, and what they may not: the three always stand
+                     together, so two people can be compared at a glance. --}}
                 <div class="flex shrink-0 items-center gap-1">
-                    @if($entry['can_view'])
-                        <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium
-                            @if($entry['override_view'])
-                                bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400
-                            @else
-                                bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300
-                            @endif
-                        " title="{{ __('filament-flow::messages.view') }}">
-                            <x-filament::icon icon="heroicon-m-eye" class="h-3.5 w-3.5" />
+                    @foreach($permissionConfig as $permission => $config)
+                        @php
+                            $granted = (bool) $assignment['can_'.$permission];
+                            $override = (bool) $assignment['override_'.$permission];
+                            $label = $config['label'].($granted ? '' : ' — '.__('filament-flow::messages.denied'));
+                        @endphp
+                        <span
+                            class="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium
+                                @if($override)
+                                    bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400
+                                @elseif($granted)
+                                    {{ $config['on'] }}
+                                @else
+                                    bg-gray-50 text-gray-300 dark:bg-gray-800/60 dark:text-gray-600
+                                @endif
+                            "
+                            role="img"
+                            aria-label="{{ $label }}"
+                            title="{{ $granted && $override ? $config['label'].' ('.__('filament-flow::messages.override').')' : $label }}"
+                        >
+                            <x-filament::icon :icon="$config['icon']" class="h-3.5 w-3.5" aria-hidden="true" />
                         </span>
-                    @endif
-                    @if($entry['can_edit'])
-                        <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium
-                            @if($entry['override_edit'])
-                                bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400
-                            @else
-                                bg-primary-50 text-primary-600 dark:bg-primary-400/10 dark:text-primary-400
-                            @endif
-                        " title="{{ __('filament-flow::messages.edit') }}">
-                            <x-filament::icon icon="heroicon-m-pencil-square" class="h-3.5 w-3.5" />
-                        </span>
-                    @endif
-                    @if($entry['can_transition'])
-                        <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium
-                            @if($entry['override_transition'])
-                                bg-warning-100 text-warning-700 dark:bg-warning-400/20 dark:text-warning-400
-                            @else
-                                bg-success-50 text-success-600 dark:bg-success-400/10 dark:text-success-400
-                            @endif
-                        " title="{{ __('filament-flow::messages.transition') }}">
-                            <x-filament::icon icon="heroicon-m-arrow-path" class="h-3.5 w-3.5" />
-                        </span>
-                    @endif
+                    @endforeach
                 </div>
             </div>
         @empty
             <div class="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/50">
                 <div class="flex items-center gap-2">
-                    <x-filament::icon icon="heroicon-m-information-circle" class="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                    <x-filament::icon icon="heroicon-m-information-circle" class="h-4 w-4 text-gray-400 dark:text-gray-500" aria-hidden="true" />
                     <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                         {{ __('filament-flow::messages.no_users_assigned') }}
                     </p>
@@ -137,17 +169,15 @@
                 <div class="flex flex-wrap gap-1.5">
                     @foreach($roleLabels as $role => $perms)
                         <span class="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                            {{ $role }}
+                            {{ $getRoleLabel($role) }}
                             <span class="flex items-center gap-0.5 text-gray-400 dark:text-gray-500">
-                                @if($perms['view'])
-                                    <x-filament::icon icon="heroicon-m-eye" class="h-3 w-3" />
-                                @endif
-                                @if($perms['edit'])
-                                    <x-filament::icon icon="heroicon-m-pencil-square" class="h-3 w-3" />
-                                @endif
-                                @if($perms['transition'])
-                                    <x-filament::icon icon="heroicon-m-arrow-path" class="h-3 w-3" />
-                                @endif
+                                @foreach($permissionConfig as $permission => $config)
+                                    @if($perms[$permission])
+                                        <span role="img" aria-label="{{ $config['label'] }}" title="{{ $config['label'] }}">
+                                            <x-filament::icon :icon="$config['icon']" class="h-3 w-3" aria-hidden="true" />
+                                        </span>
+                                    @endif
+                                @endforeach
                             </span>
                         </span>
                     @endforeach

@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Tables\Columns;
 use Closure;
 use Filament\Tables\Columns\Column;
 use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Support\RoleLabel;
 
 /**
  * The column that shows who holds a record: the faces of the people assigned, and how many of
@@ -19,6 +20,14 @@ class AssignmentSummaryColumn extends Column
     protected bool $withAvatarTooltip = true;
 
     protected ?Closure $avatarDecoratorCallback = null;
+
+    /**
+     * The words the host uses for its own roles, keyed by role name: the tooltip of an avatar
+     * reads them instead of the names the roles are stored under.
+     *
+     * @var array<string, string>
+     */
+    protected array $roleLabels = [];
 
     protected function setUp(): void
     {
@@ -58,6 +67,14 @@ class AssignmentSummaryColumn extends Column
         return $this;
     }
 
+    /** @param array<string, string> $labels */
+    public function roleLabels(array $labels): static
+    {
+        $this->roleLabels = $labels;
+
+        return $this;
+    }
+
     public function getAvatarDecorator(): ?Closure
     {
         return $this->avatarDecoratorCallback;
@@ -88,7 +105,7 @@ class AssignmentSummaryColumn extends Column
                     : mb_strtoupper(mb_substr($user->name, 0, 2));
 
                 $roles = method_exists($user, 'getRoleNames')
-                    ? $user->getRoleNames()->implode(', ')
+                    ? $user->getRoleNames()->map(fn ($role): string => RoleLabel::for((string) $role, $this->roleLabels))->implode(', ')
                     : '';
 
                 return [

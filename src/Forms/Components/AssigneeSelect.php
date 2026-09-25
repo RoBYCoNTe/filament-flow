@@ -6,6 +6,7 @@ use Closure;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
 use Illuminate\Support\Collection;
+use RoBYCoNTe\FilamentFlow\Support\RoleLabel;
 use RoBYCoNTe\FilamentFlow\Support\UserModel;
 
 /**
@@ -21,6 +22,14 @@ class AssigneeSelect extends Select
     protected string $assignmentType = 'primary';
 
     protected ?Closure $usersQueryModifier = null;
+
+    /**
+     * The words the host uses for its own roles, keyed by role name: a name is a key, and a
+     * list of people reads like a database without them.
+     *
+     * @var array<string, string>
+     */
+    protected array $roleLabels = [];
 
     protected function setUp(): void
     {
@@ -54,6 +63,14 @@ class AssigneeSelect extends Select
     public function usersQuery(Closure $modifier): static
     {
         $this->usersQueryModifier = $modifier;
+
+        return $this;
+    }
+
+    /** @param array<string, string> $labels */
+    public function roleLabels(array $labels): static
+    {
+        $this->roleLabels = $labels;
 
         return $this;
     }
@@ -92,7 +109,10 @@ class AssigneeSelect extends Select
             $roles = $user->getAttribute('roles');
 
             if ($roles instanceof Collection && $roles->isNotEmpty()) {
-                $label .= ' ('.$roles->pluck('name')->implode(', ').')';
+                // The role names are keys: the label reads in the words of the host.
+                $label .= ' ('.$roles
+                    ->map(fn ($role): string => RoleLabel::for((string) $role->name, $this->roleLabels))
+                    ->implode(', ').')';
             }
             $options[$user->getKey()] = $label;
         }
