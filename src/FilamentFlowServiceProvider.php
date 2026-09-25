@@ -137,6 +137,7 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
         FilamentAsset::register([
             Js::make('formula-editor', __DIR__.'/../resources/js/formula-editor.js'),
             Css::make('formula-editor', __DIR__.'/../resources/css/formula-editor.css'),
+            Css::make('timeline', __DIR__.'/../resources/css/timeline.css'),
         ], package: 'robyconte/filament-flow');
 
         Livewire::component('assignment-manager', AssignmentManager::class);

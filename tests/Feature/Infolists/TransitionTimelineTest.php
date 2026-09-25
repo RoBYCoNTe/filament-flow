@@ -2,7 +2,13 @@
 
 namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Infolists;
 
+use Illuminate\Support\Facades\Lang;
+use RoBYCoNTe\FilamentFlow\Contracts\HasFieldPresentation;
+use RoBYCoNTe\FilamentFlow\Infolists\Components\TransitionTimeline;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionMetadata;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSnapshot;
+use RoBYCoNTe\FilamentFlow\Presentation\FieldPresentation;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
@@ -272,5 +278,636 @@ class TransitionTimelineTest extends TestCase
 
         $this->assertEquals(1, $visibleCount);
         $this->assertEquals(2, $totalCount);
+    }
+
+    /** @see TransitionTimeline */
+    public function test_component_has_a_translated_label_and_sensible_defaults(): void
+    {
+        $component = TransitionTimeline::make();
+
+        $this->assertSame(__('filament-flow::messages.timeline_label'), $component->getLabel());
+        $this->assertSame(10, $component->getLimit());
+        $this->assertSame(100, $component->getLoadLimit());
+        $this->assertTrue($component->isExpandable());
+        $this->assertTrue($component->showsMetadata());
+        $this->assertFalse($component->showsIpAddress());
+        $this->assertFalse($component->showsSnapshots());
+        $this->assertStringContainsString('H:i', $component->getDateTimeFormat());
+    }
+
+    public function test_host_can_override_every_option(): void
+    {
+        $component = TransitionTimeline::make()
+            ->limit(3)
+            ->loadLimit(50)
+            ->expandable(false)
+            ->showMetadata(false)
+            ->showIpAddress()
+            ->showSnapshots()
+            ->dateTimeFormat('Y-m-d');
+
+        $this->assertSame(3, $component->getLimit());
+        $this->assertSame(50, $component->getLoadLimit());
+        $this->assertFalse($component->isExpandable());
+        $this->assertFalse($component->showsMetadata());
+        $this->assertTrue($component->showsIpAddress());
+        $this->assertTrue($component->showsSnapshots());
+        $this->assertSame('Y-m-d', $component->getDateTimeFormat());
+    }
+
+    public function test_load_limit_never_goes_below_the_visible_limit(): void
+    {
+        $component = TransitionTimeline::make()->limit(10)->loadLimit(5);
+
+        $this->assertSame(10, $component->getLoadLimit());
+    }
+
+    public function test_timeline_eager_loads_the_metadata_only_when_asked(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        $pending = $this->createWorkflowState($workflow, [
+            'name' => 'pending',
+            'label' => 'Pending',
+            'is_initial' => true,
+            'sort_order' => 0,
+        ]);
+
+        $processing = $this->createWorkflowState($workflow, [
+            'name' => 'processing',
+            'label' => 'Processing',
+            'sort_order' => 1,
+        ]);
+
+        $transition = $this->createWorkflowTransition($workflow, $pending, $processing);
+
+        $order = Order::create([
+            'order_number' => 'ORD-TL-100',
+            'customer_name' => 'Timeline Customer',
+            'total_amount' => 50.00,
+            'state' => 'processing',
+        ]);
+
+        $history = WorkflowStateTransition::create([
+            'transitionable_type' => Order::class,
+            'transitionable_id' => $order->id,
+            'workflow_id' => $workflow->id,
+            'transition_id' => $transition->id,
+            'from_state' => 'pending',
+            'to_state' => 'processing',
+            'from_state_label' => 'Pending',
+            'to_state_label' => 'Processing',
+            'is_visible' => true,
+            'created_at' => now(),
+        ]);
+
+        WorkflowTransitionMetadata::create([
+            'transition_history_id' => $history->id,
+            'form_data' => ['amount' => '2.500'],
+        ]);
+
+        $eager = TransitionTimeline::make()->model($order)->getTimeline();
+
+        $this->assertTrue($eager->first()->relationLoaded('metadata'));
+
+        $plain = TransitionTimeline::make()
+            ->showMetadata(false)
+            ->model($order)
+            ->getTimeline();
+
+        $this->assertFalse($plain->first()->relationLoaded('metadata'));
+    }
+
+    public function test_snapshots_load_only_when_asked_and_the_diff_keeps_what_moved(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        $pending = $this->createWorkflowState($workflow, [
+            'name' => 'pending',
+            'label' => 'Pending',
+            'is_initial' => true,
+            'sort_order' => 0,
+        ]);
+
+        $processing = $this->createWorkflowState($workflow, [
+            'name' => 'processing',
+            'label' => 'Processing',
+            'sort_order' => 1,
+        ]);
+
+        $transition = $this->createWorkflowTransition($workflow, $pending, $processing);
+
+        $order = Order::create([
+            'order_number' => 'ORD-TL-101',
+            'customer_name' => 'Timeline Customer',
+            'total_amount' => 75.00,
+            'state' => 'processing',
+        ]);
+
+        $history = WorkflowStateTransition::create([
+            'transitionable_type' => Order::class,
+            'transitionable_id' => $order->id,
+            'workflow_id' => $workflow->id,
+            'transition_id' => $transition->id,
+            'from_state' => 'pending',
+            'to_state' => 'processing',
+            'from_state_label' => 'Pending',
+            'to_state_label' => 'Processing',
+            'is_visible' => true,
+            'created_at' => now(),
+        ]);
+
+        WorkflowTransitionSnapshot::create([
+            'transition_history_id' => $history->id,
+            'snapshot_type' => 'before',
+            'record_data' => ['total_amount' => 50, 'state' => 'pending', 'note' => 'same'],
+        ]);
+
+        WorkflowTransitionSnapshot::create([
+            'transition_history_id' => $history->id,
+            'snapshot_type' => 'after',
+            'record_data' => ['total_amount' => 75, 'state' => 'processing', 'note' => 'same'],
+        ]);
+
+        $component = TransitionTimeline::make()->showSnapshots()->model($order);
+        $item = $component->getTimeline()->first();
+
+        $this->assertTrue($item->relationLoaded('snapshotBefore'));
+        $this->assertTrue($item->relationLoaded('snapshotAfter'));
+
+        $diff = $component->getSnapshotDiff($item);
+
+        $this->assertSame(['total_amount', 'state'], array_column($diff, 'field'));
+        $this->assertSame(50, $diff[0]['before']);
+        $this->assertSame(75, $diff[0]['after']);
+
+        $quiet = TransitionTimeline::make()->model($order)->getTimeline()->first();
+
+        $this->assertFalse($quiet->relationLoaded('snapshotBefore'));
+        $this->assertSame([], TransitionTimeline::make()->getSnapshotDiff($quiet));
+    }
+
+    public function test_field_changes_are_counted_only_when_metadata_is_asked(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        $pending = $this->createWorkflowState($workflow, [
+            'name' => 'pending',
+            'label' => 'Pending',
+            'is_initial' => true,
+            'sort_order' => 0,
+        ]);
+
+        $processing = $this->createWorkflowState($workflow, [
+            'name' => 'processing',
+            'label' => 'Processing',
+            'sort_order' => 1,
+        ]);
+
+        $transition = $this->createWorkflowTransition($workflow, $pending, $processing);
+
+        $order = Order::create([
+            'order_number' => 'ORD-TL-102',
+            'customer_name' => 'Timeline Customer',
+            'total_amount' => 50.00,
+            'state' => 'processing',
+        ]);
+
+        $history = WorkflowStateTransition::create([
+            'transitionable_type' => Order::class,
+            'transitionable_id' => $order->id,
+            'workflow_id' => $workflow->id,
+            'transition_id' => $transition->id,
+            'from_state' => 'pending',
+            'to_state' => 'processing',
+            'from_state_label' => 'Pending',
+            'to_state_label' => 'Processing',
+            'is_visible' => true,
+            'created_at' => now(),
+        ]);
+
+        WorkflowTransitionMetadata::create([
+            'transition_history_id' => $history->id,
+            'field_changes' => [
+                'total_amount' => ['from' => 50, 'to' => 75],
+                'note' => ['from' => 'a', 'to' => 'b'],
+            ],
+        ]);
+
+        $asked = TransitionTimeline::make()->model($order);
+
+        $this->assertSame(2, $asked->countFieldChanges($asked->getTimeline()->first()));
+
+        $ignored = TransitionTimeline::make()->showMetadata(false)->model($order);
+
+        $this->assertNull($ignored->countFieldChanges($ignored->getTimeline()->first()));
+    }
+
+    public function test_marker_wears_the_colour_the_workflow_gave_the_state(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        $pending = $this->createWorkflowState($workflow, [
+            'name' => 'pending',
+            'label' => 'Pending',
+            'color' => 'gray',
+            'is_initial' => true,
+            'sort_order' => 0,
+        ]);
+
+        $processing = $this->createWorkflowState($workflow, [
+            'name' => 'processing',
+            'label' => 'Processing',
+            'color' => 'success',
+            'icon' => 'heroicon-m-check-circle',
+            'sort_order' => 1,
+        ]);
+
+        $transition = $this->createWorkflowTransition($workflow, $pending, $processing);
+
+        $order = Order::create([
+            'order_number' => 'ORD-TL-103',
+            'customer_name' => 'Timeline Customer',
+            'total_amount' => 50.00,
+            'state' => 'processing',
+        ]);
+
+        $history = WorkflowStateTransition::create([
+            'transitionable_type' => Order::class,
+            'transitionable_id' => $order->id,
+            'workflow_id' => $workflow->id,
+            'transition_id' => $transition->id,
+            'from_state' => 'pending',
+            'to_state' => 'processing',
+            'from_state_label' => 'Pending',
+            'to_state_label' => 'Processing',
+            'is_visible' => true,
+            'created_at' => now(),
+        ]);
+
+        $component = TransitionTimeline::make()->model($order);
+        $marker = $component->getMarkerFor($history);
+
+        $this->assertSame('success', $marker['color']);
+        $this->assertSame('heroicon-m-check-circle', $marker['icon']);
+
+        $action = $history->replicate()->fill([
+            'from_state' => 'processing',
+            'transition_id' => null,
+            'created_at' => now(),
+        ]);
+        $action->save();
+
+        $this->assertSame(['color' => null, 'icon' => null], $component->getMarkerFor($action));
+    }
+
+    public function test_access_filter_decides_what_the_timeline_counts_and_shows(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        $pending = $this->createWorkflowState($workflow, [
+            'name' => 'pending',
+            'label' => 'Pending',
+            'is_initial' => true,
+            'sort_order' => 0,
+        ]);
+
+        $processing = $this->createWorkflowState($workflow, [
+            'name' => 'processing',
+            'label' => 'Processing',
+            'sort_order' => 1,
+        ]);
+
+        $transition = $this->createWorkflowTransition($workflow, $pending, $processing);
+
+        $order = Order::create([
+            'order_number' => 'ORD-TL-104',
+            'customer_name' => 'Timeline Customer',
+            'total_amount' => 50.00,
+            'state' => 'processing',
+        ]);
+
+        foreach ([true, false] as $isVisible) {
+            WorkflowStateTransition::create([
+                'transitionable_type' => Order::class,
+                'transitionable_id' => $order->id,
+                'workflow_id' => $workflow->id,
+                'transition_id' => $transition->id,
+                'from_state' => 'pending',
+                'to_state' => 'processing',
+                'from_state_label' => 'Pending',
+                'to_state_label' => 'Processing',
+                'is_visible' => $isVisible,
+                'created_at' => now(),
+            ]);
+        }
+
+        $filtered = TransitionTimeline::make()->model($order);
+
+        $this->assertSame(1, $filtered->getTimeline()->count());
+        $this->assertSame(1, $filtered->getTotalCount());
+
+        $open = TransitionTimeline::make()->filterByAccess(false)->model($order);
+
+        $this->assertSame(2, $open->getTimeline()->count());
+        $this->assertSame(2, $open->getTotalCount());
+    }
+
+    public function test_durations_under_a_minute_are_left_out(): void
+    {
+        $component = TransitionTimeline::make();
+
+        $this->assertNull($component->formatDuration(null));
+        $this->assertNull($component->formatDuration(30));
+        $this->assertNotNull($component->formatDuration(3600));
+    }
+
+    public function test_every_kind_of_value_draws_as_text(): void
+    {
+        $component = TransitionTimeline::make();
+
+        $this->assertSame('—', $component->formatValue(null));
+        $this->assertSame('true', $component->formatValue(true));
+        $this->assertSame('text', $component->formatValue('text'));
+        $this->assertSame('{"a":1}', $component->formatValue(['a' => 1]));
+        $this->assertSame('—', $component->formatValue(["\xB1"]));
+    }
+
+    /**
+     * The fields the transition moved read in the words of the host: the label, the shape of
+     * the value, the block it belongs to — and what the host keeps out of the history stays
+     * out of it.
+     */
+    public function test_changed_fields_read_through_the_host_presentation(): void
+    {
+        $record = new class extends Order implements HasFieldPresentation
+        {
+            public function fieldPresentation(string $path, mixed $value): ?FieldPresentation
+            {
+                return match ($path) {
+                    'total_amount' => FieldPresentation::text(
+                        'Importo',
+                        $value === null ? null : '€ '.number_format((float) $value, 2, ',', '.'),
+                        'Importi',
+                    ),
+                    'internal' => FieldPresentation::hidden('Interno'),
+                    default => null,
+                };
+            }
+        };
+
+        $entry = $this->historyEntry([
+            'field_changes' => [
+                'total_amount' => ['from' => 50, 'to' => 75],
+                'internal' => ['from' => 'a', 'to' => 'b'],
+                'order_number' => ['from' => null, 'to' => 'ORD-1'],
+            ],
+        ]);
+
+        $changed = TransitionTimeline::make()->model($record)->getChangedFields($entry);
+
+        $this->assertSame(1, $changed['hidden']);
+        $this->assertCount(2, $changed['fields']);
+
+        $this->assertSame('Importo', $changed['fields'][0]['label']);
+        $this->assertSame('Importi', $changed['fields'][0]['group']);
+        $this->assertSame('€ 50,00', $changed['fields'][0]['before']->toInlineString());
+        $this->assertSame('€ 75,00', $changed['fields'][0]['after']->toInlineString());
+
+        // The label of a path the custom presenter does not claim comes from HasFieldLabels.
+        $this->assertSame('Order number', $changed['fields'][1]['label']);
+        $this->assertSame('—', $changed['fields'][1]['before']->toInlineString());
+        $this->assertSame('ORD-1', $changed['fields'][1]['after']->toInlineString());
+
+        $this->assertSame(
+            ['Importi' => ['total_amount'], '' => ['order_number']],
+            array_map(
+                static fn (array $rows): array => array_column($rows, 'path'),
+                TransitionTimeline::make()->groupFields($changed['fields']),
+            ),
+        );
+    }
+
+    public function test_the_submitted_data_is_flattened_presented_and_grouped(): void
+    {
+        $record = new class extends Order implements HasFieldPresentation
+        {
+            public function fieldPresentation(string $path, mixed $value): ?FieldPresentation
+            {
+                return match ($path) {
+                    'applicant.first_name' => FieldPresentation::text('Nome', $value, '1. Richiedente'),
+                    'documents.report' => FieldPresentation::files(
+                        'Verbale',
+                        array_map(
+                            static fn (string $name): array => ['name' => $name, 'url' => null],
+                            $value ?? [],
+                        ),
+                        '4. Documenti',
+                    ),
+                    default => null,
+                };
+            }
+        };
+
+        $entry = $this->historyEntry([
+            'form_data' => [
+                'applicant' => ['first_name' => 'Ada', 'email' => null],
+                'note' => 'a note',
+                'documents' => ['report' => ['verbale.pdf']],
+                'empty_list' => [],
+            ],
+        ]);
+
+        // The empty paths are left out, and counted: a form carries dozens of them.
+        $submitted = TransitionTimeline::make()->model($record)->getSubmittedFields($entry);
+
+        $this->assertSame(2, $submitted['hidden']);
+        $this->assertSame(
+            ['applicant.first_name', 'note', 'documents.report'],
+            array_column($submitted['fields'], 'path'),
+        );
+
+        $this->assertSame(
+            ['1. Richiedente', '', '4. Documenti'],
+            array_keys(TransitionTimeline::make()->groupFields($submitted['fields'])),
+        );
+
+        $this->assertSame(1, count($submitted['fields'][2]['presentation']->value));
+        $this->assertSame('verbale.pdf', $submitted['fields'][2]['presentation']->value[0]['name']);
+
+        // Asking for them shows the empty paths too.
+        $everything = TransitionTimeline::make()
+            ->hideEmptyFields(false)
+            ->model($record)
+            ->getSubmittedFields($entry);
+
+        $this->assertSame(0, $everything['hidden']);
+        $this->assertCount(5, $everything['fields']);
+    }
+
+    public function test_the_changed_fields_are_preferred_over_the_whole_form(): void
+    {
+        $entry = $this->historyEntry([
+            'form_data' => ['note' => 'the whole form'],
+        ]);
+
+        $this->assertSame([], TransitionTimeline::make()->getChangedFields($entry)['fields']);
+        $this->assertSame(
+            ['note'],
+            array_column(TransitionTimeline::make()->getSubmittedFields($entry)['fields'], 'path'),
+        );
+    }
+
+    /**
+     * A path nobody claims is named with the words of the key — and those words are asked of
+     * the translations first, because a host that translates its own vocabulary has them
+     * written down already.
+     */
+    public function test_the_label_of_an_unknown_path_is_translated_when_the_words_are_known(): void
+    {
+        // The vocabulary of the host, as a JSON translation file: the same place the words
+        // declared by a scheme are translated from.
+        $directory = sys_get_temp_dir().'/filament-flow-lang-'.uniqid();
+        mkdir($directory);
+        file_put_contents($directory.'/en.json', json_encode([
+            'Amount' => 'Importo',
+            'Vat Number' => 'Partita IVA',
+            'applicant.vat_number' => 'Partita IVA del richiedente',
+        ]));
+
+        Lang::addJsonPath($directory);
+
+        $component = TransitionTimeline::make();
+
+        // The words of the key are translated.
+        $this->assertSame('Importo', $component->presentationFor('intervention.amount', 5)->label);
+
+        // The path is the most precise key, and wins over the headlined words.
+        $this->assertSame(
+            'Partita IVA del richiedente',
+            $component->presentationFor('applicant.vat_number', '123')->label,
+        );
+
+        // Nothing known: the words of the key stand as they are.
+        $this->assertSame('Saved At', $component->presentationFor('meta.saved_at', 'now')->label);
+
+        unlink($directory.'/en.json');
+        rmdir($directory);
+    }
+
+    public function test_the_paths_the_host_hides_never_reach_the_history(): void
+    {
+        $entry = $this->historyEntry([
+            'form_data' => [
+                'meta' => ['saved_at' => 'now'],
+                'extra' => ['note' => 'x'],
+                'applicant' => ['first_name' => 'Ada'],
+            ],
+        ]);
+
+        $component = TransitionTimeline::make()->hideFields(['extra', 'meta.saved_at']);
+        $submitted = $component->getSubmittedFields($entry);
+
+        // The subtree and the exact path are left out, and counted with the empties.
+        $this->assertSame(['applicant.first_name'], array_column($submitted['fields'], 'path'));
+        $this->assertSame(2, $submitted['hidden']);
+
+        $this->assertTrue($component->hidesPath('extra.note'));
+        $this->assertTrue($component->hidesPath('meta.saved_at'));
+        $this->assertFalse($component->hidesPath('meta.submitted_at'));
+        $this->assertFalse($component->hidesPath('applicant.first_name'));
+        $this->assertSame(['extra', 'meta.saved_at'], $component->hiddenFields());
+    }
+
+    public function test_a_hidden_path_takes_its_change_with_it(): void
+    {
+        $entry = $this->historyEntry([
+            'field_changes' => [
+                'extra.note' => ['from' => 'a', 'to' => 'b'],
+                'applicant.first_name' => ['from' => 'Ada', 'to' => 'Grace'],
+            ],
+        ]);
+
+        $changed = TransitionTimeline::make()->hideFields(['extra.*'])->getChangedFields($entry);
+
+        $this->assertSame(['applicant.first_name'], array_column($changed['fields'], 'path'));
+        $this->assertSame(1, $changed['hidden']);
+    }
+
+    public function test_whether_the_transition_was_compared_at_all(): void
+    {
+        // Compared, and nothing moved: an answer of its own.
+        $quiet = $this->historyEntry(['field_changes' => []]);
+        $component = TransitionTimeline::make();
+
+        $this->assertTrue($component->wasCompared($quiet));
+        $this->assertSame([], $component->getChangedFields($quiet)['fields']);
+
+        // No delta at all: nobody looked — the rows logged before the engine recorded them.
+        $silent = $this->historyEntry(['form_data' => ['note' => 'x']]);
+
+        $this->assertFalse($component->wasCompared($silent));
+
+        // With the metadata off, there is nothing to look at in the first place.
+        $this->assertFalse(TransitionTimeline::make()->showMetadata(false)->wasCompared($quiet));
+
+        // And a host may keep the values of an uncompared entry out of sight.
+        $this->assertTrue($component->showsSubmittedData());
+        $this->assertFalse(TransitionTimeline::make()->showSubmittedData(false)->showsSubmittedData());
+    }
+
+    public function test_groups_fold_only_when_there_is_something_to_navigate(): void
+    {
+        $component = TransitionTimeline::make();
+
+        // One block of a few fields: read at a glance, no fold.
+        $this->assertFalse($component->foldsGroups([
+            ['group' => 'Ente e contatti'],
+            ['group' => 'Ente e contatti'],
+        ]));
+
+        // Several blocks: navigated.
+        $this->assertTrue($component->foldsGroups([
+            ['group' => 'Ente e contatti'],
+            ['group' => 'Autocertificazioni'],
+        ]));
+
+        // One long block: navigated too.
+        $this->assertTrue($component->foldsGroups(
+            array_fill(0, 9, ['group' => 'Ente e contatti']),
+        ));
+
+        // A host that wants everything in sight says so.
+        $this->assertFalse(TransitionTimeline::make()->collapseGroups(false)->foldsGroups([
+            ['group' => 'Ente e contatti'],
+            ['group' => 'Autocertificazioni'],
+        ]));
+
+        $this->assertTrue(TransitionTimeline::make()->collapsibleGroups());
+        $this->assertFalse(TransitionTimeline::make()->collapseGroups(false)->collapsibleGroups());
+    }
+
+    /** @param array<string,mixed> $metadata */
+    private function historyEntry(array $metadata = []): WorkflowStateTransition
+    {
+        $entry = WorkflowStateTransition::create([
+            'transitionable_type' => Order::class,
+            'transitionable_id' => '1',
+            'from_state' => 'pending',
+            'to_state' => 'processing',
+            'from_state_label' => 'Pending',
+            'to_state_label' => 'Processing',
+            'is_visible' => true,
+            'created_at' => now(),
+        ]);
+
+        if ($metadata !== []) {
+            WorkflowTransitionMetadata::create(array_merge(
+                ['transition_history_id' => $entry->id],
+                $metadata,
+            ));
+        }
+
+        return $entry->refresh();
     }
 }

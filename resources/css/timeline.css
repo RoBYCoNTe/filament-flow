@@ -1,0 +1,6 @@
+/* Alpine keeps `x-cloak` attributes until it boots: this rule hides what waits
+ * behind a fold for that first moment, so the timeline never flashes its whole
+ * history before collapsing to the limit. */
+[x-cloak] {
+    display: none !important;
+}
