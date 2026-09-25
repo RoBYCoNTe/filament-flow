@@ -9,6 +9,7 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionMetadata;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSnapshot;
+use RoBYCoNTe\FilamentFlow\Support\FieldChanges;
 use Spatie\ModelStates\State;
 
 /**
@@ -83,8 +84,10 @@ trait LogsTransitionHistory
             // Extract transition notes if enabled
             $notes = $this->extractTransitionNotes();
 
-            // Determine if we have metadata/snapshots to store
-            $hasMetadata = ! empty($this->pendingTransitionData);
+            // Determine if we have metadata/snapshots to store: the values the transition
+            // carried, the fields it moved, or both.
+            $fieldChanges = $this->resolveFieldChanges($field);
+            $hasMetadata = ! empty($this->pendingTransitionData) || ! empty($fieldChanges);
             $hasSnapshot = true; // Always capture snapshots for audit trail
 
             // Create transition history record
@@ -114,6 +117,7 @@ trait LogsTransitionHistory
                 WorkflowTransitionMetadata::create([
                     'transition_history_id' => $historyRecord->id,
                     'form_data' => $this->pendingTransitionData,
+                    'field_changes' => $fieldChanges,
                 ]);
             }
 
@@ -140,6 +144,81 @@ trait LogsTransitionHistory
             // Log but don't fail if logging fails
             report($e);
         }
+    }
+
+    /**
+     * The delta this transition wrote: the paths whose value moved between the snapshot taken
+     * before it and the record as it stands now.
+     *
+     * The answer is an array in both cases the comparison runs — the paths that moved, or none
+     * at all: an empty array says "compared, nothing moved", which is not the same as `null`
+     * ("nobody compared"). The history reads the difference: a row with no delta that was never
+     * compared can only show the values it carried, while a row compared and found quiet has an
+     * answer of its own.
+     *
+     * The values live in the attributes the host names (`field_changes.attribute`), which may
+     * hold a map, a list or a single value: the paths a change row names are the paths the host
+     * itself uses (see `HasFieldLabels` and `HasFieldPresentation`).
+     *
+     * @return array<string, array{from: mixed, to: mixed}>|null
+     */
+    protected function resolveFieldChanges(string $stateColumn): ?array
+    {
+        if (! config('filament-flow.field_changes.enabled', true)) {
+            return null;
+        }
+
+        $attributes = (array) config('filament-flow.field_changes.attribute', 'form_data');
+        $ignore = (array) config('filament-flow.field_changes.ignore', []);
+        $changes = [];
+
+        foreach ($attributes as $attribute) {
+            if (! is_string($attribute) || $attribute === '') {
+                continue;
+            }
+
+            // What the record held before the change: the values the host handed over when it
+            // saved them itself, else the snapshot taken as the transition began.
+            $before = $this->decodeFieldAttribute(
+                $this->fieldValuesBefore[$attribute] ?? data_get($this->preTransitionSnapshot ?? [], $attribute),
+                $attribute,
+            );
+            $after = $this->decodeFieldAttribute(data_get($this->getAttributes(), $attribute), $attribute);
+
+            // What the record holds now, and what the transition was given: a host may write
+            // its values after the transition, and the payload is then the delta.
+            $changes += FieldChanges::between($before, $after, $ignore);
+
+            if (config('filament-flow.field_changes.payload', false)) {
+                $changes = array_merge(
+                    $changes,
+                    FieldChanges::applied($before, $this->pendingTransitionData ?? [], $ignore),
+                );
+            }
+        }
+
+        return $changes;
+    }
+
+    /**
+     * @return array<array-key,mixed>
+     */
+    protected function decodeFieldAttribute(mixed $value, string $attribute): array
+    {
+        if (is_array($value)) {
+            return array_is_list($value) ? [$attribute => $value] : $value;
+        }
+
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+
+            if (is_array($decoded)) {
+                return array_is_list($decoded) ? [$attribute => $decoded] : $decoded;
+            }
+        }
+
+        // A column that holds one value is a field of its own, named as the host names it.
+        return $value === null || $value === '' ? [] : [$attribute => $value];
     }
 
     /**

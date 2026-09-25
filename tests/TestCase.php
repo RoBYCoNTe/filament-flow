@@ -247,12 +247,20 @@ abstract class TestCase extends BaseTestCase
                 $table->timestamp('processed_at')->nullable();
                 $table->timestamp('shipped_at')->nullable();
                 $table->timestamp('delivered_at')->nullable();
+                // The values a host keeps as a map: the field changes are read from here.
+                $table->json('form_data')->nullable();
                 $table->timestamps();
             });
         } else {
             if (! Schema::hasColumn('test_orders', 'user_id')) {
                 Schema::table('test_orders', function (Blueprint $table) {
                     $table->foreignId('user_id')->nullable();
+                });
+            }
+
+            if (! Schema::hasColumn('test_orders', 'form_data')) {
+                Schema::table('test_orders', function (Blueprint $table) {
+                    $table->json('form_data')->nullable();
                 });
             }
         }

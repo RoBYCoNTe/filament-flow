@@ -95,6 +95,32 @@ trait HasDatabaseTransitions
     protected ?array $preTransitionSnapshot = null;
 
     /**
+     * The values the fields held before the change, when the host wrote them itself — see
+     * {@see withFieldValuesBefore()}.
+     *
+     * @var array<string, mixed>
+     */
+    protected array $fieldValuesBefore = [];
+
+    /**
+     * The values the fields held before the change the host is about to make, keyed by attribute
+     * (`['form_data' => [...]]`).
+     *
+     * A host that saves the record itself before asking for a transition — because a refused
+     * transition must not leave the values of an attempt behind — leaves the engine nothing to
+     * compare: the record already holds the new values, and the payload, when the host passes the
+     * whole form, equals them. With this the history still says what actually moved.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    public function withFieldValuesBefore(array $values): static
+    {
+        $this->fieldValuesBefore = array_merge($this->fieldValuesBefore, $values);
+
+        return $this;
+    }
+
+    /**
      * Override transitionTo to handle database transitions
      *
      * @param  string|State  $state  the state the record moves to

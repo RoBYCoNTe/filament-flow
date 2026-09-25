@@ -95,6 +95,65 @@ Redis is recommended for production because it supports native cache tags, enabl
 
 When `log_transition_notes` is `true`, the value of the field named by `transition_notes_field` in a transition form is persisted to `workflow_state_transitions.notes`.
 
+## Field Changes
+
+```php
+/**
+ * The delta of the values a transition moved, recorded beside the form data so the history
+ * can show what changed instead of the whole form.
+ *
+ * `attribute` names the column (or columns) that hold the values: a map is opened down to its
+ * leaves, a list stays whole. `ignore` leaves paths out, with `*` wildcards.
+ */
+'field_changes' => [
+    'enabled' => true,
+    'attribute' => 'form_data',
+    'payload' => false,
+    'ignore' => [],
+],
+```
+
+With `enabled`, every logged transition computes the difference between the record as it stood
+before the transition and the record as it stands after it, and stores it in
+`workflow_transition_metadata.field_changes` as `['path' => ['from' => mixed, 'to' => mixed]]`.
+The comparison runs on paths: a map is opened to its leaves (`intervention.location.province`),
+while a list — the rows of a repeater, the files of a document set — stays whole, because a row
+is the unit a person changed. A number written `5000` and `5000.00` is not a change, and neither
+is a missing value against an empty one.
+
+Three answers, and they are not the same thing:
+
+| `field_changes` | Meaning |
+|---|---|
+| `['path' => ['from' => …, 'to' => …]]` | The transition moved these paths. |
+| `[]` | The comparison ran, and **nothing moved**: a save that changed nothing says so. |
+| `null` | Nobody compared: the row predates this setting, or `enabled` is off. The history can only show the values the transition carried. |
+
+`attribute` may name more than one column (`['form_data', 'settings']`). A column that holds one
+scalar counts as a field of its own, named as the column is. Paths listed in `ignore` are left
+out of the delta; a transition that moves nothing records no metadata at all.
+
+`payload` decides whether **what a transition was given** counts as the delta it wrote. A host
+that writes the values *after* the transition — so a refused transition leaves nothing of the
+attempt behind — holds the old values when the log is written, and the payload (keyed by record
+path) is then the only place the delta exists: set it to `true`. Leave it `false` when the
+payload is keyed by form field name and the engine maps it onto the record through the declared
+transition fields.
+
+And a host that writes the values **before** the transition has to say what the record held a
+moment earlier: the engine can only compare what it sees, and by then the record already carries
+the new values (nor does the payload help — a whole form equals itself).
+
+```php
+$application->withFieldValuesBefore(['form_data' => $application->form_data]);
+
+$application->saveFormData($state, $user);
+$application->transitionTo($state, $state);
+```
+
+The values are consumed by the next logged transition, and forgotten with the rest of the
+transition state.
+
 ## Form Builder Configuration
 
 ```php

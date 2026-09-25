@@ -70,6 +70,7 @@ class Order extends Model implements HasFieldLabels
         'processed_at',
         'shipped_at',
         'delivered_at',
+        'form_data',
     ];
 
     protected $casts = [
@@ -78,6 +79,7 @@ class Order extends Model implements HasFieldLabels
         'processed_at' => 'datetime',
         'shipped_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'form_data' => 'array',
     ];
 
     /**

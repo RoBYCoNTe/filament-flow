@@ -106,6 +106,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Field changes
+    |--------------------------------------------------------------------------
+    |
+    | The delta of the values a transition moved, recorded beside the form data so
+    | the history can show what changed instead of the whole form.
+    |
+    | `attribute` names the column (or columns) that hold the values: a map is
+    | opened down to its leaves, a list stays whole. `ignore` leaves paths out,
+    | with `*` wildcards.
+    |
+    */
+
+    'field_changes' => [
+        'enabled' => true,
+        'attribute' => 'form_data',
+
+        /**
+         * Whether what a transition is given counts as the delta it wrote. True when the host
+         * keys the payload by record path (`intervention.amount_requested`) and writes it after
+         * the transition, so the record holds the old values when the log is written. False
+         * when the payload is keyed by form field name and the engine maps it onto the record.
+         */
+        'payload' => false,
+        'ignore' => [],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | State Access Control Configuration
     |--------------------------------------------------------------------------
     |

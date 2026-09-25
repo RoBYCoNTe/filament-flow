@@ -197,6 +197,7 @@ trait ResolvesWorkflowStates
         $this->pendingTransitionData = null;
         $this->pendingTransitionInstance = null;
         $this->preTransitionSnapshot = null;
+        $this->fieldValuesBefore = [];
         $this->transitionUser = null;
     }
 }
