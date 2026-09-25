@@ -179,6 +179,20 @@ to an owner is not found, and they draw themselves empty.
 | `RuleOptions` | `RoBYCoNTe\FilamentFlow\Support` | The access-rule tokens and relationships offered where they make sense |
 | `UserModel` | `RoBYCoNTe\FilamentFlow\Support` | Which class is the user of the application |
 | `AssignmentTypeConfig` | `RoBYCoNTe\FilamentFlow\Support` | The kinds of assignment, with their labels |
+| `FieldChanges` | `RoBYCoNTe\FilamentFlow\Support` | The delta of two sets of values: the paths that moved, compared as a person would (`5000` and `5000.00` are the same value) |
+| `LocalizedDate` | `RoBYCoNTe\FilamentFlow\Support` | How a date reads when nobody chose: the day before the month where the language belongs |
+| `RoleLabel` | `RoBYCoNTe\FilamentFlow\Support` | The words a role reads in: the labels of the host, then the translations, then the name as it is written |
+
+## Presentation
+
+How a field reads in the history: the words of the host, the shape of a value, and the generic
+reading the engine falls back to.
+
+| Class | Namespace | Description |
+|---|---|---|
+| `FieldFormat` | `RoBYCoNTe\FilamentFlow\Presentation` | How a presented value reads: a line of text, labelled pairs, a table, a set of files — or nothing |
+| `FieldPresentation` | `RoBYCoNTe\FilamentFlow\Presentation` | A field as a person should read it: its label, the shape of its value, the block it belongs to, whether it belongs to the history |
+| `DefaultFieldPresenter` | `RoBYCoNTe\FilamentFlow\Presentation` | How a value reads when nobody claimed it: a map becomes labelled pairs, a list of maps a table, a boolean yes or no |
 
 ## Exceptions
 

@@ -8,6 +8,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The engine now says **whether it compared at all**. `field_changes` is an array in both cases the
+  comparison runs — the paths that moved, or `[]` for a save that touched nothing — and stays
+  `null` only when nobody compared (the row predates the setting, or it is off). The history reads
+  the difference: a save that moved nothing says **"No field changed"** instead of laying out the
+  values it carried as if they had moved, and the values of an entry that was never compared read
+  under a fold of their own (`showSubmittedData()`), never as changed fields.
+- The engine records **what moved**: every logged transition diffs the values it carried (see the
+  `field_changes` configuration) and stores the delta in
+  `workflow_transition_metadata.field_changes`, as `['path' => ['from' => …, 'to' => …]]`. A map is
+  opened to its leaves, a list stays whole, and a transition that moved nothing records no
+  metadata at all. The timeline shows that delta instead of dumping the whole form. With
+  `field_changes.payload` the payload a transition was given counts as the delta too, for the
+  hosts that write their values after the transition (so a refusal leaves nothing behind). A host
+  that writes **before** it says what the record held a moment earlier
+  (`withFieldValuesBefore()`) — without it there is nothing left to compare, and a save that
+  changed a field would look like a save that changed nothing.
+- A record can now say **how its own fields read**, through the new `HasFieldPresentation`
+  contract (`FieldPresentation`: label, shape — text, pairs, table, files —, group, visibility),
+  beside the existing `HasFieldLabels`. The timeline asks it for both sides of a change, falls
+  back to `HasFieldLabels`, and then to a new generic `DefaultFieldPresenter`; the submitted data
+  of older entries is flattened path by path and the empty paths are left out
+  (`hideEmptyFields()`).
+- The fields of an entry are **grouped by the block they belong to**, and a section with
+  something to navigate folds each group into a `<details>` carrying its name and the count of
+  its fields, with *Expand all* / *Collapse all* in the heading (`collapseGroups()`, native
+  markup: no script needed). The record diff and the technical traces are folded on their own.
+- A path nobody claims is now named with the **words of the key, translated**: the whole path
+  first (`applicant.vat_number`), then its last step, then the same headlined — the same place
+  the labels of a scheme come from. And the paths a host wants out of the history leave it
+  entirely, submission and changes alike, through `hideFields()` (a path, a subtree, `*`
+  wildcards), counted with the empty ones.
+- The `StateBadge` reads like the history does: a translated label by default, the mark its
+  kind deserves when the workflow named no icon (the start, an approval that ends the run, a
+  refusal, a dot in the colour of the state in between), a "Final state" chip when the record
+  does not leave it, the description the call gave the state (`description()`) and a line of
+  the host under the badge (`extra()`). A state the workflow does not declare reads as its
+  name rather than leaving the badge empty.
+- The `AssignmentSummaryEntry` reads like the history does: a translated label by default, the
+  roles of the assigned people in the **words of the host** (`roleLabels()`, a map or a
+  callback; the same labels reach `AssignmentManager`, `AssigneeSelect` and
+  `AssignmentSummaryColumn`), when the case was given and by whose hand, the state the
+  permissions are read in, and the three permissions always in sight — granted, denied, or
+  granted by an override — each with its accessible name. The avatar wears the colour of the
+  kind of assignment instead of a colour of its own, and the override tint is left to the badge
+  and to the permission it covers.
+- The `TransitionTimeline` infolist component shows the history the engine records, instead
+  of a slice of it. Every entry now wears the marker (colour and icon) the workflow gave its
+  destination state, an absolute locale-aware date with the relative time beside it, the
+  author with their email, the time spent in the previous state, the reason as its own
+  callout, the notes in full, and a per-entry "Details" fold with the submitted form data,
+  the field changes (before → after), the validation errors and — when the host asks — the
+  record diff from the before/after snapshots and the IP address and browser of the author.
+  Entries past `limit()` wait behind a "show more" fold instead of vanishing, and the
+  component carries a translated label by default. New options: `loadLimit()`,
+  `expandable()`, `showMetadata()`, `showIpAddress()`, `showSnapshots()`, `dateTimeFormat()`,
+  `stateAttribute()`. Administrators now truly see the whole history: rows flagged
+  `is_visible = false` appear to them with a "Hidden" badge (the old query hid them from
+  everyone); counts and list always answer with the same rows. The package now ships a
+  tiny `timeline.css` whose only rule keeps Alpine's `x-cloak` hidden until the framework
+  boots, so the folded history never flashes before collapsing.
 - `HasDatabaseTransitions` (1096 → 428 lines) split into four focused traits —
   `ChecksTransitionPermissions` (who may walk a transition), `ResolvesWorkflowStates` (the
   bridge between state classes and their rows), `ChecksTransitionGuards` (payload

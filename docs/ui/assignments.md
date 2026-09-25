@@ -290,8 +290,26 @@ A Filament infolist entry that renders a detailed assignment summary for the cur
 use RoBYCoNTe\FilamentFlow\Infolists\Components\AssignmentSummaryEntry;
 
 AssignmentSummaryEntry::make()
-    ->stateColumn('status'), // column used to resolve current workflow state (default: 'state')
+    ->stateColumn('status')            // column used to resolve current workflow state (default: 'state')
+    ->roleLabels([                     // the words the host uses for its own roles
+        'super_admin' => 'Super Administratore',
+    ]),
 ```
+
+The component carries a translated label by default (`Assignments` / `Assegnazioni`): name it or hide it as any other entry. On top of the people and their permissions, it says **which state** the permissions are read in — they change with it — and, for each person, **when** the case was given and **by whose hand**, when the assignment recorded it.
+
+### Role labels
+
+A role name (`super_admin`, `grant_operator`) is a key, not a sentence: `roleLabels()` takes the words of the host, as a map of names to labels or as a callback answering one name at a time.
+
+```php
+AssignmentSummaryEntry::make()
+    ->roleLabels(fn (string $role): ?string => Role::tryFrom($role)?->label());
+```
+
+What the host does not name is asked of the translations — the name itself (`__('senior_collaborator')`), then the same headlined (`__('Senior Collaborator')`), which is where a host that writes its role labels down keeps them. What remains is the name read as it is written.
+
+The same labels read in the panel that manages the assignments (`AssignmentManager`, which takes a `roleLabels` map), in the assignee select of a transition form (`AssigneeSelect::roleLabels()`) and in the avatars tooltip of the applications list (`AssignmentSummaryColumn::roleLabels()`): a panel that shows `super_admin` to an office reads like a database.
 
 ### Metadata Badges (Extension Point)
 
@@ -320,6 +338,9 @@ AssignmentSummaryEntry::make()
 [
     'user'             => App\Models\User,
     'assignment_type'  => 'primary',
+    'roles'            => ['Super Amministratore'],   // the labels of the roles, not their names
+    'assigned_at'      => Illuminate\Support\Carbon,
+    'assigned_by'      => 'Mario Rossi',              // the name of who gave the case, when recorded
     'can_view'         => true,
     'can_edit'         => false,
     'can_transition'   => true,
