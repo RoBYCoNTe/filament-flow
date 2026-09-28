@@ -447,3 +447,26 @@ Execution log for each scheduled check run against a specific model record.
 | `result` | enum | No | `triggered`, `skipped`, `already_executed`, `error` |
 | `metadata` | json | Yes | Additional context about the execution |
 | `executed_at` | timestamp | No | When the check ran (default: current time) |
+
+## workflow_owner_changes
+
+The handovers of a record: who held it, who holds it now, what the previous holder kept and
+who made the change. Written by the panel of the assignments and read by `OwnerColumn`.
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | bigint unsigned | No | Primary key |
+| `changeable_type` | varchar | No | Polymorphic model class (morph type) |
+| `changeable_id` | varchar(36) | No | Polymorphic model ID |
+| `from_user_id` | bigint unsigned | Yes | Who held the record before (null on the first holder) |
+| `to_user_id` | bigint unsigned | Yes | Who holds it now |
+| `changed_by` | bigint unsigned | Yes | Who made the handover |
+| `owner_field` | varchar | Yes | The column the owner lives in (`user_id`, by default) |
+| `retention` | varchar | No | What the previous holder kept: `none`, `viewer`, `secondary` |
+| `note` | text | Yes | Why the record changed hands |
+| `metadata` | json | Yes | Arbitrary extra data |
+| `changed_at` | timestamp | No | When the handover happened (default: current time) |
+| `created_at` | timestamp | Yes | |
+| `updated_at` | timestamp | Yes | |
+
+Indexed on `(changeable_type, changeable_id)`.

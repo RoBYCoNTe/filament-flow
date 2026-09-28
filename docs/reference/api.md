@@ -103,6 +103,7 @@ to an owner is not found, and they draw themselves empty.
 | `WorkflowStateFieldRole` | `RoBYCoNTe\FilamentFlow\Models` | What a role may do on a field of a state |
 | `WorkflowStateVisibility` | `RoBYCoNTe\FilamentFlow\Models` | A visibility rule of a state |
 | `WorkflowAssignment` | `RoBYCoNTe\FilamentFlow\Models` | User/team assignments to workflows |
+| `WorkflowOwnerChange` | `RoBYCoNTe\FilamentFlow\Models` | The handovers of a record: who held it, who holds it now, what the previous holder kept |
 | `WorkflowNotification` | `RoBYCoNTe\FilamentFlow\Models` | Notification configurations |
 | `WorkflowNotificationRecipient` | `RoBYCoNTe\FilamentFlow\Models` | Notification recipient strategies |
 | `WorkflowNotificationChannel` | `RoBYCoNTe\FilamentFlow\Models` | Notification delivery channels |

@@ -200,6 +200,32 @@ $initial = $service->getInitialState(Order::class, 'state'); // 'pending'
 | `SideEffectExecutor` | What a transition writes: a field, a timestamp, an increment, a cleared value |
 | `WorkflowValidationService` | Whether a transition may run, and whether the values it was given respect its rules |
 | `RecipientResolver` | Who a notification reaches: a role, a person, the owner of the record, the people assigned, a query, or a class of the host |
+| `OwnershipTransfer` | Handing a record over: the new owner, what the previous holder keeps, the record of the handover, the event. See below. |
+
+### OwnershipTransfer
+
+`RoBYCoNTe\FilamentFlow\Services\OwnershipTransfer`
+
+Gives a record to another person. The panel of the assignments is one caller; a console command, a
+job or an import can be another, and none of them has to know how the handover is written down.
+
+```php
+use RoBYCoNTe\FilamentFlow\Services\OwnershipTransfer;
+
+app(OwnershipTransfer::class)->transfer(
+    record: $application,
+    toUserId: $successor->id,
+    retention: OwnershipTransfer::RETENTION_VIEWER, // none | viewer | secondary
+    note: 'Handover to another officer',
+    actor: auth()->user(),
+);
+```
+
+The handover moves the owner column (as configured by `state_access.owner_field`), gives the
+previous holder a row of their own when a retention asks for it (`viewer` = still sees it,
+`secondary` = stays on the work), records the change in `workflow_owner_changes` and raises
+`WorkflowOwnerChanged`. Handing a record to the person who already holds it — or naming a retention
+nobody knows — throws `InvalidArgumentException`.
 
 ## Behind these doors
 
@@ -211,6 +237,8 @@ so that a reader can follow a rule from the declaration to the answer.
 |---|---|
 | `EvaluatesAccessRules` | Which rules a state declares, and whether one of them holds |
 | `ScopesAccessibleRecords` | How to narrow a query to the records a user may see |
+| `AccessibleStatesScope` | The same clauses, on their own: the states a role opens, the ones an assignment opens, the ones an override grants, all held under a refusal. The engine and a host's own list both call it, so the two cannot drift apart |
+| `OwnershipHistory`, `RecordOwner`, `UserSummary` | The handovers of a record; the column its owner lives in; a person as the panels and the columns show them |
 | `ReadsFieldPermissions` | What a state allows on one field |
 | `ReadsCreationAndColumnPermissions` | The permissions of creating a record, and the columns of a list |
 | `ResolvesFieldPermissionContext` | The state, the user and the tenant a permission is read for |

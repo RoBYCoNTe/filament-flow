@@ -68,6 +68,7 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
                 '2025_01_01_000008_create_workflow_scheduled_checks_table',
                 '2025_01_01_000009_add_schema_version_to_workflows_table',
                 '2025_01_01_000010_create_workflow_snapshots_table',
+                '2025_01_01_000011_create_workflow_owner_changes_table',
             ])
             ->runsMigrations()
             ->hasCommands([
