@@ -1,5 +1,18 @@
 # Contributing to filament-flow
 
+## Before opening a pull request
+
+Run the checks — one command, whichever way PHP is reachable (natively, or through the DDEV
+container of the host application the package is mounted in):
+
+```bash
+./scripts/check.sh all      # lint + phpstan + debug leftovers + docs coverage + tests
+./scripts/check.sh verify   # the five gates of CI, with the guards
+```
+
+`./scripts/check.sh help` lists the single checks (`lint:fix`, `phpstan`, `test`, …), which are
+the scripts of `composer.json`.
+
 ## Registering a formula scope
 
 `FormulaEditorComponent` supports pluggable autocomplete via **formula scopes**.
