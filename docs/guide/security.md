@@ -16,7 +16,8 @@ $order->forceTransitionTo($request->input('state')); // do not do this
 
 ## Access Override Semantics
 
-`WorkflowAssignment` records carry a nullable boolean `access_override` column. Its three values have distinct meanings:
+`WorkflowAssignment` records carry three nullable boolean columns — `override_view`,
+`override_edit`, `override_transition`. Their three values have distinct meanings:
 
 | Value | Meaning |
 |---|---|
@@ -24,7 +25,11 @@ $order->forceTransitionTo($request->input('state')); // do not do this
 | `true` | Explicitly grant access regardless of state rules |
 | `false` | Explicitly deny access regardless of state rules |
 
-When building an assignment management UI, display these three options clearly to administrators. An assignment with `access_override = false` will lock a user out even if the state rules would normally grant them access.
+A denial holds over the rules of the state, over a grant of the same kind, and over every
+opening of the record scope (`visibleTo()` and friends) — it wins against everything but the
+super admin bypass. When building an assignment management UI, display these three options
+clearly to administrators: an assignment with `override_view = false` locks a user out of the
+record even if the state rules would normally grant them access.
 
 ## Super Admin Bypass
 

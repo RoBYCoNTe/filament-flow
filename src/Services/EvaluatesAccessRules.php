@@ -48,6 +48,12 @@ trait EvaluatesAccessRules
             return true;
         }
 
+        // Assignment-level denial: an explicit refusal wins over everything below —
+        // the rules of the state and a grant of the same kind, whichever row came first.
+        if ($user && method_exists($record, 'hasAccessDenial') && $record->hasAccessDenial($user, $accessType)) {
+            return false;
+        }
+
         // Assignment-level access override (short-circuit before state rules)
         if ($user && method_exists($record, 'hasAccessOverride') && $record->hasAccessOverride($user, $accessType)) {
             return true;

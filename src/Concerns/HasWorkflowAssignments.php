@@ -270,6 +270,18 @@ trait HasWorkflowAssignments
             ->exists();
     }
 
+    /**
+     * The other half of the override: a row set to `false` is a refusal, and it wins
+     * over every rule of the state — and over a grant — of the same kind.
+     */
+    public function hasAccessDenial(int|Model $user, string $accessType): bool
+    {
+        return $this->assignments()
+            ->where('user_id', $this->resolveUserId($user))
+            ->where('override_'.$accessType, false)
+            ->exists();
+    }
+
     private function resolveUserId(int|Model $user): int
     {
         return $user instanceof Model ? $user->id : $user;

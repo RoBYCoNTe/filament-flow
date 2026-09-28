@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateAccessRule;
+use RoBYCoNTe\FilamentFlow\Support\AccessibleStates;
+use RoBYCoNTe\FilamentFlow\Support\AccessibleStatesScope;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 use Spatie\ModelStates\State;
 
@@ -69,54 +71,15 @@ trait ScopesAccessibleRecords
         // Get states categorized by access type
         $categorized = $this->categorizeAccessibleStates($workflow, $user, $accessType);
 
-        $hasOverrideSupport = $user && method_exists($query->getModel(), 'assignments');
-
-        if (empty($categorized['free']) && empty($categorized['assigned']) && ! $hasOverrideSupport) {
-            // No accessible states and no override support = no results
-            $query->whereRaw('1 = 0');
-
-            return $query;
-        }
-
-        // Build query: free states OR (assigned states AND user is assigned) OR (has access
-        // override)
-        $query->where(function (Builder $q) use ($stateColumn, $categorized, $user, $accessType, $hasOverrideSupport) {
-            $hasCondition = false;
-
-            if (! empty($categorized['free'])) {
-                $q->whereIn($stateColumn, $categorized['free']);
-                $hasCondition = true;
-            }
-
-            if (! empty($categorized['assigned']) && $user) {
-                $q->orWhere(function (Builder $sub) use ($stateColumn, $categorized, $user) {
-                    $sub->whereIn($stateColumn, $categorized['assigned']);
-
-                    if (method_exists($sub->getModel(), 'assignments')) {
-                        $sub->whereHas('assignments', function (Builder $aq) use ($user) {
-                            $aq->where('user_id', $user->getKey());
-                        });
-                    }
-                });
-                $hasCondition = true;
-            }
-
-            // Access override: user has an assignment with override for this access type
-            if ($hasOverrideSupport) {
-                $overrideColumn = 'override_'.$accessType;
-                $q->orWhereHas('assignments', function (Builder $aq) use ($user, $overrideColumn) {
-                    $aq->where('user_id', $user->getKey())
-                        ->where($overrideColumn, true);
-                });
-                $hasCondition = true;
-            }
-
-            if (! $hasCondition) {
-                $q->whereRaw('1 = 0');
-            }
-        });
-
-        return $query;
+        // The clauses live with the engine that also serves the hosts: the list of a call and
+        // the rows this scope narrows are the same sentences, said once.
+        return AccessibleStatesScope::apply(
+            $query,
+            AccessibleStates::of($categorized['free'], $categorized['assigned']),
+            $user,
+            $accessType,
+            $stateColumn,
+        );
     }
 
     /**
