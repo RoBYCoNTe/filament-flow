@@ -8,6 +8,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- The handover of a record is the work of the engine, not of a form: the new
+  `Services\OwnershipTransfer` moves the owner, gives the previous holder what a retention asks for,
+  writes the handover down and raises `WorkflowOwnerChanged`. The panel of the assignments is one
+  caller; a command, a job or an import is another. `RecordOwner` gained `exists()`, so a panel can
+  tell whether a record carries the owner column at all.
+- The clauses of "who may see what" are written once, in `Support\AccessibleStatesScope`: the engine
+  (`ScopesAccessibleRecords`) and a host that keeps a list of its own call the same sentences — the
+  two had drifted apart once, and the rows an assignment handed a person were missing from the list.
+- A person as the panels and the columns show them — name, initials, the words of the host for their
+  roles — is built in one place (`Support\UserSummary`) instead of five.
+
+### Added
+- The refusal, at last: an assignment's access override is fully **three-valued** — `null` lets the
+  call decide, `true` opens the record whatever the call says, `false` shuts the person out even
+  where the call would open the door. The denial holds over the rules of the state, over a grant
+  of the same kind, and over every opening of the record scope (`visibleTo()` and friends); the
+  assignment row answers for it with the new `hasAccessDenial()`.
+- The assignment panel can now **hand the record over**: it shows who holds it (the configured
+  `state_access.owner_field`) and transfers it — with a choice of what the previous owner keeps:
+  nothing, the eyes of an observer (`viewer` + view override) or the hands of a collaborator
+  (`secondary`), and an optional note written into the assignment metadata. The change raises the
+  new `WorkflowOwnerChanged` event, carrying the previous and next owner, the retention and the
+  note.
+- The panel now **explains itself**: it carries what the panel is for — what ownership means and
+  what the previous holder keeps, what the roles of the assignees are, and the three readings of
+  a permission (the call decides, allowed, shut out) — folded for whoever acts and open for
+  whoever may not, where it is what tells them why the settings are not theirs. Set
+  `showExplanation => false` for a bare panel.
+- Every handover is **written down**: the panel records it in the new `workflow_owner_changes`
+  table (who held the record, who holds it now, what the previous holder kept, the note and who
+  made the change), beside firing `WorkflowOwnerChanged`.
+- The new `OwnerColumn` shows a record's owner — the column named by
+  `state_access.owner_field` — and, beside the name, the handovers it went through: from whom,
+  when, and how many, with the note and what the previous holder kept in the tooltip.
+  `RecordOwner` is the seam that reads the owner for a host that needs it in its own code.
+- The cells of `OwnerColumn` and `AssignmentSummaryColumn` are **part of the row**: clicking them
+  follows the record link of the table, like every other column (`->disabledClick()` for a host
+  that wants them inert). Both read the relations the host already loaded — a list that eager
+  loads the owner or the assignments spares them a query per row.
+- The history of the handovers is readable in full: the panel keeps it in a **collapsible
+  section** under the ownership one (`showHistory => false` to leave it out), and
+  `OwnershipHistoryEntry` brings the same story to a form, a step or an infolist. Both read
+  `OwnershipHistory`, the seam a host can call on its own.
+- `AccessControlAction`: the assignment panel as a **dialog** — one button to open the room where
+  the hands are dealt, mountable beside a record or pointed at one with `accessRecord()` /
+  `accessRecordType()`, with `roleLabels()` for the words of the host and `superAdminOnly()` for
+  the hosts that keep plain admins on the reading side. The panel itself accepts the same
+  `superAdminOnly` prop when embedded as a section. The component inside the dialog carries a
+  key of its own, so it never collides with another panel of the same class on the page — a
+  collision Livewire answers with an empty placeholder, which is a dialog that opens empty.
+
+### Changed
 - The engine now says **whether it compared at all**. `field_changes` is an array in both cases the
   comparison runs — the paths that moved, or `[]` for a save that touched nothing — and stays
   `null` only when nobody compared (the row predates the setting, or it is off). The history reads
@@ -244,7 +296,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   references, so definitions stay valid across revisions.
 - `WorkflowApplier::apply()` and `WorkflowSnapshotService::snapshot()` accept an
   optional explicit revision version, so a host can align a workflow revision with
-  its own version counter (e.g. a scheme/bando version).
+  its own version counter (e.g. a scheme version).
 
 ### Removed
 - Unused, untyped `Configuration\WorkflowConfiguration`, `StateConfiguration`,

@@ -173,6 +173,52 @@ $assignment->getMetadata();         // full array
 
 Metadata is automatically passed through to UI components as part of each user's data array, making it available for custom rendering.
 
+## OwnerColumn
+
+A Filament table column that renders **who holds the record** — the column named by
+`state_access.owner_field` (`user_id` by default) — and, beside the name, that the record
+**changed hands**: from whom, when, and how many times. The handovers are read from
+`workflow_owner_changes`, written every time the panel of the assignments hands a record over.
+
+```php
+use RoBYCoNTe\FilamentFlow\Tables\Columns\OwnerColumn;
+
+OwnerColumn::make('owner')
+    ->label('Held by'),
+```
+
+### Options
+
+```php
+OwnerColumn::make('owner')
+    ->roleLabels(['admin' => 'Amministratore']) // the words of the host, keyed by role name
+    ->historyLimit(5)      // how many handovers the tooltip lists (default: 5)
+    ->withHistory(false)   // the bare name, without the handovers
+    ->inlinesLastChange(false), // the last handover only in the tooltip
+```
+
+### Visual Behavior
+
+- the current owner is an avatar with initials and the name, with the roles underneath
+- when the record changed hands, the column says **`from <previous holder> · <date>`** under
+the name, with a badge carrying how many handovers there were and a tooltip listing them all
+(previous holder, date, what they kept, the note)
+- a record with nobody is a dash
+- the cell behaves like the other cells of the row: clicking it follows the record link of the
+table (`->disabledClick()` to leave it inert)
+
+### Reading the owner in your own code
+
+The seam is the same one the column uses:
+
+```php
+use RoBYCoNTe\FilamentFlow\Support\RecordOwner;
+
+RecordOwner::field();          // 'user_id', or what the host configured
+RecordOwner::id($application); // the key of the holder, or null
+RecordOwner::of($application); // the holder, resolved to the user model
+```
+
 ## AssignmentSummaryColumn
 
 A Filament table column that renders assigned users as overlapping avatars with initials, colored rings by assignment type, and an optional overflow counter.
@@ -195,6 +241,9 @@ AssignmentSummaryColumn::make('assignments')
 ### Visual Behavior
 
 - **Ring color** indicates assignment type: primary (blue), secondary (amber), viewer (gray)
+
+The cell behaves like the other cells of the row: clicking it follows the record link of the
+table. A host that wants it inert says `->disabledClick()`.
 - **Opacity** decreases by type: primary = full, secondary = 75%, viewer = 50%
 - **Z-index** stacks primary on top, secondary below, viewer at the bottom
 - **Overflow counter** shows `+N` when assignments exceed the limit
@@ -243,20 +292,92 @@ use Filament\Schemas\Components\Livewire;
 use RoBYCoNTe\FilamentFlow\Livewire\AssignmentManager;
 
 Livewire::make(AssignmentManager::class)
+    ->key('assignment-manager.section')
     ->visible(fn (?Model $record) => $record !== null),
 ```
 
 The component automatically receives the current `$record` from Filament's schema context.
 
+### Explaining itself
+
+The panel carries a short explanation of what it is for — ownership and what the previous
+holder keeps, the roles of the assignees, and the three readings of a permission. It is read
+once, so it stays **folded for whoever acts** and opens for whoever may not: there the
+explanation is the whole content of the panel, and it says why the settings are not theirs to
+change. Pass `showExplanation => false` for a bare panel:
+
+```php
+Livewire::make(AssignmentManager::class, ['showExplanation' => false])
+```
+
+### The handovers it went through
+
+Under the ownership section the panel keeps the history of the handovers — **collapsed by
+default** — with who held the record before, who holds it now, when, what the previous holder
+kept and who made the change. `showHistory => false` for a panel without it.
+
+## OwnershipHistoryEntry
+
+The same history as a component of its own, for a form, a step or an infolist:
+
+```php
+use RoBYCoNTe\FilamentFlow\Infolists\Components\OwnershipHistoryEntry;
+
+OwnershipHistoryEntry::make('ownership_history')
+    ->limit(10)          // how many handovers to list (default: all)
+    ->timeline(false),   // a plain list instead of a timeline
+```
+
+A record that never changed hands says so in one line
+(`filament-flow::messages.ownership_history_empty`) instead of showing nothing.
+
+### Handing a record over from your own code
+
+The panel is one caller of the handover; a command, a job or an import is another:
+
+```php
+use RoBYCoNTe\FilamentFlow\Services\OwnershipTransfer;
+
+app(OwnershipTransfer::class)->transfer(
+    record: $application,
+    toUserId: $successor->id,
+    retention: OwnershipTransfer::RETENTION_SECONDARY, // none | viewer | secondary
+    note: 'Handover to another officer',
+    actor: auth()->user(),
+);
+```
+
+### Reading the history in your own code
+
+```php
+use RoBYCoNTe\FilamentFlow\Support\OwnershipHistory;
+
+OwnershipHistory::for($application);         // the handovers, most recent first
+OwnershipHistory::for($application, 5);      // the last five
+```
+
+The `key()` matters when the same page carries more than one instance of the panel (a section
+and the dialog, two sections in two steps): Livewire identifies a nested component by its key,
+and a second instance sharing the first one's key comes back as an **empty placeholder**. Give
+each placement a key of its own.
+
 ### Authorization
 
-The "add" and "remove" controls are only visible when `canManageAssignments()` returns `true`. By default this checks for `isAdmin()` or `isSuperAdmin()` on the authenticated user. Override this behavior by extending `AssignmentManager` and replacing the method.
+The "add" and "remove" controls are only visible when `canManageAssignments()` returns `true`. By default this checks for `isAdmin()` or `isSuperAdmin()` on the authenticated user. Pass `superAdminOnly => true` to keep plain admins on the reading side of the panel:
+
+```php
+Livewire::make(AssignmentManager::class, ['superAdminOnly' => true])
+```
+
+### Ownership Transfer
+
+When the record has the configured owner column (`state_access.owner_field`, `user_id` by default), the panel shows a section with who holds the record and a **Transfer ownership** form. The handover asks who takes over, what the previous owner keeps — *nothing* (their access ends), *observer* (a `viewer` assignment with the view override granted) or *collaborator* (a `secondary` assignment, no overrides) — and an optional note, written into the assignment metadata. The change fires the `WorkflowOwnerChanged` event, with the previous and next owner, the retention and the note.
 
 ### Access Overrides UI
 
-When adding a new assignment, the form includes checkboxes for `view`, `edit`, and `transition` overrides. At least `view` must be checked — the component throws a validation error if it is not.
+When adding a new assignment, each permission — `view`, `edit`, `transition` — has three readings: **the call decides** (no override stored), **allowed** (`true`) and **shut out** (`false`). Every reading is a legitimate answer: all three on "the call decides" still creates the row, because the type of the assignment matters to the rules that ask for an assignee.
 
-When a user already has overrides set, the UI shows a summary badge on their row and allows toggling each override individually.
+In the list, each override badge cycles through its three readings on click, colored gray (call decides), green (allowed) and red (shut out). A denial holds over every rule of the state, and over a grant of the same kind.
 
 ### Tenant Awareness
 
@@ -281,6 +402,30 @@ Livewire::make(AssignmentManager::class, [
 ```
 
 The custom view receives the assignment array as `$assignment` (same shape as described in the `metadataBadges` extension point documentation above).
+
+## AccessControlAction
+
+A Filament action that opens the assignment panel **as a dialog** — the same room as `AssignmentManager`, through a door: who holds the record, who works on it, and what each one may do. Mount it wherever a record exists (a table row, a record page, or a page that can answer for the record):
+
+```php
+use RoBYCoNTe\FilamentFlow\Actions\AccessControlAction;
+
+AccessControlAction::make()
+    ->roleLabels(RoleLabels::map())
+    ->superAdminOnly(),
+```
+
+When the action does not sit beside the record (a page that keeps it in a property, for example), hand it over with `accessRecord()` — a model, its key, or the answer of a closure — and, when the key is all the host knows, `accessRecordType()`:
+
+```php
+AccessControlAction::make()
+    ->accessRecord(fn (): Application => $this->application)
+    ->superAdminOnly(),
+```
+
+The action hides itself from whoever may not manage assignments (or, with `superAdminOnly()`, from everyone but super administrators); the panel inside the dialog keeps its own protection either way.
+
+The component inside the dialog gets a **key of its own** (`{action}.assignment-manager`), so it never shares the identity of another instance of the same class on the page. Remember it when embedding the panel twice — two sections of the same component on one page must each carry a distinct `->key()`, or Livewire answers the second one with an empty placeholder (the dialog opens, and it is empty).
 
 ## AssignmentSummaryEntry Infolist Component
 
