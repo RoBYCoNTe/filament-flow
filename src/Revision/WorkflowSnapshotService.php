@@ -25,8 +25,9 @@ class WorkflowSnapshotService
 {
     /**
      * @param  array<string,mixed>|null  $changes
-     * @param  int|null  $version  Explicit revision version (e.g. the scheme/bando
-     *                             version); when null the workflow's own counter is used.
+     * @param  int|null  $version  Explicit revision version (e.g. the version of the
+     *                             scheme it belongs to); when null the workflow's own
+     *                             counter is used.
      */
     public function snapshot(Workflow $workflow, ?array $changes = null, ?int $userId = null, ?int $version = null): int
     {

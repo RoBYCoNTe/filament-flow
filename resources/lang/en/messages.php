@@ -108,4 +108,14 @@ return [
     'transfer_note' => 'Note',
     'help_transfer_note' => 'Why the record changed hands: the note is kept beside the change.',
     'ownership_transferred' => 'Ownership transferred.',
+
+    // What the formula editor reads beside a variable: the words a person writing a
+    // condition sees.
+    'formula_now' => 'Current date and time',
+    'formula_now_format' => 'Formats the date',
+    'formula_now_add_days' => 'Adds days',
+    'formula_now_diff_in_days' => 'Difference in days',
+    'formula_state' => 'Current workflow state of the record',
+    'formula_user' => 'The authenticated user running the transition',
+    'formula_record' => 'The record the transition happens on',
 ];

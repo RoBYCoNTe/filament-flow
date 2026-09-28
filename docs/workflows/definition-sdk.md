@@ -329,7 +329,7 @@ app(WorkflowSnapshotService::class)->snapshot($workflow, ['changes' => $changes]
 ### Aligning a revision with a host version counter
 
 A host application can keep the workflow revision in sync with its own domain
-version (e.g. a scheme/bando version). Passing `revisionVersion` writes the
+version (e.g. the version of the scheme it belongs to). Passing `revisionVersion` writes the
 workflow snapshot at that version instead of the workflow's own counter:
 
 ```php

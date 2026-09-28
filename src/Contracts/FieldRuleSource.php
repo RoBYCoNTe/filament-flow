@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * Application side of the validation engine: the rules declared on the fields
- * of a record (the scheme schema of a bando, in this project).
+ * of a record (the schema a scheme declares, in this project).
  *
  * The package never knows where the rules come from: it only runs them, together
  * with the ones the workflow itself declares.

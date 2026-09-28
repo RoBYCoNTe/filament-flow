@@ -46,7 +46,7 @@ class DefaultFieldPresenter
 
     /**
      * The name of a path nobody claimed: the words of the key, asked of the translations
-     * first — a host that translates its own vocabulary («campo», «nome») has those words
+     * first — a host that translates its own vocabulary ("field", "name") has those words
      * written down already, and the path itself is the most precise key it can use.
      */
     private function labelFor(string $path): string

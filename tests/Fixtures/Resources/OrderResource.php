@@ -37,7 +37,7 @@ class OrderResource extends Resource
                 Textarea::make('processing_notes'),
                 Textarea::make('shipping_notes'),
             ]),
-            Section::make('Spedizione')->schema([
+            Section::make('Shipping')->schema([
                 TextInput::make('tracking_number'),
                 TextInput::make('carrier'),
                 DatePicker::make('estimated_delivery'),

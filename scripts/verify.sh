@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Verifica i cinque controlli del pacchetto e stampa gli esiti veri.
-# Uno script su file, e non una catena di comandi: dentro una catena il `$?` viene
-# espanso da una shell esterna, e ogni esito diventa zero per costruzione.
+# Runs the five checks of the package and prints their real outcomes.
+# A script on file, and not a chain of commands: inside a chain the `$?` is
+# expanded by an outer shell, and every outcome becomes zero by construction.
 
-# La radice del pacchetto, ovunque sia montato.
+# The root of the package, wherever it is mounted.
 cd "$(dirname "$0")/.." || exit 1
 
 status() {
@@ -26,12 +26,12 @@ status "phpunit" vendor/bin/phpunit --no-coverage || failed=1
 status "docs"    npm run docs:build || failed=1
 
 echo
-echo "--- i guard"
-php scripts/docs-coverage.php > /dev/null 2>&1 && echo "docs-coverage: legge la copertura" || echo "docs-coverage: non gira"
-# Il cancello della copertura deve passare quando ogni classe e' nominata, e fallire quando no:
-# il secondo caso e' provato a mano, aggiungendo una classe e togliendola subito dopo.
-php scripts/docs-coverage.php --fail > /dev/null 2>&1 && echo "check:docs: 0 (giusto se la copertura e' completa)" || echo "check:docs: non-zero (qualche classe non e' nominata)"
+echo "--- the guards"
+php scripts/docs-coverage.php > /dev/null 2>&1 && echo "docs-coverage: the coverage reads" || echo "docs-coverage: does not run"
+# The coverage gate has to pass when every class is named, and fail when it is not:
+# the second case is tried by hand, adding a class and taking it back right after.
+php scripts/docs-coverage.php --fail > /dev/null 2>&1 && echo "check:docs: 0 (right when the coverage is complete)" || echo "check:docs: non-zero (some class is not named)"
 
 echo
-echo "esito complessivo: $failed (0 = tutto verde)"
+echo "overall outcome: $failed (0 = all green)"
 exit "$failed"

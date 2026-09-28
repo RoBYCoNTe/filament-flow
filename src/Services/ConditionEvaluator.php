@@ -20,7 +20,7 @@ class ConditionEvaluator
      * @param  array|null  $conditions  JSON-decoded conditions array
      *
      * Field condition: {"field": "assignmentType.name", "operator": "in", "value":
-     * ["Compatibilità"]} Formula condition: {"type": "formula", "expression": "amount > 0",
+     * ["Compatibility"]} Formula condition: {"type": "formula", "expression": "amount > 0",
      * "message_template": "Amount must be positive."}
      *
      * Supported operators: =, !=, in, not_in, >, <, >=, <=, is_null, is_not_null, contains

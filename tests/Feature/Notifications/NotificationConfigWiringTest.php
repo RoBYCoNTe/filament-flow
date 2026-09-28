@@ -251,8 +251,8 @@ class NotificationConfigWiringTest extends TestCase
 
     public function test_the_mail_channel_uses_the_configured_sender(): void
     {
-        config()->set('filament-flow.notifications.channels.mail.from_address', 'bandi@example.com');
-        config()->set('filament-flow.notifications.channels.mail.from_name', 'Ufficio Bandi');
+        config()->set('filament-flow.notifications.channels.mail.from_address', 'notices@example.com');
+        config()->set('filament-flow.notifications.channels.mail.from_name', 'Notices Office');
 
         $notification = new WorkflowNotification([
             'channel' => 'mail',
@@ -263,8 +263,8 @@ class NotificationConfigWiringTest extends TestCase
         $message = $notification->toMail($this->user);
 
         $this->assertInstanceOf(MailMessage::class, $message);
-        $this->assertSame('bandi@example.com', $message->from[0] ?? null);
-        $this->assertSame('Ufficio Bandi', $message->from[1] ?? null);
+        $this->assertSame('notices@example.com', $message->from[0] ?? null);
+        $this->assertSame('Notices Office', $message->from[1] ?? null);
     }
 
     public function test_the_mail_channel_keeps_the_laravel_default_sender_when_not_configured(): void

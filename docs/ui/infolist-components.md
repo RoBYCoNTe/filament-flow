@@ -86,12 +86,12 @@ When a transition carries metadata, snapshots or (with `showIpAddress()`) techni
 
 ```
 Changed fields                      Expand all · Collapse all
-  ▸ Ente e contatti · 2
-  ▾ Autocertificazioni · 3
-        Veridicità dei dati dichiarati: No → Sì
-        Consenso al trattamento dei dati personali: No → Sì
-        Nessun altro finanziamento pubblico per gli stessi lavori: No
-  ▸ Dettaglio della spesa · 1
+  ▸ Body and contacts · 2
+  ▾ Self-declarations · 3
+        Truthfulness of the declared data: No → Yes
+        Consent to the processing of personal data: No → Yes
+        No other public funding for the same works: No
+  ▸ Breakdown of the expense · 1
 ```
 
 Fields with no group stand together at the top, under "Other fields". The folding is native (`<details>`), so it works before any script loads and keeps the keyboard and the screen reader happy.

@@ -337,7 +337,7 @@ class MultiScopeWorkflowTest extends TestCase
             ->count();
 
         $this->assertSame(0, $visible,
-            'Chi non ha il ruolo richiesto dalla regola di vista non deve vedere la riga.');
+            'Whoever misses the role the view rule asks for must not see the row.');
     }
 
     /** And the same for editing: the scope answers for the access type it was asked about. */
@@ -356,7 +356,7 @@ class MultiScopeWorkflowTest extends TestCase
             ->count();
 
         $this->assertSame(0, $editable,
-            'Le regole di modifica dello scope richiesto valgono anche nella query.');
+            'The edit rules of the given scope hold in the query too.');
     }
 
     /**
@@ -376,18 +376,18 @@ class MultiScopeWorkflowTest extends TestCase
         $mine->forceFill(['user_id' => $owner->getKey()])->save();
 
         $theirs = ScopedOrder::create(['state' => 'draft', 'scope_id' => 1]);
-        $theirs->forceFill(['user_id' => $this->createTestUser(['email' => 'altro@example.com', 'name' => 'Altro Utente'])->getKey()])->save();
+        $theirs->forceFill(['user_id' => $this->createTestUser(['email' => 'other@example.com', 'name' => 'Other User'])->getKey()])->save();
 
         // The query: the state is allowed, so both rows pass.
         $this->assertSame(
             2,
             $this->stateAccess->scopeAccessible(ScopedOrder::query(), $owner, 'view', 1)->count(),
-            'Lo scope è per stato: non conosce la proprietà della singola riga.'
+            'The scope is by state: it does not know the ownership of a single row.'
         );
 
         // The row: the ownership decides (the check the trait of the model exposes).
-        $this->assertTrue($this->stateAccess->canView($mine->refresh(), $owner), 'La propria riga si vede.');
-        $this->assertFalse($this->stateAccess->canView($theirs->refresh(), $owner), 'Quella di un altro no.');
+        $this->assertTrue($this->stateAccess->canView($mine->refresh(), $owner), 'One\'s own row is seen.');
+        $this->assertFalse($this->stateAccess->canView($theirs->refresh(), $owner), 'Somebody else\'s is not.');
     }
 
     private function createAccessRule(int $stateId, string $accessType, string $rule): void

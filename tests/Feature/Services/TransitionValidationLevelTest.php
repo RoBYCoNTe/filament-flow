@@ -22,7 +22,7 @@ class TransitionValidationLevelTest extends TestCase
         // The tracking number is required by the state, and it is missing.
         $order->transitionTo('shipped');
 
-        $this->assertSame('shipped', $order->fresh()->state, 'Il salvataggio non può essere bloccato dalle regole.');
+        $this->assertSame('shipped', $order->fresh()->state, 'A save cannot be blocked by the rules.');
     }
 
     public function test_a_semantic_level_does_not_enforce_the_workflow_rules(): void
@@ -40,7 +40,7 @@ class TransitionValidationLevelTest extends TestCase
 
         try {
             $order->transitionTo('shipped');
-            $this->fail('La transizione doveva essere rifiutata.');
+            $this->fail('The transition had to be refused.');
         } catch (WorkflowValidationException $exception) {
             $this->assertTrue($exception->result->has('tracking_number'));
         }
@@ -56,7 +56,7 @@ class TransitionValidationLevelTest extends TestCase
 
         $transition = $this->createWorkflowTransition($workflow, $from, $to, ['name' => 'ship']);
 
-        $this->assertSame(ValidationLevel::Full, $transition->validationLevel(), 'Il default è "ogni regola".');
+        $this->assertSame(ValidationLevel::Full, $transition->validationLevel(), 'The default is "every rule".');
     }
 
     // ── fixture ──────────────────────────────────────────────────────────────

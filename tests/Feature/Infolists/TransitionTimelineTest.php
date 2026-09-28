@@ -646,11 +646,11 @@ class TransitionTimelineTest extends TestCase
             {
                 return match ($path) {
                     'total_amount' => FieldPresentation::text(
-                        'Importo',
-                        $value === null ? null : '€ '.number_format((float) $value, 2, ',', '.'),
-                        'Importi',
+                        'Amount',
+                        $value === null ? null : '€ '.number_format((float) $value, 2, '.', ','),
+                        'Amounts',
                     ),
-                    'internal' => FieldPresentation::hidden('Interno'),
+                    'internal' => FieldPresentation::hidden('Internal'),
                     default => null,
                 };
             }
@@ -669,10 +669,10 @@ class TransitionTimelineTest extends TestCase
         $this->assertSame(1, $changed['hidden']);
         $this->assertCount(2, $changed['fields']);
 
-        $this->assertSame('Importo', $changed['fields'][0]['label']);
-        $this->assertSame('Importi', $changed['fields'][0]['group']);
-        $this->assertSame('€ 50,00', $changed['fields'][0]['before']->toInlineString());
-        $this->assertSame('€ 75,00', $changed['fields'][0]['after']->toInlineString());
+        $this->assertSame('Amount', $changed['fields'][0]['label']);
+        $this->assertSame('Amounts', $changed['fields'][0]['group']);
+        $this->assertSame('€ 50.00', $changed['fields'][0]['before']->toInlineString());
+        $this->assertSame('€ 75.00', $changed['fields'][0]['after']->toInlineString());
 
         // The label of a path the custom presenter does not claim comes from HasFieldLabels.
         $this->assertSame('Order number', $changed['fields'][1]['label']);
@@ -680,7 +680,7 @@ class TransitionTimelineTest extends TestCase
         $this->assertSame('ORD-1', $changed['fields'][1]['after']->toInlineString());
 
         $this->assertSame(
-            ['Importi' => ['total_amount'], '' => ['order_number']],
+            ['Amounts' => ['total_amount'], '' => ['order_number']],
             array_map(
                 static fn (array $rows): array => array_column($rows, 'path'),
                 TransitionTimeline::make()->groupFields($changed['fields']),
@@ -695,14 +695,14 @@ class TransitionTimelineTest extends TestCase
             public function fieldPresentation(string $path, mixed $value): ?FieldPresentation
             {
                 return match ($path) {
-                    'applicant.first_name' => FieldPresentation::text('Nome', $value, '1. Richiedente'),
+                    'applicant.first_name' => FieldPresentation::text('Name', $value, '1. Applicant'),
                     'documents.report' => FieldPresentation::files(
-                        'Verbale',
+                        'Report',
                         array_map(
                             static fn (string $name): array => ['name' => $name, 'url' => null],
                             $value ?? [],
                         ),
-                        '4. Documenti',
+                        '4. Documents',
                     ),
                     default => null,
                 };
@@ -713,7 +713,7 @@ class TransitionTimelineTest extends TestCase
             'form_data' => [
                 'applicant' => ['first_name' => 'Ada', 'email' => null],
                 'note' => 'a note',
-                'documents' => ['report' => ['verbale.pdf']],
+                'documents' => ['report' => ['report.pdf']],
                 'empty_list' => [],
             ],
         ]);
@@ -728,12 +728,12 @@ class TransitionTimelineTest extends TestCase
         );
 
         $this->assertSame(
-            ['1. Richiedente', '', '4. Documenti'],
+            ['1. Applicant', '', '4. Documents'],
             array_keys(TransitionTimeline::make()->groupFields($submitted['fields'])),
         );
 
         $this->assertSame(1, count($submitted['fields'][2]['presentation']->value));
-        $this->assertSame('verbale.pdf', $submitted['fields'][2]['presentation']->value[0]['name']);
+        $this->assertSame('report.pdf', $submitted['fields'][2]['presentation']->value[0]['name']);
 
         // Asking for them shows the empty paths too.
         $everything = TransitionTimeline::make()
@@ -770,9 +770,9 @@ class TransitionTimelineTest extends TestCase
         $directory = sys_get_temp_dir().'/filament-flow-lang-'.uniqid();
         mkdir($directory);
         file_put_contents($directory.'/en.json', json_encode([
-            'Amount' => 'Importo',
-            'Vat Number' => 'Partita IVA',
-            'applicant.vat_number' => 'Partita IVA del richiedente',
+            'Amount' => 'Requested amount',
+            'Vat Number' => 'VAT number',
+            'applicant.vat_number' => 'VAT number of the applicant',
         ]));
 
         Lang::addJsonPath($directory);
@@ -780,11 +780,11 @@ class TransitionTimelineTest extends TestCase
         $component = TransitionTimeline::make();
 
         // The words of the key are translated.
-        $this->assertSame('Importo', $component->presentationFor('intervention.amount', 5)->label);
+        $this->assertSame('Requested amount', $component->presentationFor('intervention.amount', 5)->label);
 
         // The path is the most precise key, and wins over the headlined words.
         $this->assertSame(
-            'Partita IVA del richiedente',
+            'VAT number of the applicant',
             $component->presentationFor('applicant.vat_number', '123')->label,
         );
 
@@ -862,25 +862,25 @@ class TransitionTimelineTest extends TestCase
 
         // One block of a few fields: read at a glance, no fold.
         $this->assertFalse($component->foldsGroups([
-            ['group' => 'Ente e contatti'],
-            ['group' => 'Ente e contatti'],
+            ['group' => 'Body and contacts'],
+            ['group' => 'Body and contacts'],
         ]));
 
         // Several blocks: navigated.
         $this->assertTrue($component->foldsGroups([
-            ['group' => 'Ente e contatti'],
-            ['group' => 'Autocertificazioni'],
+            ['group' => 'Body and contacts'],
+            ['group' => 'Self-declarations'],
         ]));
 
         // One long block: navigated too.
         $this->assertTrue($component->foldsGroups(
-            array_fill(0, 9, ['group' => 'Ente e contatti']),
+            array_fill(0, 9, ['group' => 'Body and contacts']),
         ));
 
         // A host that wants everything in sight says so.
         $this->assertFalse(TransitionTimeline::make()->collapseGroups(false)->foldsGroups([
-            ['group' => 'Ente e contatti'],
-            ['group' => 'Autocertificazioni'],
+            ['group' => 'Body and contacts'],
+            ['group' => 'Self-declarations'],
         ]));
 
         $this->assertTrue(TransitionTimeline::make()->collapsibleGroups());

@@ -10,7 +10,7 @@ use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
 /**
  * Create access is resolved on the workflow of an explicit tenant, so hosts that
- * scope one workflow per owner (a bando per company, an order per marketplace)
+ * scope one workflow per owner (a scheme per company, an order per marketplace)
  * can ask "may this user start a record for that owner?".
  */
 class CreateAccessTenantTest extends TestCase

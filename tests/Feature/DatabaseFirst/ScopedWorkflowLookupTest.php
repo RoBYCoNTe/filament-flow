@@ -54,7 +54,7 @@ class ScopedWorkflowLookupTest extends TestCase
 
         $this->assertNull(
             app(StateService::class)->getInitialState(ScopedOrder::class),
-            'Senza tenant la ricerca non trova il workflow, e tace.'
+            'Without a tenant the lookup finds no workflow, and says nothing.'
         );
     }
 

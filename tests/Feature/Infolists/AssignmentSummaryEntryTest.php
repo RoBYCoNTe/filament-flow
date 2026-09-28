@@ -24,12 +24,12 @@ class AssignmentSummaryEntryTest extends TestCase
 
     public function test_a_role_reads_in_the_words_the_host_gives_it(): void
     {
-        $mapped = AssignmentSummaryEntry::make()->roleLabels(['super_admin' => 'Super Amministratore']);
-        $this->assertSame('Super Amministratore', $mapped->getRoleLabel('super_admin'));
+        $mapped = AssignmentSummaryEntry::make()->roleLabels(['super_admin' => 'Super Administrator']);
+        $this->assertSame('Super Administrator', $mapped->getRoleLabel('super_admin'));
 
         $callback = AssignmentSummaryEntry::make()
-            ->roleLabels(fn (string $role): ?string => $role === 'grant_operator' ? 'Redattore Atti di Concessione' : null);
-        $this->assertSame('Redattore Atti di Concessione', $callback->getRoleLabel('grant_operator'));
+            ->roleLabels(fn (string $role): ?string => $role === 'grant_operator' ? 'Grant Acts Drafter' : null);
+        $this->assertSame('Grant Acts Drafter', $callback->getRoleLabel('grant_operator'));
 
         // A role the host does not know, and whose words are not written down anywhere, is
         // read as its name says — never as the raw key.
@@ -41,8 +41,8 @@ class AssignmentSummaryEntryTest extends TestCase
         $directory = sys_get_temp_dir().'/filament-flow-lang-'.uniqid();
         mkdir($directory);
         file_put_contents($directory.'/en.json', json_encode([
-            'senior_collaborator' => 'Collaboratore Senior',
-            'reviewer' => 'Revisore',
+            'senior_collaborator' => 'Senior Team Member',
+            'reviewer' => 'Auditor',
         ]));
 
         Lang::addJsonPath($directory);
@@ -50,8 +50,8 @@ class AssignmentSummaryEntryTest extends TestCase
         $entry = AssignmentSummaryEntry::make();
 
         // The name itself, and the same name headlined, are both asked of the translations.
-        $this->assertSame('Collaboratore Senior', $entry->getRoleLabel('senior_collaborator'));
-        $this->assertSame('Revisore', $entry->getRoleLabel('reviewer'));
+        $this->assertSame('Senior Team Member', $entry->getRoleLabel('senior_collaborator'));
+        $this->assertSame('Auditor', $entry->getRoleLabel('reviewer'));
 
         unlink($directory.'/en.json');
         rmdir($directory);
@@ -79,7 +79,7 @@ class AssignmentSummaryEntryTest extends TestCase
         }
 
         $assigned = AssignmentSummaryEntry::make()
-            ->roleLabels(['super_admin' => 'Super Amministratore'])
+            ->roleLabels(['super_admin' => 'Super Administrator'])
             ->model($order)
             ->getAssignedUsersWithPermissions();
 
@@ -99,7 +99,7 @@ class AssignmentSummaryEntryTest extends TestCase
         $workflow = $this->createTestWorkflow();
         $this->createWorkflowState($workflow, [
             'name' => 'processing',
-            'label' => 'In istruttoria',
+            'label' => 'Under review',
             'sort_order' => 0,
         ]);
 
@@ -107,7 +107,7 @@ class AssignmentSummaryEntryTest extends TestCase
 
         $entry = AssignmentSummaryEntry::make()->model($order);
 
-        $this->assertSame('In istruttoria', $entry->getStateLabel());
+        $this->assertSame('Under review', $entry->getStateLabel());
 
         // A record whose state is not one of the workflow's says nothing rather than guessing.
         $other = $this->createOrder(['state' => 'unknown']);

@@ -80,16 +80,16 @@ class FormulaConditionProviderTest extends TestCase
 
     public function test_formula_condition_interpolates_message_via_provider(): void
     {
-        $this->registry->register($this->makeProvider(false, 'Totale: € 100,00'));
+        $this->registry->register($this->makeProvider(false, 'Total: € 100.00'));
         $order = $this->createOrder(['total_amount' => 100.0]);
 
         try {
             $this->evaluator->evaluate($order, [
-                ['type' => 'formula', 'expression' => 'false', 'message_template' => 'Totale: {{ currency(total_amount) }}'],
+                ['type' => 'formula', 'expression' => 'false', 'message_template' => 'Total: {{ currency(total_amount) }}'],
             ]);
             $this->fail('Expected FormulaConditionFailedException');
         } catch (FormulaConditionFailedException $e) {
-            $this->assertStringContainsString('€ 100,00', $e->getMessage());
+            $this->assertStringContainsString('€ 100.00', $e->getMessage());
         }
     }
 

@@ -27,7 +27,7 @@ final class WorkflowFormulaScope implements FormulaCompletionProvider
                     'name' => 'now',
                     'kind' => 'variable',
                     'type' => 'DateTime',
-                    'description' => 'Data e ora corrente',
+                    'description' => __('filament-flow::messages.formula_now'),
                     'properties' => [
                         ['name' => 'year', 'kind' => 'property', 'type' => 'int'],
                         ['name' => 'month', 'kind' => 'property', 'type' => 'int'],
@@ -37,22 +37,22 @@ final class WorkflowFormulaScope implements FormulaCompletionProvider
                         ['name' => 'timestamp', 'kind' => 'property', 'type' => 'int'],
                     ],
                     'methods' => [
-                        ['name' => 'format', 'kind' => 'method', 'signature' => 'format(string $format): string', 'description' => 'Formatta la data'],
-                        ['name' => 'addDays', 'kind' => 'method', 'signature' => 'addDays(int $days): DateTime', 'description' => 'Aggiunge giorni'],
-                        ['name' => 'diffInDays', 'kind' => 'method', 'signature' => 'diffInDays(DateTime $other): int', 'description' => 'Differenza in giorni'],
+                        ['name' => 'format', 'kind' => 'method', 'signature' => 'format(string $format): string', 'description' => __('filament-flow::messages.formula_now_format')],
+                        ['name' => 'addDays', 'kind' => 'method', 'signature' => 'addDays(int $days): DateTime', 'description' => __('filament-flow::messages.formula_now_add_days')],
+                        ['name' => 'diffInDays', 'kind' => 'method', 'signature' => 'diffInDays(DateTime $other): int', 'description' => __('filament-flow::messages.formula_now_diff_in_days')],
                     ],
                 ],
                 [
                     'name' => 'state',
                     'kind' => 'variable',
                     'type' => 'string',
-                    'description' => 'Stato workflow corrente del record',
+                    'description' => __('filament-flow::messages.formula_state'),
                 ],
                 [
                     'name' => 'user',
                     'kind' => 'variable',
                     'type' => 'User',
-                    'description' => 'Utente autenticato che esegue la transizione',
+                    'description' => __('filament-flow::messages.formula_user'),
                     'properties' => [
                         ['name' => 'id', 'kind' => 'property', 'type' => 'int'],
                         ['name' => 'name', 'kind' => 'property', 'type' => 'string'],
@@ -63,7 +63,7 @@ final class WorkflowFormulaScope implements FormulaCompletionProvider
                     'name' => 'record',
                     'kind' => 'variable',
                     'type' => 'Model',
-                    'description' => 'Il record su cui avviene la transizione',
+                    'description' => __('filament-flow::messages.formula_record'),
                     'properties' => [
                         ['name' => 'id', 'kind' => 'property', 'type' => 'mixed'],
                         ['name' => 'created_at', 'kind' => 'property', 'type' => 'DateTime'],

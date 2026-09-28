@@ -27,7 +27,7 @@ class StateBadgeTest extends TestCase
 
         $this->createWorkflowState($workflow, [
             'name' => 'draft',
-            'label' => 'Bozza',
+            'label' => 'Draft',
             'color' => 'gray',
             'is_initial' => true,
             'sort_order' => 0,
@@ -35,7 +35,7 @@ class StateBadgeTest extends TestCase
 
         $this->createWorkflowState($workflow, [
             'name' => 'under_review',
-            'label' => 'In istruttoria',
+            'label' => 'Under review',
             'color' => 'warning',
             'sort_order' => 1,
         ]);
@@ -95,8 +95,8 @@ class StateBadgeTest extends TestCase
 
         $this->createWorkflowState($workflow, [
             'name' => 'under_review',
-            'label' => 'In istruttoria',
-            'description' => 'La domanda è assegnata all’ufficio e attende una decisione.',
+            'label' => 'Under review',
+            'description' => 'The application is with the office, waiting for a decision.',
             'sort_order' => 0,
         ]);
 
@@ -104,7 +104,7 @@ class StateBadgeTest extends TestCase
 
         $this->assertNull(StateBadge::make()->model($order)->getStateDescription());
         $this->assertSame(
-            'La domanda è assegnata all’ufficio e attende una decisione.',
+            'The application is with the office, waiting for a decision.',
             StateBadge::make()->description()->model($order)->getStateDescription(),
         );
     }
@@ -112,15 +112,15 @@ class StateBadgeTest extends TestCase
     public function test_the_host_can_add_a_line_of_its_own(): void
     {
         $workflow = $this->createTestWorkflow();
-        $this->createWorkflowState($workflow, ['name' => 'draft', 'label' => 'Bozza', 'sort_order' => 0]);
+        $this->createWorkflowState($workflow, ['name' => 'draft', 'label' => 'Draft', 'sort_order' => 0]);
 
         $order = $this->createOrder(['state' => 'draft']);
 
         $badge = StateBadge::make()
             ->model($order)
-            ->extra(fn (Model $record): string => 'In questo stato dal '.$record->created_at->format('d/m/Y'));
+            ->extra(fn (Model $record): string => 'In this state since '.$record->created_at->format('d/m/Y'));
 
-        $this->assertStringStartsWith('In questo stato dal', (string) $badge->getExtraLine());
+        $this->assertStringStartsWith('In this state since', (string) $badge->getExtraLine());
 
         // A host with nothing to say says nothing, rather than an empty line.
         $quiet = StateBadge::make()->model($order)->extra(fn (): ?string => null);
@@ -132,7 +132,7 @@ class StateBadgeTest extends TestCase
     public function test_a_state_the_workflow_does_not_declare_still_reads(): void
     {
         $workflow = $this->createTestWorkflow();
-        $this->createWorkflowState($workflow, ['name' => 'draft', 'label' => 'Bozza', 'sort_order' => 0]);
+        $this->createWorkflowState($workflow, ['name' => 'draft', 'label' => 'Draft', 'sort_order' => 0]);
 
         $order = $this->createOrder(['state' => 'nowhere']);
 

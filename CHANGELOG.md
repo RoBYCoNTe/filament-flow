@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   two had drifted apart once, and the rows an assignment handed a person were missing from the list.
 - A person as the panels and the columns show them — name, initials, the words of the host for their
   roles — is built in one place (`Support\UserSummary`) instead of five.
+- The descriptions the formula editor shows beside a variable are **translated** now
+  (`filament-flow::messages.formula_*`): they were written in the language of one office, in a
+  package that ships to everybody.
 
 ### Added
 - The refusal, at last: an assignment's access override is fully **three-valued** — `null` lets the

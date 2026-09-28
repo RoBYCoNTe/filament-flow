@@ -215,7 +215,7 @@ class FieldChangesLoggedTest extends TestCase
 
         $this->assertNull(
             $this->getLastTransition($order)->metadata,
-            'Senza sapere cosa c\'era prima, il motore non ha nulla da confrontare.',
+            'Without knowing what was there before, the engine has nothing to compare.',
         );
 
         // Told what the record held a moment ago, the history says what moved.

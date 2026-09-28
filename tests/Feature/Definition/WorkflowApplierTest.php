@@ -82,7 +82,7 @@ class WorkflowApplierTest extends TestCase
         $workflow = $this->applier()->apply(Order::class, self::TENANT, $this->definition());
 
         // Remove the "paid" state and its transition (breaking), forcing the
-        // snapshot at an explicit revision version (e.g. the bando version).
+        // snapshot at an explicit revision version (e.g. the version of the scheme).
         $desired = WorkflowDefinition::make('order', Order::class)
             ->state(State::make('draft', 'Draft')->initial()->color('gray'));
 

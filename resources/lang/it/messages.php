@@ -109,4 +109,14 @@ return [
     'transfer_note' => 'Nota',
     'help_transfer_note' => 'Perché la pratica cambia mani: la nota resta scritta accanto al cambio.',
     'ownership_transferred' => 'Proprietà trasferita.',
+
+    // Cosa legge il formula editor accanto a una variabile: le parole che vede chi scrive
+    // una condizione.
+    'formula_now' => 'Data e ora corrente',
+    'formula_now_format' => 'Formatta la data',
+    'formula_now_add_days' => 'Aggiunge giorni',
+    'formula_now_diff_in_days' => 'Differenza in giorni',
+    'formula_state' => 'Stato workflow corrente del record',
+    'formula_user' => 'Utente autenticato che esegue la transizione',
+    'formula_record' => 'Il record su cui avviene la transizione',
 ];

@@ -30,10 +30,10 @@ class TransitionFormFieldsTest extends TestCase
 
         $field = $transition->fields()->first();
 
-        $this->assertNotNull($field, 'La transizione non ha nessun campo da compilare.');
+        $this->assertNotNull($field, 'The transition has no field to fill in.');
         $this->assertSame('rejection_reason', $field->field_name);
         $this->assertSame('textarea', $field->field_type);
-        $this->assertSame('Motivo del rifiuto', $field->label);
+        $this->assertSame('Reason of the rejection', $field->label);
         $this->assertTrue((bool) $field->is_required);
         $this->assertSame(['required', 'min:20'], $field->validation_rules);
     }
@@ -57,7 +57,7 @@ class TransitionFormFieldsTest extends TestCase
         $this->assertSame('textarea', $transition->fields()->first()->field_type);
     }
 
-    /** Le regole restano regole: il motore le applica come prima. */
+    /** The rules stay rules: the engine applies them as it did before. */
     public function test_the_validation_rules_are_still_declared(): void
     {
         $transition = $this->applyAndFind('reject');
@@ -75,11 +75,11 @@ class TransitionFormFieldsTest extends TestCase
             ->state(State::make('rejected', 'Rejected')->final()->color('danger'))
             ->transition(
                 Transition::make('reject', 'draft', 'rejected')
-                    ->label('Rifiuta')
+                    ->label('Reject')
                     ->validationRule(
                         ValidationRule::make('rejection_reason')
                             ->rules(['required', 'min:20'])
-                            ->label('Motivo del rifiuto')
+                            ->label('Reason of the rejection')
                             ->fieldType('textarea')
                     )
             );
@@ -101,13 +101,13 @@ class TransitionFormFieldsTest extends TestCase
         $transition = $this->applyAndFind('reject');
 
         $this->assertTrue($transition->hasValidationRules());
-        $this->assertGreaterThan(0, $transition->fields()->count(), 'Le regole sono anche campi da compilare.');
+        $this->assertGreaterThan(0, $transition->fields()->count(), 'The rules are also fields to fill in.');
     }
 
     /**
-     * L'etichetta del campo che il pacchetto aggiunge da se' — la ragione di una transizione
-     * che la pretende — si salva come **chiave** e si traduce dove si disegna: cosi' il modulo
-     * segue la lingua dell'applicazione, invece di restare in quella del giorno del sync.
+     * The label of the field the package adds by itself — the reason of a transition that asks
+     * for one — is stored as a **key** and translated where it is drawn: so the form follows the
+     * language of the application, instead of staying in the one of the day of the sync.
      */
     public function test_a_label_of_the_package_is_stored_as_a_key(): void
     {
@@ -126,7 +126,7 @@ class TransitionFormFieldsTest extends TestCase
             ->where('field_name', 'reason')
             ->firstOrFail();
 
-        $this->assertSame('Reason', $field->label, 'La chiave, non la traduzione.');
-        $this->assertSame(__('Reason'), __('Reason'), 'E la traduzione arriva al render.');
+        $this->assertSame('Reason', $field->label, 'The key, not the translation.');
+        $this->assertSame(__('Reason'), __('Reason'), 'And the translation comes at render time.');
     }
 }
