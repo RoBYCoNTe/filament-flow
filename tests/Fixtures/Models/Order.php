@@ -89,4 +89,13 @@ class Order extends Model implements HasFieldLabels
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    /**
+     * The same hand, under the name the owner column derives from `user_id`: a list that eager
+     * loads it spares the owner column a query for every row.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

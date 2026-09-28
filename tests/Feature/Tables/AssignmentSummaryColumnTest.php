@@ -41,6 +41,15 @@ class AssignmentSummaryColumnTest extends TestCase
         $this->assertInstanceOf(AssignmentSummaryColumn::class, $column);
     }
 
+    /** The cell is part of the row: clicking it follows the record link, like any other. */
+    public function test_the_cell_follows_the_row_link(): void
+    {
+        $this->assertFalse(AssignmentSummaryColumn::make('assignments')->isClickDisabled());
+
+        // A host that wants it inert still can.
+        $this->assertTrue(AssignmentSummaryColumn::make('assignments')->disabledClick()->isClickDisabled());
+    }
+
     public function test_avatar_limit_defaults_to_three(): void
     {
         $column = AssignmentSummaryColumn::make('assignments');
