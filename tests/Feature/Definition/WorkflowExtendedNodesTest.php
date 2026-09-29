@@ -154,4 +154,21 @@ class WorkflowExtendedNodesTest extends TestCase
         $this->assertSame(NotificationTiming::Immediate->value, $notification['timing']);
         $this->assertNull($notification['delay_minutes']);
     }
+
+    public function test_a_channel_declared_twice_is_kept_once(): void
+    {
+        // A notification that declares the same channel twice is delivered twice: the second
+        // declaration is a duplicate, not a second delivery.
+        $notification = Notification::make('dup')
+            ->database()
+            ->mail()
+            ->mail()
+            ->database()
+            ->toArray();
+
+        $this->assertSame(
+            [NotificationChannel::Database->value, NotificationChannel::Mail->value],
+            array_column($notification['channels'], 'channel_type'),
+        );
+    }
 }

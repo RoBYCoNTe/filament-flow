@@ -260,9 +260,26 @@ final class Notification
     /** @return list<array{channel_type:string,channel_config:array<string,mixed>,is_active:bool}> */
     public function channelList(): array
     {
-        return $this->channels === []
+        $channels = $this->channels === []
             ? [['channel_type' => NotificationChannel::Database->value, 'channel_config' => [], 'is_active' => true]]
             : $this->channels;
+
+        // One channel of each type: a notification that declares the same channel twice (the
+        // shared helper plus the transition, say) is delivered twice, which is a duplicate, not
+        // a feature. The first declaration wins.
+        $seen = [];
+
+        return array_values(array_filter($channels, function (array $channel) use (&$seen): bool {
+            $type = (string) ($channel['channel_type'] ?? '');
+
+            if ($type === '' || isset($seen[$type])) {
+                return false;
+            }
+
+            $seen[$type] = true;
+
+            return true;
+        }));
     }
 
     /** @return array<string,mixed> */
