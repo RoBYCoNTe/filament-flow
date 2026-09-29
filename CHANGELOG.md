@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-29
+
 ### Changed
 - The handover of a record is the work of the engine, not of a form: the new
   `Services\OwnershipTransfer` moves the owner, gives the previous holder what a retention asks for,
