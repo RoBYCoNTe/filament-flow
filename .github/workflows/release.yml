@@ -20,7 +20,8 @@ jobs:
         id: changelog
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
-          awk "/\\[${VERSION}\\]/{found=1; next} /^## /{found=0} found" CHANGELOG.md > /tmp/changelog.txt
+          # The section is matched as text, not as a pattern: a version is full of dots.
+          awk -v version="[$VERSION]" 'index($0, version) { found=1; next } /^## / { found=0 } found' CHANGELOG.md > /tmp/changelog.txt
           {
             echo 'CONTENT<<EOF'
             cat /tmp/changelog.txt
@@ -29,16 +30,18 @@ jobs:
 
       - name: Create GitHub Release
         uses: actions/github-script@v7
+        env:
+          # The notes travel as data, never inside the script: a changelog is full of backticks.
+          RELEASE_NOTES: ${{ steps.changelog.outputs.CONTENT }}
         with:
           script: |
             const tag = context.ref.replace('refs/tags/', '');
-            const body = `${{ steps.changelog.outputs.CONTENT }}`;
             await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: tag,
               name: tag,
-              body: body,
+              body: process.env.RELEASE_NOTES,
             });
 
       - name: Trigger Packagist update
