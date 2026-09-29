@@ -283,6 +283,14 @@ transition state.
     'default_template_engine' => 'plain',
 
     /**
+     * How the title of every notification reads. `{title}` is the event, `{record}` the
+     * code of the record it is about (see `HasWorkflowLabel`): a notification always says
+     * which file it concerns, without every event having to repeat it. When the record has
+     * no label, the event stands alone.
+     */
+    'title_pattern' => '{title}',
+
+    /**
      * A custom recipient resolver: the name of a class extending
      * RoBYCoNTe\FilamentFlow\Services\RecipientResolver.
      * Null uses the resolver of the package.
@@ -290,6 +298,8 @@ transition state.
     'recipient_resolver' => null,
 ],
 ```
+
+**`title_pattern`** — The title of every notification, composed once: `{title}` is the event, `{record}` the code the record answers with (its `workflowLabel()`, or the title Filament gives it, or a column that looks like a code). Applied to the bell title and the mail subject; a pattern without `{record}` leaves the title as the event wrote it.
 
 **`logging_enabled`** — When `true`, every notification dispatch attempt (sent, failed, or skipped) is recorded in `workflow_notification_logs`. Disable for high-volume workflows where audit logging is not required.
 

@@ -12,6 +12,9 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Str;
+use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
+use RoBYCoNTe\FilamentFlow\Support\RecordLabel;
+use Throwable;
 
 /**
  * Laravel Notification class for workflow notifications.
@@ -61,7 +64,7 @@ class WorkflowNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
-            ->subject($this->renderTemplate($this->template['subject'] ?? 'Workflow Notification'))
+            ->subject($this->composeTitle($this->renderTemplate($this->template['subject'] ?? 'Workflow Notification')))
             ->greeting($this->renderTemplate($this->template['title'] ?? 'Hello!'))
             ->line($this->renderTemplate($this->template['body'] ?? 'A workflow event has occurred.'));
 
@@ -93,7 +96,7 @@ class WorkflowNotification extends Notification implements ShouldQueue
      */
     public function toDatabase(object $notifiable): array
     {
-        $title = $this->renderTemplate($this->template['title'] ?? 'Workflow Notification');
+        $title = $this->composeTitle($this->renderTemplate($this->template['title'] ?? 'Workflow Notification'));
         $body = $this->renderTemplate($this->template['body'] ?? 'A workflow event has occurred.');
         $actionUrl = $this->renderTemplate($this->template['action_url'] ?? '');
         $actionText = $this->renderTemplate($this->template['action_text'] ?? '');
@@ -144,11 +147,59 @@ class WorkflowNotification extends Notification implements ShouldQueue
         // Build variables for substitution
         $variables = $this->buildVariables();
 
-        return match ($engine) {
+        $rendered = match ($engine) {
             'blade' => $this->renderBlade($template, $variables),
             'mustache' => $this->renderMustache($template, $variables),
             default => $this->renderPlain($template, $variables),
         };
+
+        return $this->renderHostExpressions($rendered);
+    }
+
+    /**
+     * The placeholders the engine does not know — `field("...")`, `currency(...)`, the URL of the
+     * record — are handed to the host, which answers with the same record the notification is
+     * about. The engine has already filled its own variables, so what is left is the vocabulary
+     * of the host; a host that registered no provider leaves the template as it stands.
+     */
+    protected function renderHostExpressions(string $template): string
+    {
+        try {
+            $registry = app(NotificationTemplateRegistry::class);
+
+            if (! $registry->has()) {
+                return $template;
+            }
+
+            return $registry->get()->interpolate($template, $this->record);
+        } catch (Throwable $e) {
+            report($e);
+
+            return $template;
+        }
+    }
+
+    /**
+     * The title of a notification: the event and the file it is about, composed once for every
+     * notification by the pattern of the host (`notifications.title_pattern`, tokens `{title}`
+     * and `{record}`). A record with no label leaves the event standing alone, never a dangling
+     * separator.
+     */
+    protected function composeTitle(string $eventTitle): string
+    {
+        $pattern = (string) config('filament-flow.notifications.title_pattern', '{title}');
+
+        if (! str_contains($pattern, '{record}')) {
+            return $eventTitle;
+        }
+
+        $label = RecordLabel::of($this->record);
+
+        if ($label === null || $label === '') {
+            return $eventTitle;
+        }
+
+        return str_replace(['{title}', '{record}'], [$eventTitle, $label], $pattern);
     }
 
     /**
@@ -160,7 +211,7 @@ class WorkflowNotification extends Notification implements ShouldQueue
         // with database-only state strings that don't resolve to a PHP class.
         try {
             $recordArray = $this->record->toArray();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $recordArray = $this->record->getAttributes();
         }
 
@@ -169,6 +220,9 @@ class WorkflowNotification extends Notification implements ShouldQueue
             'record' => $recordArray,
             'record_id' => $this->record->getKey(),
             'record_type' => class_basename($this->record),
+            // The code the record reads by, beside the event in the title and usable in a
+            // template (`{{ record_title }}`): the file a notification is about.
+            'record_title' => RecordLabel::of($this->record) ?? '',
 
             // Context variables
             'trigger' => $this->context['trigger'] ?? '',

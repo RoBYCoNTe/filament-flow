@@ -158,6 +158,47 @@ WorkflowNotificationTemplate::create([
 - `blade` — Laravel Blade syntax with full Blade features
 - `mustache` — Mustache syntax with HTML escaping (<code v-pre>{{var}}</code> escaped, <code v-pre>{{{var}}}</code> unescaped)
 
+## The title of a notification
+
+A bell is a list of events: without the file each one is about, two "Application received" say
+nothing, and the reader has to open them one by one. The engine composes the title from a
+pattern declared **once**, so every notification carries the code of its record without any
+event having to repeat it.
+
+```php
+// config/filament-flow.php
+'notifications' => [
+    // `{title}` is the event, `{record}` the code of the record it is about.
+    'title_pattern' => '{title} · {record}',
+],
+```
+
+Which code a record reads by is the host's decision: the record implements `HasWorkflowLabel`.
+
+```php
+use RoBYCoNTe\FilamentFlow\Contracts\HasWorkflowLabel;
+
+class Application extends Model implements HasWorkflowLabel
+{
+    public function workflowLabel(): ?string
+    {
+        // The protocol the office assigned, or the short id the page itself shows.
+        return $this->protocol_number ?? '#'.strtoupper(substr((string) $this->getKey(), -6));
+    }
+}
+```
+
+The title then reads `Application received · #4F2A9C`, `Integration requested · Prot. 123/2026`.
+
+When the record has no label — no contract, no title, no code — the event stands alone instead
+of showing a dangling separator. A record that does not implement the contract is still read by
+`RecordLabel`: the title Filament gives it (`getRecordTitle()`), then a column that looks like a
+code (`protocol_number`, `reference`, `code`, `number`, `name`, `title`).
+
+The pattern is applied to the **title of the bell** and the **subject of the mail**; the code is
+also available inside templates as the `record_title` variable. A pattern without `{record}` leaves the
+title exactly as the event wrote it.
+
 ## Action Buttons in Templates
 
 Notification templates support a call-to-action button via `action_text` and `action_url`.
@@ -167,7 +208,7 @@ Notification templates support a call-to-action button via `action_text` and `ac
 | `action_text` | Button label (e.g., "View Order") |
 | `action_url` | URL — supports template variables like `{{app_url}}/orders/{{record_id}}` |
 
-The button is rendered as an actionable link in database notifications and as a linked button in mail notifications.
+The button is rendered as an actionable link in database notifications and as a linked button in mail notifications. A notification that says something happened is only useful if it opens the file it happened on: `->action('{{ record_url }}', 'Open the application')` on the definition puts that link on the bell and on the mail.
 
 The template's `format` field controls how the body is rendered:
 
@@ -176,6 +217,50 @@ The template's `format` field controls how the body is rendered:
 | `html` | Raw HTML body |
 | `markdown` | Markdown rendered to HTML |
 | `plain` | Plain text (default) |
+
+### Expressions of the host
+
+The engine fills its own placeholders — `record_id`, `app_url`, `from_state`,
+`to_state_label`, `transition_label` — and leaves everything else to the host. A host
+that wants its own vocabulary (`field("path")`, `currency("amount")`, the URL of the record)
+registers a `NotificationTemplateProvider`:
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Contracts\NotificationTemplateProvider;
+use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
+
+final class ApplicationNotificationTemplateProvider implements NotificationTemplateProvider
+{
+    public function interpolate(string $template, Model $record): string
+    {
+        // fill the `{{ ... }}` the engine left behind, against the record
+        return $template;
+    }
+}
+```
+
+```php
+// a service provider
+$this->app->afterResolving(NotificationTemplateRegistry::class, function (NotificationTemplateRegistry $registry): void {
+    $registry->register(app(ApplicationNotificationTemplateProvider::class));
+});
+```
+
+The engine renders its own variables first, then hands the result to the provider: a template may
+mix `record_id` and `field("review.notes")` without either side having to know the
+other. An expression the provider cannot resolve should be left out, never thrown — a
+notification that carries one broken placeholder is worth more than one that never leaves. A
+host that registers no provider gets the engine's rendering alone.
+
+Together, the two make a notification that says what happened and opens where it happened:
+
+```php
+Notification::make('integration_requested', 'Integration requested')
+    ->body('The office asked for an integration: {{ field("review.notes") }}')
+    ->action('{{ record_url }}', 'Open the application')
+    ->database();
+```
 
 ## Notification Timing
 

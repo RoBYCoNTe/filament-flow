@@ -292,6 +292,14 @@ return [
         'default_template_engine' => 'plain',
 
         /**
+         * How the title of every notification reads. `{title}` is the event, `{record}` the
+         * code of the record it is about (see `HasWorkflowLabel`): a notification always says
+         * which file it concerns, without every event having to repeat it. When the record has
+         * no label, the event stands alone.
+         */
+        'title_pattern' => '{title}',
+
+        /**
          * A custom recipient resolver: the name of a class extending
          * RoBYCoNTe\FilamentFlow\Services\RecipientResolver.
          * Null uses the resolver of the package.

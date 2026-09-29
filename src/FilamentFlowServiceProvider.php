@@ -29,6 +29,7 @@ use RoBYCoNTe\FilamentFlow\Observers\WorkflowCacheObserver;
 use RoBYCoNTe\FilamentFlow\Services\RecipientResolver;
 use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
+use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
 use RoBYCoNTe\FilamentFlow\Support\ValidationRuleRegistry;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowFormulaScope;
 use RoBYCoNTe\FilamentFlow\Testing\TestsFilamentFlow;
@@ -101,6 +102,10 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
         });
 
         $this->app->singleton(FormulaConditionRegistry::class, fn () => new FormulaConditionRegistry);
+
+        // The host that fills the expressions of a notification template (`field("...")`, the URL
+        // of the record): a singleton, so registering it once is enough for every notification.
+        $this->app->singleton(NotificationTemplateRegistry::class, fn () => new NotificationTemplateRegistry);
 
         // Named validation rules: shared by every rule declaration (state field
         // rules, transition rules, host field rules).

@@ -10,6 +10,7 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasFlexibleStates;
 use RoBYCoNTe\FilamentFlow\Concerns\HasStateAccess;
 use RoBYCoNTe\FilamentFlow\Concerns\HasWorkflowAssignments;
 use RoBYCoNTe\FilamentFlow\Contracts\HasFieldLabels;
+use RoBYCoNTe\FilamentFlow\Contracts\HasWorkflowLabel;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\OrderState;
 
 /**
@@ -34,7 +35,7 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\OrderState;
  * @method static visibleTo(User $user)
  * @method static editableBy(User $user)
  */
-class Order extends Model implements HasFieldLabels
+class Order extends Model implements HasFieldLabels, HasWorkflowLabel
 {
     use HasDatabaseTransitions;
     use HasFlexibleStates;
@@ -50,6 +51,12 @@ class Order extends Model implements HasFieldLabels
             'customer_email' => 'Customer e-mail',
             'customer_name' => 'Customer name',
         ][$path] ?? null;
+    }
+
+    /** How the order reads in a notification: the code beside the event. */
+    public function workflowLabel(): ?string
+    {
+        return $this->order_number;
     }
 
     protected $table = 'test_orders';

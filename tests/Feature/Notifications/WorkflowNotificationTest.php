@@ -3,9 +3,13 @@
 namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Notifications;
 
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
+use RoBYCoNTe\FilamentFlow\Contracts\NotificationTemplateProvider;
 use RoBYCoNTe\FilamentFlow\Notifications\WorkflowNotification;
+use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
+use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Ticket;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\PendingState;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ProcessingState;
@@ -196,6 +200,96 @@ class WorkflowNotificationTest extends TestCase
         $action = collect($arrayData['actions'])->first();
         $this->assertEquals('https://example.com/orders/'.$this->order->id, $action['url']);
         $this->assertEquals('View Order', $action['label']);
+    }
+
+    public function test_the_host_fills_the_expressions_the_engine_does_not_know(): void
+    {
+        $registry = app(NotificationTemplateRegistry::class);
+        $registry->clear();
+        $registry->register(new class implements NotificationTemplateProvider
+        {
+            public function interpolate(string $template, Model $record): string
+            {
+                return str_replace(
+                    ['{{ field("customer_name") }}', '{{ record_url }}'],
+                    [$record->getAttribute('customer_name'), 'https://app.example.com/orders/'.$record->getKey()],
+                    $template,
+                );
+            }
+        });
+
+        $data = [
+            'channel' => 'database',
+            'template' => [
+                'title' => 'Test',
+                'body' => 'Order for {{ field("customer_name") }} (#{{ record_id }})',
+                'action_url' => '{{ record_url }}',
+                'action_text' => 'Open the order',
+                'template_engine' => 'plain',
+            ],
+        ];
+
+        $arrayData = (new WorkflowNotification($data, $this->order))->toArray($this->user);
+
+        // The engine fills its own variable, the host the expression beside it.
+        $this->assertSame('Order for John Doe (#'.$this->order->id.')', $arrayData['body']);
+
+        $action = collect($arrayData['actions'])->first();
+        $this->assertSame('https://app.example.com/orders/'.$this->order->id, $action['url']);
+    }
+
+    public function test_the_title_composes_the_event_and_the_code_of_the_record(): void
+    {
+        config()->set('filament-flow.notifications.title_pattern', '{title} · {record}');
+
+        $data = [
+            'channel' => 'database',
+            'template' => [
+                'title' => 'Order updated',
+                'body' => 'File: {{ record_title }}',
+                'template_engine' => 'plain',
+            ],
+        ];
+
+        $arrayData = (new WorkflowNotification($data, $this->order))->toArray($this->user);
+
+        $this->assertSame('Order updated · ORD-TEST-001', $arrayData['title']);
+        // The code is also a variable a template may read.
+        $this->assertSame('File: ORD-TEST-001', $arrayData['body']);
+    }
+
+    public function test_the_event_stands_alone_when_the_record_has_no_label(): void
+    {
+        config()->set('filament-flow.notifications.title_pattern', '{title} · {record}');
+
+        $ticket = Ticket::create([
+            'ticket_number' => 'TKT-LABEL-001',
+            'subject' => 'No label here',
+        ]);
+
+        $data = [
+            'channel' => 'database',
+            'template' => ['title' => 'Ticket updated', 'body' => 'x'],
+        ];
+
+        $arrayData = (new WorkflowNotification($data, $ticket))->toArray($this->user);
+
+        // Nothing to put beside the event: no dangling separator.
+        $this->assertSame('Ticket updated', $arrayData['title']);
+    }
+
+    public function test_the_plain_pattern_leaves_the_title_as_it_is(): void
+    {
+        config()->set('filament-flow.notifications.title_pattern', '{title}');
+
+        $data = [
+            'channel' => 'database',
+            'template' => ['title' => 'Order updated', 'body' => 'x'],
+        ];
+
+        $arrayData = (new WorkflowNotification($data, $this->order))->toArray($this->user);
+
+        $this->assertSame('Order updated', $arrayData['title']);
     }
 
     public function test_it_sets_correct_icon_for_transition_trigger(): void
