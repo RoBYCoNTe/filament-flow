@@ -81,14 +81,20 @@ composer docs:comments src/Services # ... in one subtree
 composer docs:comments --base main  # ... since a branch point, instead of the working tree
 ```
 
-## The two guards
+## The three guards
 
-Two commands keep the documentation honest, and both run in CI:
+Three commands keep the documentation honest, and all run in CI:
 
 ```bash
-composer docs:comments   # a documentation pass changed comment lines only
-composer check:docs      # every public class is named by at least one page
+composer docs:comments    # a documentation pass changed comment lines only
+composer check:docs       # every public class is named by at least one page
+composer check:language   # no Italian word slipped into a comment or a page
 ```
+
+`check:language` is the newest, and it exists because a docblock read *“the exchanges of the
+istruttoria”*: English with a hole in it. It reads comments, docblocks, Blade comments and pages,
+and fails on a word no English text would use (`istruttoria`, `ufficio`, `scadenza`, …) — never on a
+string, where a host writes in its own language on purpose.
 
 The second one is a gate, not an advice: `docs-coverage` counts the public classes of `src/` that no
 page ever mentions, and it fails while that number is not zero. Adding a service, a trait, a

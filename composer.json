@@ -57,17 +57,20 @@
         "phpstan": "vendor/bin/phpstan analyse",
         "check:debug": "php scripts/no-debug-leftovers.php",
         "check:docs": "php scripts/docs-coverage.php --fail",
+        "check:language": "php scripts/no-italian.php",
         "docs:comments": "php scripts/comment-only.php",
         "docs:coverage": "php scripts/docs-coverage.php",
         "check": [
             "@lint",
             "@phpstan",
-            "@check:debug"
+            "@check:debug",
+            "@check:language"
         ],
         "check:all": [
             "@lint",
             "@phpstan",
             "@check:debug",
+            "@check:language",
             "@check:docs",
             "@test"
         ],
