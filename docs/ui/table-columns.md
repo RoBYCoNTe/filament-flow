@@ -54,6 +54,47 @@ The column will automatically:
 - Show the state icon (from `HasIcon`)
 - Sort by custom order if defined (see below)
 
+### OpenRequestsColumn
+
+A column that tells, at a glance, that a row awaits an answer: the request an earlier transition
+opened and no later one answered. It reads the same history the
+[`OpenRequestsEntry`](infolist-components.md#openrequestsentry) reads — the note and the term
+declared by the transition that asked — one record per row.
+
+```php
+use RoBYCoNTe\FilamentFlow\Tables\Columns\OpenRequestsColumn;
+
+OpenRequestsColumn::make('open_requests')
+    ->noteField('review.notes')          // optional: override the declared path
+    ->deadlineField('meta.deadline')     // optional: override the declared path
+    ->hideDeadline()                     // omit the term
+    ->toggleable();                      // already on: the reader may put it away
+```
+
+The column is created **toggleable**, so a list can offer it and each reader can hide it without
+the call deciding for them. A row with an open request wears a chip — “Waiting for a reply · 2
+days”, or “Overdue” in red — with the note on hover; a row a decision was taken on wears the
+**label and the colour of the state it moved to** (a rejection in red, an approval in green); a
+row with nothing to answer shows a dash.
+
+| Method | Default | Description |
+|---|---|---|
+| `noteField(?string $field)` | declared | Overrides the path of the note the transition declared. |
+| `deadlineField(?string $field)` | declared | Overrides the path of the term the transition declared. |
+| `hideDeadline(bool $hidden = true)` | `false` | Leaves the term out of the chip. |
+| `toggleable(bool \| Closure $condition = true, ...)` | `true` | Inherited from Filament: the reader shows or hides the column. |
+
+> **Cost.** The cell is not a value of the row: the column queries the history once per record.
+> On a list of a hundred rows that is a hundred queries — the price of a column that says
+> something the row does not carry. It is why the column is toggleable, and why a host that keeps
+> it should keep the page size modest.
+
+The reading is also available outside the render:
+
+```php
+$request = OpenRequestsColumn::make()->getRequest($order); // OpenRequest|null
+```
+
 ### TextColumn with Badge
 
 Alternatively, use the standard Filament `TextColumn` to display states as badges:

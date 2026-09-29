@@ -118,4 +118,23 @@ return [
     'formula_state' => 'Current workflow state of the record',
     'formula_user' => 'The authenticated user running the transition',
     'formula_record' => 'The record the transition happens on',
+
+    // What the workflow waits for on a record: the requests an earlier transition opened and
+    // no later one answered.
+    'open_requests_label' => 'Open requests',
+    'open_requests_action_required' => 'Your turn',
+    'open_requests_waiting' => 'Waiting for a reply',
+    'open_requests_answered' => 'Replied',
+    'open_requests_message_label' => 'Message',
+    'open_requests_message_on' => 'Communicated on :date',
+    'open_requests_message_by' => 'Communicated by :name on :date',
+    'open_requests_asked_by' => 'Asked by :name on :date',
+    'open_requests_asked_on' => 'Asked on :date',
+    'open_requests_deadline' => 'Term: :date',
+    'open_requests_days_left' => '{1} :count day left|[2,*] :count days left',
+    'open_requests_overdue' => 'The term passed on :date',
+    'open_requests_overdue_short' => 'Overdue',
+    'open_requests_answered_on' => 'Replied on :date',
+    'open_requests_reply_hint' => 'Reply with the action available in the toolbar below.',
+    'open_requests_office_hint' => 'The other side has not replied yet.',
 ];

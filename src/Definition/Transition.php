@@ -187,6 +187,93 @@ final class Transition
         return $this;
     }
 
+    /**
+     * The transition asks something of the other side of the workflow — the applicant,
+     * usually: a note to read, a document to attach. The request stays open until a
+     * transition that answers it runs, and the flow tells whoever opens the record what is
+     * expected of them (see `OpenRequests`).
+     *
+     * The flag lives in the metadata the transition already carries: nothing else is stored,
+     * and a workflow that never marks a transition behaves exactly as before.
+     */
+    public function opensRequest(bool $opens = true): self
+    {
+        return $this->withMetadata('opens_request', $opens);
+    }
+
+    /**
+     * The transition answers the request an earlier one opened: the exchange is closed, and
+     * the flow stops asking.
+     */
+    public function answersRequest(bool $answers = true): self
+    {
+        return $this->withMetadata('answers_request', $answers);
+    }
+
+    /**
+     * Where the note and the term of the request live, in the words of the host: the engine
+     * reads them from here, so the components that tell what is expected need no path of their
+     * own — the call declares them once, on the transition that asks.
+     */
+    public function withRequestFields(?string $noteField = null, ?string $deadlineField = null): self
+    {
+        if ($noteField !== null && $noteField !== '') {
+            $this->withMetadata('note_field', $noteField);
+        }
+
+        if ($deadlineField !== null && $deadlineField !== '') {
+            $this->withMetadata('deadline_field', $deadlineField);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Whether this transition opens a request (the flag the DSL writes).
+     */
+    public function isRequestOpening(): bool
+    {
+        return (bool) ($this->metadata['opens_request'] ?? false);
+    }
+
+    /**
+     * Whether this transition answers an open request (the flag the DSL writes).
+     */
+    public function isRequestAnswering(): bool
+    {
+        return (bool) ($this->metadata['answers_request'] ?? false);
+    }
+
+    /**
+     * The transition leaves a message for the other side of the workflow: a decision with its
+     * reason, a note that closes the exchange. It is read like a request — same history, same
+     * note — but it expects no answer, and the flow shows it as what the workflow said rather
+     * than as something to do. The note is named here, once.
+     */
+    public function leavesMessage(?string $noteField = null): self
+    {
+        $this->withMetadata('leaves_message', true);
+
+        if ($noteField !== null && $noteField !== '') {
+            $this->withMetadata('note_field', $noteField);
+        }
+
+        return $this;
+    }
+
+    /** Whether this transition leaves a message (the flag the DSL writes). */
+    public function isMessageLeaving(): bool
+    {
+        return (bool) ($this->metadata['leaves_message'] ?? false);
+    }
+
+    private function withMetadata(string $key, mixed $value): self
+    {
+        $this->metadata[$key] = $value;
+
+        return $this;
+    }
+
     public function name(): string
     {
         return $this->name;

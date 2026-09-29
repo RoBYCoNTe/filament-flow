@@ -119,4 +119,22 @@ return [
     'formula_state' => 'Stato workflow corrente del record',
     'formula_user' => 'Utente autenticato che esegue la transizione',
     'formula_record' => 'Il record su cui avviene la transizione',
+
+    // Cosa la pratica aspetta: le richieste aperte da una transizione e non ancora risposte.
+    'open_requests_label' => 'Richieste in sospeso',
+    'open_requests_action_required' => 'Tocca a te',
+    'open_requests_waiting' => 'In attesa di risposta',
+    'open_requests_answered' => 'Risposta inviata',
+    'open_requests_message_label' => 'Comunicazione',
+    'open_requests_message_on' => 'Comunicato il :date',
+    'open_requests_message_by' => 'Comunicato da :name il :date',
+    'open_requests_asked_by' => 'Richiesto da :name il :date',
+    'open_requests_asked_on' => 'Richiesto il :date',
+    'open_requests_deadline' => 'Termine: :date',
+    'open_requests_days_left' => '{1} :count giorno|[2,*] :count giorni',
+    'open_requests_overdue' => 'Termine scaduto il :date',
+    'open_requests_overdue_short' => 'Scaduta',
+    'open_requests_answered_on' => 'Risposta inviata il :date',
+    'open_requests_reply_hint' => 'Rispondi con l\'azione disponibile nella barra dei comandi qui sotto.',
+    'open_requests_office_hint' => 'La controparte non ha ancora risposto.',
 ];

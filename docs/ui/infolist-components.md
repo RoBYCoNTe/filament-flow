@@ -1,6 +1,6 @@
 # Infolist Components
 
-Filament Flow provides two infolist entry components for displaying workflow-related information inside Filament infolists, plus a workflow diagram view for the admin panel.
+Filament Flow provides infolist entry components for displaying workflow-related information inside Filament infolists, plus a workflow diagram view for the admin panel.
 
 ## TransitionTimeline
 
@@ -156,6 +156,60 @@ If you need to work with the transition records directly (e.g. in a custom view 
 $entries = $timelineComponent->getTimeline(); // Collection of WorkflowStateTransition
 $total   = $timelineComponent->getTotalCount(); // int — full count, unaffected by limit
 ```
+
+## OpenRequestsEntry
+
+`OpenRequestsEntry` tells what the workflow is waiting for on a record: the transitions that
+asked something and no later one answered — who asked, when, with which note and which term.
+
+It reads the history the engine already keeps, through the note and the term the transition that
+asked declared with
+[`withRequestFields()`](../workflows/open-requests.md#marking-a-request-and-its-answer). A
+workflow that marks no transition renders nothing: the entry is silent where there is nothing to
+say.
+
+```php
+use RoBYCoNTe\FilamentFlow\Infolists\Components\OpenRequestsEntry;
+
+OpenRequestsEntry::make()
+    ->noteField('review.notes')          // optional: override the declared path
+    ->deadlineField('meta.deadline')     // optional: override the declared path
+    ->hideDeadline()                     // omit the term
+    ->showAnswered()                     // read the closed exchanges too
+    ->limit(3)                           // keep the newest N
+    ->transitions(['request_integration'], ['resubmit']); // name them instead of marking the DSL
+```
+
+| Method | Default | Description |
+|---|---|---|
+| `noteField(?string $field)` | declared | Overrides the path of the note the transition declared. |
+| `deadlineField(?string $field)` | declared | Overrides the path of the term the transition declared. |
+| `hideDeadline(bool $hidden = true)` | `false` | Leaves the term out of the entry. |
+| `showAnswered(bool $show = true)` | `false` | Also reads the exchanges already answered, under the open ones. |
+| `limit(int $limit)` | — | How many exchanges are shown at most, newest first. |
+| `openTransitions(array $names)` / `answerTransitions(array $names)` / `transitions(array $open, array $answer = [])` | `[]` | Names the transitions instead of reading the metadata flags. When given, they win over the flags. |
+
+Each open request reads as a card: the label of the transition that asked, who asked and when,
+the note quoted, the term (with the days left, amber when close, red when passed), and — for the
+reader the request is meant for — the line that points at the action that answers it. The view
+tells the two sides apart: the owner of the record reads *“Your turn”*, everyone else *“Waiting
+for a reply”*.
+
+A **message** — a decision a transition left with `leavesMessage()` — reads as a card of its own:
+it wears the **colour and the label of the state it moved to** (a rejection in red, an approval in
+green) and asks for nothing. No second entry, no second placement: the same component tells both
+what the workflow waits for and what it said.
+
+### Programmatic access
+
+The reading is available outside the render, for a host that wants to ask on its own:
+
+```php
+$requests = OpenRequestsEntry::make()->requestsFor($order); // Collection of OpenRequest
+```
+
+For the data model and the options of the resolver behind it, see
+[Open Requests](../workflows/open-requests.md).
 
 ## StateBadge
 
