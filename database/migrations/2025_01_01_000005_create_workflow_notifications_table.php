@@ -69,10 +69,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('notification_id')->constrained('workflow_notifications')->cascadeOnDelete();
 
-            $table->enum('channel_type', [
-                'database',
-                'mail',
-            ])->default('database');
+            // The name of the channel: the two the engine delivers itself, or any custom
+            // channel the host registered a driver for (a PEC, an external service).
+            $table->string('channel_type')->default('database');
 
             $table->json('channel_config')->nullable();
             $table->boolean('is_active')->default(true);

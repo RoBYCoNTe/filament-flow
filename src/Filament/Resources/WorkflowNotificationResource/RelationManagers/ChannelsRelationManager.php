@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 use RoBYCoNTe\FilamentFlow\Concerns\HasRelationManagerForm;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationChannel;
 
@@ -97,6 +98,33 @@ class ChannelsRelationManager extends RelationManager
         ];
     }
 
+    /**
+     * The channels the configuration declares (every key of `notifications.channels`),
+     * the engine's two on top of the custom ones the host added — a label of its own
+     * when the channel declares one.
+     *
+     * @return array<string, string>
+     */
+    protected static function channelOptions(): array
+    {
+        $channels = (array) config('filament-flow.notifications.channels', [
+            'database' => [],
+            'mail' => [],
+        ]);
+
+        if ($channels === []) {
+            $channels = ['database' => [], 'mail' => []];
+        }
+
+        return collect($channels)
+            ->mapWithKeys(fn (mixed $config, string $type): array => [
+                $type => is_array($config) && isset($config['label'])
+                    ? (string) $config['label']
+                    : __(Str::ucfirst($type)),
+            ])
+            ->all();
+    }
+
     protected static function getFormSchema(): array
     {
         return [
@@ -104,14 +132,14 @@ class ChannelsRelationManager extends RelationManager
                 ->label(__('Channel'))
                 ->default((string) config('filament-flow.notifications.default_channel', 'database'))
                 ->required()
-                ->options([
-                    'database' => __('Database'),
-                    'mail' => __('Mail'),
-                ])
-                ->descriptions([
+                ->options(self::channelOptions())
+                ->descriptions(array_merge([
                     'database' => __('In-app notification stored in the database. Shown in Filament\'s notification bell.'),
                     'mail' => __('Email notification sent via configured mail driver.'),
-                ])
+                ], array_fill_keys(
+                    array_diff(array_keys(self::channelOptions()), ['database', 'mail']),
+                    __('Delivered through the channel driver the host registered.'),
+                )))
                 ->columns(2),
 
             Forms\Components\Toggle::make('is_active')

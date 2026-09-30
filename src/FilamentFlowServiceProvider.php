@@ -29,6 +29,7 @@ use RoBYCoNTe\FilamentFlow\Observers\WorkflowCacheObserver;
 use RoBYCoNTe\FilamentFlow\Services\RecipientResolver;
 use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
+use RoBYCoNTe\FilamentFlow\Support\NotificationChannelDriverRegistry;
 use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
 use RoBYCoNTe\FilamentFlow\Support\ValidationRuleRegistry;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowFormulaScope;
@@ -70,6 +71,7 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
                 '2025_01_01_000009_add_schema_version_to_workflows_table',
                 '2025_01_01_000010_create_workflow_snapshots_table',
                 '2025_01_01_000011_create_workflow_owner_changes_table',
+                '2025_01_01_000012_make_workflow_notification_channels_channel_type_free',
             ])
             ->runsMigrations()
             ->hasCommands([
@@ -106,6 +108,19 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
         // The host that fills the expressions of a notification template (`field("...")`, the URL
         // of the record): a singleton, so registering it once is enough for every notification.
         $this->app->singleton(NotificationTemplateRegistry::class, fn () => new NotificationTemplateRegistry);
+
+        // The channels the host teaches the engine (a PEC, an external service), seeded with the
+        // drivers of the configuration (`notifications.channel_drivers`): a host registers more
+        // of them on the singleton, the engine reads the same registry for every notification.
+        $this->app->singleton(NotificationChannelDriverRegistry::class, function () {
+            $registry = new NotificationChannelDriverRegistry;
+
+            foreach ((array) config('filament-flow.notifications.channel_drivers', []) as $channelType => $driver) {
+                $registry->register((string) $channelType, $driver);
+            }
+
+            return $registry;
+        });
 
         // Named validation rules: shared by every rule declaration (state field
         // rules, transition rules, host field rules).

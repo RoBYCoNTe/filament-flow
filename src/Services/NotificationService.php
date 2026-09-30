@@ -239,6 +239,12 @@ class NotificationService
         Collection $recipients,
         array $notificationData
     ): void {
+        // A channel the host taught the engine delivers through its own driver,
+        // the same as the database-configured notifications do.
+        if ($this->deliverViaDriver((string) ($notificationData['channel'] ?? 'database'), $record, $recipients, $notificationData)) {
+            return;
+        }
+
         try {
             $notification = new WorkflowNotification($notificationData, $record);
             Notification::send($recipients, $notification);

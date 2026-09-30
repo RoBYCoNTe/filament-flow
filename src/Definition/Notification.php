@@ -81,7 +81,7 @@ final class Notification
 
         foreach ($data['channels'] ?? [] as $channel) {
             $notification->channel(
-                NotificationChannel::from((string) $channel['channel_type']),
+                (string) $channel['channel_type'],
                 $channel['channel_config'] ?? [],
                 (bool) ($channel['is_active'] ?? true),
             );
@@ -151,11 +151,17 @@ final class Notification
         return $this;
     }
 
-    /** @param array<string,mixed> $config */
-    public function channel(NotificationChannel $channel, array $config = [], bool $active = true): self
+    /**
+     * A channel of the notification: one of the engine's (`NotificationChannel`) or a
+     * custom one the host registered a driver for — `pec`, an external service. The
+     * configuration travels with the channel and reaches its driver untouched.
+     *
+     * @param  array<string, mixed>  $config
+     */
+    public function channel(NotificationChannel|string $channel, array $config = [], bool $active = true): self
     {
         $this->channels[] = [
-            'channel_type' => $channel->value,
+            'channel_type' => $channel instanceof NotificationChannel ? $channel->value : $channel,
             'channel_config' => $config,
             'is_active' => $active,
         ];

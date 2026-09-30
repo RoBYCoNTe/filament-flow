@@ -286,6 +286,18 @@ return [
         ],
 
         /**
+         * Custom channel drivers: the channels the host teaches the engine, a name and the
+         * class that delivers on it (implements
+         * RoBYCoNTe\FilamentFlow\Contracts\NotificationChannelDriver). A notification that
+         * declares one of these channels is handed to its driver rendered, with its
+         * recipients and its channel configuration; timing, logging and the database
+         * channels stay the engine's business.
+         */
+        'channel_drivers' => [
+            // 'pec' => \App\Notifications\Channels\PecChannelDriver::class,
+        ],
+
+        /**
          * Template rendering engine.
          * Available: plain ({{variable}}), blade, mustache
          */

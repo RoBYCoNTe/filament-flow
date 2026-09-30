@@ -11,6 +11,8 @@ use RoBYCoNTe\FilamentFlow\Jobs\SendWorkflowNotification;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification as WorkflowNotificationConfig;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotificationLog;
 use RoBYCoNTe\FilamentFlow\Notifications\WorkflowNotification;
+use RoBYCoNTe\FilamentFlow\Support\NotificationChannelDriverRegistry;
+use Throwable;
 
 /**
  * How a notification is delivered.
@@ -145,6 +147,24 @@ trait DeliversNotifications
             // Create the Laravel notification
             $notification = new WorkflowNotification($notificationData, $record);
 
+            // A channel the host taught the engine delivers through its own driver:
+            // rendered template in, transport out — the log stays the engine's.
+            if ($this->deliverViaDriver($channelType, $record, $recipients, $notificationData)) {
+                foreach ($recipients as $recipient) {
+                    $this->logNotification(
+                        $config,
+                        $record,
+                        $channelType,
+                        'sent',
+                        null,
+                        $notificationData,
+                        $recipient->id
+                    );
+                }
+
+                return;
+            }
+
             // Determine the Laravel notification channel
             $laravelChannel = $this->mapToLaravelChannel($channelType);
 
@@ -181,6 +201,34 @@ trait DeliversNotifications
 
             report($e);
         }
+    }
+
+    /**
+     * Deliver through the driver the host registered for the channel, if one is:
+     * the engine renders the template the same way it does for its own channels and
+     * hands it over with the recipients and the channel configuration.
+     */
+    protected function deliverViaDriver(
+        string $channelType,
+        Model $record,
+        Collection $recipients,
+        array $notificationData
+    ): bool {
+        try {
+            $registry = app(NotificationChannelDriverRegistry::class);
+        } catch (Throwable) {
+            return false;
+        }
+
+        if (! $registry->has($channelType)) {
+            return false;
+        }
+
+        $notificationData['rendered'] = (new WorkflowNotification($notificationData, $record))->renderedTemplate();
+
+        $registry->get($channelType)->send($record, $recipients, $notificationData);
+
+        return true;
     }
 
     /**

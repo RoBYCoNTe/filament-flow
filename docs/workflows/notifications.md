@@ -391,6 +391,58 @@ All notifications are logged in the `workflow_notification_logs` table with:
 - `payload` — The notification data sent
 - `sent_at` — When the notification was sent
 
+## Custom Channels: Drivers
+
+The engine delivers `database` and `mail` itself. A channel of its own — a PEC, an
+external messaging service — is taught to it with a driver: a class implementing
+`NotificationChannelDriver`, registered for the name the notifications declare.
+
+```php
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use RoBYCoNTe\FilamentFlow\Contracts\NotificationChannelDriver;
+
+final class PecChannelDriver implements NotificationChannelDriver
+{
+    public function send(Model $record, Collection $recipients, array $notificationData): void
+    {
+        // $notificationData['rendered'] — subject, title, body, action, all filled
+        // $notificationData['channel_config'] — what the notification declared
+    }
+}
+```
+
+```php
+// config/filament-flow.php
+'notifications' => [
+    'channel_drivers' => [
+        'pec' => \App\Notifications\Channels\PecChannelDriver::class,
+    ],
+],
+```
+
+Or on the registry directly, from a service provider:
+
+```php
+$this->app->afterResolving(NotificationChannelDriverRegistry::class, function (NotificationChannelDriverRegistry $registry): void {
+    $registry->register('pec', app(PecChannelDriver::class));
+});
+```
+
+The channel is declared where every other channel is — the Definition SDK takes a name
+beside the enum, the panel lists the channels of the configuration:
+
+```php
+Notification::make('registered-pec', 'Registered')
+    ->channel('pec', ['mailbox' => 'protocol@pec.example'])
+    ->recipient(Recipient::recordOwner());
+```
+
+The engine renders the template the same way it does for its own channels and hands it
+to the driver with the recipients and the channel configuration; timing, the dispatch
+job and the delivery log stay the engine's business. A channel declared in the
+configuration but disabled there is skipped like a disabled `database` or `mail`.
+
 ## Code-First Notifications
 
 In addition to database-configured notifications, you can define notifications directly in your State and Transition classes using a fluent builder API.

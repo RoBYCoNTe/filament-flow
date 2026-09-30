@@ -134,6 +134,24 @@ class WorkflowNotification extends Notification implements ShouldQueue
     }
 
     /**
+     * The template with every placeholder filled — the same rendering the database and the
+     * mail channels read, handed to the custom drivers, which speak transport and not
+     * placeholders.
+     *
+     * @return array{subject: string, title: string, body: string, action_text: string, action_url: string}
+     */
+    public function renderedTemplate(): array
+    {
+        return [
+            'subject' => $this->composeTitle($this->renderTemplate($this->template['subject'] ?? '')),
+            'title' => $this->composeTitle($this->renderTemplate($this->template['title'] ?? '')),
+            'body' => $this->renderTemplate($this->template['body'] ?? ''),
+            'action_text' => $this->renderTemplate($this->template['action_text'] ?? ''),
+            'action_url' => $this->renderTemplate($this->template['action_url'] ?? ''),
+        ];
+    }
+
+    /**
      * Render a template string with variable substitution.
      */
     protected function renderTemplate(?string $template): string
