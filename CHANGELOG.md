@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-30
+
 ### Added
 - The channels of a notification stop being a closed list. Beside the database and the
   mail the engine delivers itself, a host registers a **driver** for the channels of its
