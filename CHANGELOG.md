@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The channels of a notification stop being a closed list. Beside the database and the
+  mail the engine delivers itself, a host registers a **driver** for the channels of its
+  own — a PEC, an external messaging service (`Contracts\NotificationChannelDriver`,
+  seeded from the new `notifications.channel_drivers` configuration or registered on the
+  new `Support\NotificationChannelDriverRegistry`). A notification that declares a
+  custom channel is handed to its driver rendered, with its recipients and its channel
+  configuration; timing, the dispatch job and the delivery log stay the engine's
+  business. The Definition SDK takes a channel name beside the enum
+  (`Notification::channel('pec', [...])`), the panel of the database-driven
+  notifications lists the channels of the configuration, and `channel_type` of
+  `workflow_notification_channels` is a string now — a migration makes the column free
+  for the installs that already carry it.
+- The rendered template — the placeholders filled, the title composed — is offered to
+  the drivers through the new `Notifications\WorkflowNotification::renderedTemplate()`.
+
+### Changed
+- The code-first notifications travel through the same door: a prepared notification
+  whose channel has a registered driver is delivered by it, like the configured ones.
+
 ## [0.2.0] - 2026-09-29
 
 ### Changed
