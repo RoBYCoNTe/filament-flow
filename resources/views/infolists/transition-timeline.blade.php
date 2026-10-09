@@ -42,6 +42,7 @@
                         ? $getSubmittedFields($item)
                         : ['fields' => [], 'hidden' => 0];
                     $snapshotDiff = $getSnapshotDiff($item);
+                    $requestScope = $getRequestScope($item);
                     $duration = $formatDuration($item->duration_seconds);
                     $hasTechnicalDetails = $showIpAddress && ($item->ip_address || $item->user_agent);
                     $hasDetails = $changed['fields'] !== []
@@ -130,6 +131,25 @@
                             <p class="mt-2 border-l-2 border-gray-200 pl-2.5 text-sm italic leading-relaxed text-gray-700 dark:border-gray-700 dark:text-gray-300">
                                 {{ $item->notes }}
                             </p>
+                        @endif
+
+                        @if($requestScope)
+                            <div data-request-scope class="mt-2 space-y-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-700 ring-1 ring-gray-950/5 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10">
+                                <p class="font-semibold">
+                                    {{ __('filament-flow::messages.request_scope_'.$requestScope['mode']) }}
+                                </p>
+                                @if($requestScope['fields'] !== [])
+                                    <ul class="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
+                                        @foreach($requestScope['fields'] as $field)
+                                            <li data-request-scope-field class="flex items-center gap-1.5">
+                                                <x-filament::icon icon="heroicon-m-arrow-right" class="h-3 w-3 shrink-0" aria-hidden="true" />
+                                                <span class="min-w-0">{{ $field['label'] }}</span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                                @include('filament-flow::partials.request-attachments', ['documents' => $requestScope['documents']])
+                            </div>
                         @endif
 
                         @if($hasDetails)

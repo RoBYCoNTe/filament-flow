@@ -2,10 +2,14 @@
 
 namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Infolists;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use RoBYCoNTe\FilamentFlow\Contracts\StoresRequestAttachments;
 use RoBYCoNTe\FilamentFlow\Infolists\Components\OpenRequestsEntry;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
+use RoBYCoNTe\FilamentFlow\Support\OpenRequest;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
@@ -193,6 +197,113 @@ class OpenRequestsEntryTest extends TestCase
      *
      * @return array{0: Order}
      */
+    public function test_the_documents_of_a_request_come_from_the_host(): void
+    {
+        [$order] = $this->exchange(answered: false);
+
+        $this->app->bind(StoresRequestAttachments::class, fn (): StoresRequestAttachments => new class implements StoresRequestAttachments
+        {
+            public function store(Model $record, string $transitionName, UploadedFile $file): int|string
+            {
+                return 1;
+            }
+
+            public function discard(array $ids): void {}
+
+            public function documents(Model $record, array $ids): array
+            {
+                return array_map(static fn (int|string $id): array => [
+                    'id' => $id,
+                    'name' => "documento-{$id}.pdf",
+                    'url' => "https://example.test/files/{$id}",
+                ], $ids);
+            }
+        });
+
+        $request = $this->requestCarrying($order, ['attachments' => [7, 9]]);
+
+        $documents = $this->entry()->attachmentsFor($request, $order);
+
+        $this->assertSame([7, 9], array_column($documents, 'id'));
+        $this->assertSame('documento-7.pdf', $documents[0]['name']);
+    }
+
+    public function test_a_request_without_documents_hands_over_none(): void
+    {
+        [$order] = $this->exchange(answered: false);
+
+        $this->assertSame([], $this->entry()->attachmentsFor($this->requestCarrying($order, ['paths' => ['title']]), $order));
+    }
+
+    public function test_the_documents_are_not_read_when_the_host_keeps_none(): void
+    {
+        [$order] = $this->exchange(answered: false);
+
+        $this->assertFalse($this->app->bound(StoresRequestAttachments::class));
+        $this->assertSame([], $this->entry()->attachmentsFor($this->requestCarrying($order, ['attachments' => [7]]), $order));
+    }
+
+    public function test_the_recap_appears_once_there_is_an_answered_exchange_to_look_back_at(): void
+    {
+        [$order] = $this->exchange(answered: true);
+
+        // The open requests are empty (all answered) and the recap still has the exchange.
+        $this->assertCount(0, $this->entry()->requestsFor($order));
+        $this->assertCount(1, $this->entry()->model($order)->getExchangeRecap());
+
+    }
+
+    public function test_the_recap_stays_away_while_nothing_has_been_answered(): void
+    {
+        [$pending] = $this->exchange(answered: false);
+
+        $this->assertCount(0, $this->entry()->model($pending)->getExchangeRecap(), 'Nothing answered yet: nothing to look back at.');
+    }
+
+    public function test_the_recap_is_folded_by_default_and_lists_fields_and_documents(): void
+    {
+        [$order] = $this->exchange(answered: true);
+
+        $entry = $this->entry()->model($order);
+        $request = $this->requestCarrying($order, ['paths' => ['order_number', 'total_amount']]);
+
+        $this->assertSame(['Order number', 'Total Amount'], $entry->scopeLabelsFor($request));
+
+        $html = view('filament-flow::partials.exchange-recap', [
+            'entry' => $entry,
+            'exchanges' => $entry->getExchangeRecap(),
+            'dateTimeFormat' => 'd/m/Y H:i',
+        ])->render();
+
+        $this->assertStringContainsString('data-exchange-recap', $html);
+        $this->assertStringNotContainsString('<details open', $html, 'The recap starts folded.');
+        $this->assertSame(1, preg_match_all('/data-exchange(?![-\\w])/', $html));
+    }
+
+    public function test_a_request_without_fields_has_no_labels(): void
+    {
+        [$order] = $this->exchange(answered: true);
+
+        $this->assertSame([], $this->entry()->model($order)->scopeLabelsFor($this->requestCarrying($order, [])));
+    }
+
+    /** @param array<string, mixed> $scope */
+    private function requestCarrying(Order $order, array $scope): OpenRequest
+    {
+        return new OpenRequest(
+            transitionName: 'request_integration',
+            label: null,
+            fromState: 'under_review',
+            toState: 'integration_requested',
+            toStateLabel: null,
+            note: null,
+            deadline: null,
+            requestedAt: Carbon::now(),
+            requestedBy: null,
+            scope: $scope,
+        );
+    }
+
     private function rejection(): array
     {
         $workflow = $this->createTestWorkflow();

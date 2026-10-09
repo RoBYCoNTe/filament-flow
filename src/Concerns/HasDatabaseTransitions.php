@@ -14,6 +14,7 @@ use RoBYCoNTe\FilamentFlow\Exceptions\UnauthorizedTransitionException;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Services\SideEffectExecutor;
 use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
+use RoBYCoNTe\FilamentFlow\Support\RequestScopeRecorder;
 use Spatie\ModelStates\Exceptions\TransitionNotFound;
 use Spatie\ModelStates\State;
 use Throwable;
@@ -78,6 +79,14 @@ trait HasDatabaseTransitions
      * Temporary storage for transition data (used for logging notes)
      */
     protected ?array $pendingTransitionData = null;
+
+    /**
+     * What the office picked for the request the transition opens: set apart from the payload,
+     * which it must not join, until the history takes it.
+     *
+     * @var array{paths: list<string>, attachments: list<int|string>}|null
+     */
+    protected ?array $pendingRequestScopePick = null;
 
     /**
      * Temporary storage for transition class instance (used for getting notes)
@@ -152,8 +161,23 @@ trait HasDatabaseTransitions
             is_array($arguments[0] ?? null) ? $arguments[0] : [],
         );
 
-        // Store transition data for logging (will be used in logTransition)
+        $this->validateRequestScopePayload(
+            $state,
+            is_array($arguments[0] ?? null) ? $arguments[0] : [],
+        );
+
+        $this->validateRequestAnswer(
+            $state,
+            is_array($arguments[0] ?? null) ? $arguments[0] : [],
+        );
+
+        // Store transition data for logging (will be used in logTransition). The request pick is
+        // not a value of the record: it is kept apart and leaves the payload here.
         if (! empty($arguments) && is_array($arguments[0] ?? null)) {
+            $this->pendingRequestScopePick = isset($arguments[0][RequestScopeRecorder::PAYLOAD_KEY])
+                ? RequestScopeRecorder::pick($arguments[0])
+                : null;
+            $arguments[0] = RequestScopeRecorder::withoutPick($arguments[0]);
             $this->pendingTransitionData = $arguments[0];
         }
 

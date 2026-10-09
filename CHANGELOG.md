@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Request scope.** The office that opens a request can pick the fields the other side may
+  change and attach documents (`Transition::withRequestScope()`, `Definition\RequestScope`).
+  While the request is open and the record sits in the state it led to, the permissions follow
+  the pick (`Support\RequestScopeResolver`, `Support\RequestScopeOverlay`, applied after the
+  permission cache), and the answer can be refused until a picked field has changed
+  (`requireChange()`). The pick is recorded in the history together with a snapshot; nothing new
+  is stored. The dialog gains a field picker (`Forms\Components\RequestScopePicker`, fed by
+  `Contracts\ProvidesRequestScopeTree`) and a document upload (`Contracts\StoresRequestAttachments`);
+  both are optional and absent when the host binds nothing.
+- `OpenRequest` carries the pick (`scope`, `hasScope()`, `attachmentIds()`, `requiresChange()`).
+  The timeline shows the fields and documents of the entry that opened a request
+  (`TransitionTimeline::getRequestScope()`), and `OpenRequestsEntry` gains a recap of every
+  exchange, folded by default (`getExchangeRecap()`, `Support\RequestScopeLabels`).
+
 ## [0.3.0] - 2026-09-30
 
 ### Added

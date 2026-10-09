@@ -2,8 +2,11 @@
 
 namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Infolists;
 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Lang;
 use RoBYCoNTe\FilamentFlow\Contracts\HasFieldPresentation;
+use RoBYCoNTe\FilamentFlow\Contracts\StoresRequestAttachments;
 use RoBYCoNTe\FilamentFlow\Infolists\Components\TransitionTimeline;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionMetadata;
@@ -885,6 +888,75 @@ class TransitionTimelineTest extends TestCase
 
         $this->assertTrue(TransitionTimeline::make()->collapsibleGroups());
         $this->assertFalse(TransitionTimeline::make()->collapseGroups(false)->collapsibleGroups());
+    }
+
+    public function test_an_entry_that_opened_a_request_reads_the_fields_and_documents_the_office_chose(): void
+    {
+        $this->app->bind(StoresRequestAttachments::class, fn (): StoresRequestAttachments => new class implements StoresRequestAttachments
+        {
+            public function store(Model $record, string $transitionName, UploadedFile $file): int|string
+            {
+                return 1;
+            }
+
+            public function discard(array $ids): void {}
+
+            public function documents(Model $record, array $ids): array
+            {
+                return array_map(static fn (int|string $id): array => [
+                    'id' => $id,
+                    'name' => "documento-{$id}.pdf",
+                    'url' => "https://example.test/files/{$id}",
+                ], $ids);
+            }
+        });
+
+        $entry = $this->historyEntry([
+            'custom_data' => ['request_scope' => [
+                'mode' => 'additive',
+                'paths' => ['total_amount', 'order_number'],
+                'snapshot' => ['total_amount' => 50],
+                'attachments' => [7],
+            ]],
+        ]);
+
+        $scope = TransitionTimeline::make()->model(new Order)->getRequestScope($entry);
+
+        $this->assertSame('additive', $scope['mode']);
+        $this->assertSame(['total_amount', 'order_number'], array_column($scope['fields'], 'path'));
+        $this->assertSame(['documento-7.pdf'], array_column($scope['documents'], 'name'));
+    }
+
+    public function test_the_fields_the_host_keeps_out_of_the_history_do_not_appear_in_the_request(): void
+    {
+        $entry = $this->historyEntry([
+            'custom_data' => ['request_scope' => ['paths' => ['internal.note', 'order_number']]],
+        ]);
+
+        $scope = TransitionTimeline::make()->hideFields(['internal.*'])->model(new Order)->getRequestScope($entry);
+
+        $this->assertSame('exclusive', $scope['mode']);
+        $this->assertSame(['order_number'], array_column($scope['fields'], 'path'));
+    }
+
+    public function test_an_entry_without_a_scope_reads_no_request(): void
+    {
+        $component = TransitionTimeline::make()->model(new Order);
+
+        $this->assertNull($component->getRequestScope($this->historyEntry()));
+        $this->assertNull($component->getRequestScope($this->historyEntry(['custom_data' => ['other' => 1]])));
+        $this->assertNull($component->getRequestScope($this->historyEntry([
+            'custom_data' => ['request_scope' => ['paths' => [], 'attachments' => [3]]],
+        ])), 'documents with no storage bound, and no field, leave nothing to show');
+    }
+
+    public function test_the_request_stays_out_of_the_timeline_when_metadata_is_off(): void
+    {
+        $entry = $this->historyEntry([
+            'custom_data' => ['request_scope' => ['paths' => ['order_number']]],
+        ]);
+
+        $this->assertNull(TransitionTimeline::make()->showMetadata(false)->model(new Order)->getRequestScope($entry));
     }
 
     /** @param array<string,mixed> $metadata */

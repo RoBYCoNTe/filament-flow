@@ -5,17 +5,25 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 use Exception;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use RoBYCoNTe\FilamentFlow\Contracts\ProvidesRequestScopeTree;
+use RoBYCoNTe\FilamentFlow\Contracts\StoresRequestAttachments;
 use RoBYCoNTe\FilamentFlow\Forms\Components\AssigneeSelect;
+use RoBYCoNTe\FilamentFlow\Forms\Components\RequestScopePicker;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionField;
+use RoBYCoNTe\FilamentFlow\Support\RequestScopeRecorder;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
+use Symfony\Component\Mime\MimeTypes;
 
 /**
  * The form of a transition: it finds the transition between two states — tenant included —
@@ -90,7 +98,7 @@ class TransitionFormService
     /**
      * Build form schema from transition configuration
      */
-    public function buildFormSchema(WorkflowTransition $transition): array
+    public function buildFormSchema(WorkflowTransition $transition, ?Model $record = null): array
     {
         $schema = [];
 
@@ -112,7 +120,80 @@ class TransitionFormService
             }
         }
 
+        $picker = $record === null ? null : $this->buildRequestScopePicker($transition, $record);
+
+        if ($picker !== null) {
+            $schema[] = $picker;
+        }
+
+        $upload = $record === null ? null : $this->buildRequestAttachmentsUpload($transition, $record);
+
+        if ($upload !== null) {
+            $schema[] = $upload;
+        }
+
         return $schema;
+    }
+
+    /**
+     * The upload of the documents the office attaches to the request, when the transition takes
+     * them and the host can keep them. What the form holds in the end is the identifiers the host
+     * gave, the shape the request records.
+     */
+    public function buildRequestAttachmentsUpload(WorkflowTransition $transition, Model $record): ?FileUpload
+    {
+        $scope = $transition->declaredRequestScope();
+
+        if ($scope === null || ! $scope->takesAttachments() || ! app()->bound(StoresRequestAttachments::class)) {
+            return null;
+        }
+
+        $mimes = collect($scope->attachmentExtensions())
+            ->flatMap(static fn (string $extension): array => MimeTypes::getDefault()->getMimeTypes($extension))
+            ->unique()
+            ->values()
+            ->all();
+
+        // A limit of one is a single document: the field asks for one file and says so.
+        $multiple = $scope->attachmentLimit() > 1;
+
+        $upload = FileUpload::make(RequestScopeRecorder::PAYLOAD_KEY.'.attachments')
+            ->label($multiple ? __('Documents for the applicant') : __('Document for the applicant'))
+            ->helperText($multiple
+                ? __('Up to :max files of :size MB at most.', ['max' => $scope->attachmentLimit(), 'size' => $scope->attachmentMaxSizeMb()])
+                : __('One file of :size MB at most.', ['size' => $scope->attachmentMaxSizeMb()]))
+            ->maxSize($scope->attachmentMaxSizeMb() * 1024)
+            ->acceptedFileTypes($mimes)
+            ->saveUploadedFileUsing(static fn (TemporaryUploadedFile $file): string => (string) app(StoresRequestAttachments::class)
+                ->store($record, $transition->name, $file))
+            ->dehydrateStateUsing(static fn (mixed $state): array => array_values(array_filter((array) $state)));
+
+        return $multiple ? $upload->multiple()->maxFiles($scope->attachmentLimit()) : $upload;
+    }
+
+    /**
+     * The picker of the fields the office opens to the answering side, when the transition
+     * declares a request scope and the host can tell which fields the record has to choose from.
+     */
+    protected function buildRequestScopePicker(WorkflowTransition $transition, Model $record): ?RequestScopePicker
+    {
+        $scope = $transition->declaredRequestScope();
+
+        if ($scope === null || ! app()->bound(ProvidesRequestScopeTree::class)) {
+            return null;
+        }
+
+        $tree = app(ProvidesRequestScopeTree::class)->treeFor($record, $transition, $scope);
+
+        if ($tree === []) {
+            return null;
+        }
+
+        return RequestScopePicker::make(RequestScopeRecorder::PAYLOAD_KEY.'.paths')
+            ->label(__('Fields the applicant may change'))
+            ->helperText(__('Everything else stays read-only until the applicant answers.'))
+            ->tree($tree)
+            ->required($scope->requiresSelection());
     }
 
     /**

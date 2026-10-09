@@ -191,7 +191,20 @@ final class OpenRequests
             answeredByTransition: data_get($answer?->transition, 'name'),
             kind: $kind,
             color: $kind === OpenRequest::KIND_MESSAGE ? $this->colorOf($record, $open->to_state, $options) : null,
+            scope: $kind === OpenRequest::KIND_REQUEST ? $this->scopeOf($open) : null,
         );
+    }
+
+    /**
+     * What the office picked when it opened the request, as the history kept it.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function scopeOf(WorkflowStateTransition $open): ?array
+    {
+        $scope = data_get($open->metadata, 'custom_data.request_scope');
+
+        return is_array($scope) ? $scope : null;
     }
 
     /**

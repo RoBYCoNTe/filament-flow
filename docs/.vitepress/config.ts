@@ -60,6 +60,7 @@ export default defineConfig({
           { text: 'Validation', link: '/workflows/validation' },
           { text: 'Notifications', link: '/workflows/notifications' },
           { text: 'Open Requests', link: '/workflows/open-requests' },
+          { text: 'Request Scope', link: '/workflows/request-scope' },
           { text: 'Lifecycle Events', link: '/workflows/events' },
           { text: 'Conditions & Actions', link: '/workflows/conditions' },
           { text: 'Scheduled Checks', link: '/workflows/scheduled-checks' },

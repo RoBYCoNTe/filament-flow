@@ -136,5 +136,11 @@ return [
     'open_requests_overdue_short' => 'Scaduta',
     'open_requests_answered_on' => 'Risposta inviata il :date',
     'open_requests_reply_hint' => 'Rispondi con l\'azione disponibile nella barra dei comandi qui sotto.',
+    'open_requests_documents' => '{1} :count documento allegato|[2,*] :count documenti allegati',
+    'exchange_recap_title' => 'Storico degli scambi',
+    'exchange_recap_fields' => 'Campi richiesti',
+    'request_scope_exclusive' => "Campi aperti dall'ufficio per la risposta (il resto è in sola lettura)",
+    'request_scope_additive' => "Campi aperti dall'ufficio per la risposta (gli altri seguono le regole abituali)",
+    'request_change_required' => 'Modifica almeno uno dei campi sbloccati prima di rispondere.',
     'open_requests_office_hint' => 'La controparte non ha ancora risposto.',
 ];

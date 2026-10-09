@@ -157,3 +157,8 @@ is the state's own colour, not a colour declared again for the message.
   metadata of the transitions, which was already there.
 - **Not a gate.** Opening or answering a request changes nothing about who may run a transition:
   access is still the one the states declare.
+
+## See also
+
+- [Request Scope](./request-scope.md) — let the office pick the fields the applicant may change and attach
+  documents to the request.

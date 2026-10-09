@@ -195,6 +195,7 @@ trait ResolvesWorkflowStates
     protected function clearPendingTransitionData(): void
     {
         $this->pendingTransitionData = null;
+        $this->pendingRequestScopePick = null;
         $this->pendingTransitionInstance = null;
         $this->preTransitionSnapshot = null;
         $this->fieldValuesBefore = [];

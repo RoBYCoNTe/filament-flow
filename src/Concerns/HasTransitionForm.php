@@ -3,6 +3,7 @@
 namespace RoBYCoNTe\FilamentFlow\Concerns;
 
 use Exception;
+use RoBYCoNTe\FilamentFlow\Contracts\ProvidesRequestScopeTree;
 use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
 
 /**
@@ -17,6 +18,9 @@ trait HasTransitionForm
 {
     protected function setupTransitionForm(): void
     {
+        // The tree of the fields a request opens needs room: only that dialog is wide.
+        $this->modalWidth(fn (): ?string => $this->declaresRequestScope() ? '5xl' : null);
+
         $this->schema(function () {
             // Transition class takes priority over database configuration
             try {
@@ -72,6 +76,35 @@ trait HasTransitionForm
             : null;
     }
 
+    /**
+     * Whether the transition this action runs opens fields to the answering side, and the host
+     * can say which fields there are to choose from.
+     */
+    private function declaresRequestScope(): bool
+    {
+        $modelClass = $this->getModel();
+
+        if (! $modelClass || ! app()->bound(ProvidesRequestScopeTree::class)) {
+            return false;
+        }
+
+        try {
+            $toState = $this->getToStateClass();
+
+            return app(TransitionFormService::class)->getTransitionConfig(
+                $modelClass,
+                $this->getFromStateClass(),
+                is_string($toState) ? $toState : get_class($toState),
+                $this->getTransitionClass(),
+                $this->getTransitionTenantId(),
+            )?->declaredRequestScope() !== null;
+        } catch (Exception $e) {
+            report($e);
+
+            return false;
+        }
+    }
+
     private function hasValidationRulesWithoutFields(): bool
     {
         $modelClass = $this->getModel();
@@ -93,7 +126,8 @@ trait HasTransitionForm
             // that asks for values asks for them, even when it only validates them.
             return $transitionConfig
                 && $transitionConfig->hasValidationRules()
-                && $transitionConfig->fields()->count() === 0;
+                && $transitionConfig->fields()->count() === 0
+                && $transitionConfig->declaredRequestScope() === null;
         } catch (Exception $e) {
             report($e);
 
@@ -143,7 +177,8 @@ trait HasTransitionForm
                 $this->getTransitionTenantId(),
             );
 
-            return $transitionConfig && $transitionConfig->fields()->count() > 0;
+            return $transitionConfig
+                && ($transitionConfig->fields()->count() > 0 || $transitionConfig->declaredRequestScope() !== null);
         } catch (Exception $e) {
             report($e);
 
@@ -193,7 +228,8 @@ trait HasTransitionForm
         }
 
         $hasValidationRulesOnly = $transitionConfig->hasValidationRules()
-            && $transitionConfig->fields()->count() === 0;
+            && $transitionConfig->fields()->count() === 0
+            && $transitionConfig->declaredRequestScope() === null;
 
         if ($transitionConfig->requires_confirmation && ! $hasValidationRulesOnly) {
             $this->requiresConfirmation();
@@ -203,6 +239,6 @@ trait HasTransitionForm
             $this->modalDescription(__('filament-flow::transitions.reason_required_description'));
         }
 
-        return $service->buildFormSchema($transitionConfig);
+        return $service->buildFormSchema($transitionConfig, $this->getRecord());
     }
 }

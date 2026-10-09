@@ -2,6 +2,7 @@
 
 namespace RoBYCoNTe\FilamentFlow\Support;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Throwable;
 
@@ -11,6 +12,9 @@ use Throwable;
  *
  * It is a reading of the history, not a row of its own: nothing is stored for it, and it
  * exists only while a component asks.
+ *
+ * `$scope` is what the office picked when it opened the request — the fields the applicant may
+ * change and the files it attached — as the history kept it (see `RequestScopeRecorder`).
  */
 final readonly class OpenRequest
 {
@@ -35,12 +39,70 @@ final readonly class OpenRequest
         public ?string $answeredByTransition = null,
         public string $kind = self::KIND_REQUEST,
         public ?string $color = null,
+        public ?array $scope = null,
     ) {}
 
     /** Whether the workflow said something and walks away: a decision, a closing note. */
     public function isMessage(): bool
     {
         return $this->kind === self::KIND_MESSAGE;
+    }
+
+    /** Whether the office opened any field to the answering side. */
+    public function hasScope(): bool
+    {
+        return ($this->scope['paths'] ?? []) !== [];
+    }
+
+    /**
+     * The files the office attached to the request, by id.
+     *
+     * @return list<int|string>
+     */
+    public function attachmentIds(): array
+    {
+        return array_values((array) ($this->scope['attachments'] ?? []));
+    }
+
+    /** Whether the office wants the answer to carry a change in at least one of the fields it opened. */
+    public function requiresChange(): bool
+    {
+        return $this->hasScope() && ($this->scope['require_change'] ?? false) === true;
+    }
+
+    /**
+     * The fields the office opened that still hold what they held when it asked, given the
+     * values as they stand now. A field never filled and a field cleared are the same value.
+     *
+     * @param  array<array-key,mixed>  $values  the record's values, by path
+     * @return list<string>
+     */
+    public function unchangedPaths(array $values): array
+    {
+        $snapshot = (array) ($this->scope['snapshot'] ?? []);
+
+        return array_values(array_filter(
+            array_map('strval', (array) ($this->scope['paths'] ?? [])),
+            static fn (string $path): bool => self::normalise(Arr::get($values, $path)) === self::normalise($snapshot[$path] ?? null),
+        ));
+    }
+
+    /** A value in a form two equal values share, whatever order their keys came in. */
+    private static function normalise(mixed $value): string
+    {
+        if ($value === '' || $value === null) {
+            return 'null';
+        }
+
+        if (is_array($value)) {
+            $value = array_map(static fn (mixed $item): mixed => is_array($item) ? json_decode(self::normalise($item), true) : $item, $value);
+
+            if (! array_is_list($value)) {
+                ksort($value);
+            }
+        }
+
+        return (string) json_encode($value);
     }
 
     public function isOpen(): bool
@@ -118,6 +180,7 @@ final readonly class OpenRequest
             'answered_at' => $this->answeredAt?->toDateTimeString(),
             'answered_by' => $this->answeredBy,
             'answered_by_transition' => $this->answeredByTransition,
+            'scope' => $this->scope,
             'days_remaining' => $this->daysRemaining(),
         ];
     }

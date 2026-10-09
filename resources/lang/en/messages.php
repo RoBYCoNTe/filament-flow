@@ -136,5 +136,11 @@ return [
     'open_requests_overdue_short' => 'Overdue',
     'open_requests_answered_on' => 'Replied on :date',
     'open_requests_reply_hint' => 'Reply with the action available in the toolbar below.',
+    'open_requests_documents' => '{1} :count document attached|[2,*] :count documents attached',
+    'exchange_recap_title' => 'Exchange history',
+    'exchange_recap_fields' => 'Fields requested',
+    'request_scope_exclusive' => 'Fields the office opened for the answer (everything else stays read-only)',
+    'request_scope_additive' => 'Fields the office opened for the answer (the others keep their usual rules)',
+    'request_change_required' => 'Change at least one of the unlocked fields before replying.',
     'open_requests_office_hint' => 'The other side has not replied yet.',
 ];

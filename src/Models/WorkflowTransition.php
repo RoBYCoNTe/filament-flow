@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use RoBYCoNTe\FilamentFlow\Definition\Enums\ValidationLevel;
+use RoBYCoNTe\FilamentFlow\Definition\RequestScope;
 
 /**
  * @property-read Collection<int, WorkflowTransitionField> $fields
@@ -108,6 +109,16 @@ class WorkflowTransition extends Model
     public function activeSideEffects(): HasMany
     {
         return $this->sideEffects()->where('is_active', true)->orderBy('sort_order');
+    }
+
+    /**
+     * The request scope this transition declares, or null when it declares none.
+     */
+    public function declaredRequestScope(): ?RequestScope
+    {
+        $declared = $this->metadata['request_scope'] ?? null;
+
+        return is_array($declared) ? RequestScope::fromArray($declared) : null;
     }
 
     /**

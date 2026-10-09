@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use RoBYCoNTe\FilamentFlow\Contracts\HasFieldLabels;
 use RoBYCoNTe\FilamentFlow\Contracts\HasFieldPresentation;
+use RoBYCoNTe\FilamentFlow\Contracts\StoresRequestAttachments;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Presentation\DefaultFieldPresenter;
 use RoBYCoNTe\FilamentFlow\Presentation\FieldPresentation;
@@ -460,6 +461,54 @@ class TransitionTimeline extends Entry
         }
 
         return is_array($entry->metadata?->field_changes);
+    }
+
+    /**
+     * What the office asked for when the entry opened a request: the fields it opened to the
+     * answering side, by the label a person reads, and the documents it attached. Nothing for
+     * an entry that opened no request, or opened one with no scope.
+     *
+     * @return array{mode: string, fields: list<array{path: string, label: string}>, documents: list<array{id: int|string, name: string, url: string}>}|null
+     */
+    public function getRequestScope(WorkflowStateTransition $entry): ?array
+    {
+        if (! $this->showMetadata) {
+            return null;
+        }
+
+        $scope = $entry->metadata?->custom_data['request_scope'] ?? null;
+
+        if (! is_array($scope)) {
+            return null;
+        }
+
+        $fields = [];
+
+        foreach ((array) ($scope['paths'] ?? []) as $path) {
+            $presentation = $this->presentationFor((string) $path, null);
+
+            if ($presentation->visible) {
+                $fields[] = ['path' => (string) $path, 'label' => $presentation->label];
+            }
+        }
+
+        $documents = [];
+        $ids = array_values((array) ($scope['attachments'] ?? []));
+        $record = $this->record();
+
+        if ($ids !== [] && $record instanceof Model && app()->bound(StoresRequestAttachments::class)) {
+            $documents = app(StoresRequestAttachments::class)->documents($record, $ids);
+        }
+
+        if ($fields === [] && $documents === []) {
+            return null;
+        }
+
+        return [
+            'mode' => ($scope['mode'] ?? 'exclusive') === 'additive' ? 'additive' : 'exclusive',
+            'fields' => $fields,
+            'documents' => $documents,
+        ];
     }
 
     /**

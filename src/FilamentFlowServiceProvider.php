@@ -14,6 +14,7 @@ use ReflectionException;
 use RoBYCoNTe\FilamentFlow\Commands\ListWorkflowsCommand;
 use RoBYCoNTe\FilamentFlow\Commands\ProcessScheduledChecksCommand;
 use RoBYCoNTe\FilamentFlow\Commands\SyncStatesCommand;
+use RoBYCoNTe\FilamentFlow\Contracts\ResolvesRequestScope;
 use RoBYCoNTe\FilamentFlow\Livewire\AssignmentManager;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
@@ -31,6 +32,7 @@ use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\NotificationChannelDriverRegistry;
 use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
+use RoBYCoNTe\FilamentFlow\Support\RequestScopeResolver;
 use RoBYCoNTe\FilamentFlow\Support\ValidationRuleRegistry;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowFormulaScope;
 use RoBYCoNTe\FilamentFlow\Testing\TestsFilamentFlow;
@@ -121,6 +123,11 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
 
             return $registry;
         });
+
+        // What an open request lets the answering side change. Scoped: it remembers what it
+        // read for the lifetime of a request, and a host that reads its scopes elsewhere binds
+        // its own.
+        $this->app->scoped(ResolvesRequestScope::class, RequestScopeResolver::class);
 
         // Named validation rules: shared by every rule declaration (state field
         // rules, transition rules, host field rules).

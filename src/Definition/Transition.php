@@ -2,6 +2,7 @@
 
 namespace RoBYCoNTe\FilamentFlow\Definition;
 
+use InvalidArgumentException;
 use RoBYCoNTe\FilamentFlow\Definition\Enums\NotificationTrigger;
 use RoBYCoNTe\FilamentFlow\Definition\Enums\ValidationLevel;
 
@@ -229,6 +230,26 @@ final class Transition
     }
 
     /**
+     * What the office may add to the request this transition opens: documents, and the fields
+     * the answering side will be allowed to change. Declared once here, it is carried in the
+     * metadata like the rest of the request (see `RequestScope`).
+     */
+    public function withRequestScope(RequestScope $scope): self
+    {
+        return $this->withMetadata('request_scope', $scope->toArray());
+    }
+
+    /**
+     * The scope the transition declares, or null when it declares none.
+     */
+    public function requestScope(): ?RequestScope
+    {
+        $declared = $this->metadata['request_scope'] ?? null;
+
+        return is_array($declared) ? RequestScope::fromArray($declared) : null;
+    }
+
+    /**
      * Whether this transition opens a request (the flag the DSL writes).
      */
     public function isRequestOpening(): bool
@@ -310,6 +331,10 @@ final class Transition
     /** @return array<string,mixed> */
     public function toArray(): array
     {
+        if (isset($this->metadata['request_scope']) && ! $this->isRequestOpening()) {
+            throw new InvalidArgumentException("The transition [{$this->name}] declares a request scope but does not open a request: call opensRequest().");
+        }
+
         return [
             'name' => $this->name,
             'from' => $this->from,

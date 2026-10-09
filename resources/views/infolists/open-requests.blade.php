@@ -135,6 +135,10 @@
                                 </blockquote>
                             @endif
 
+                            @if (! $isMessage)
+                                @include('filament-flow::partials.request-attachments', ['documents' => $entry->attachmentsFor($request)])
+                            @endif
+
                             @if ($isOpen && $request->deadline)
                                 <p @class([
                                     'text-sm font-medium',
@@ -180,4 +184,10 @@
             @endforeach
         </div>
     @endif
+
+    @include('filament-flow::partials.exchange-recap', [
+        'entry' => $entry,
+        'exchanges' => $getExchangeRecap(),
+        'dateTimeFormat' => $dateTimeFormat,
+    ])
 </x-dynamic-component>

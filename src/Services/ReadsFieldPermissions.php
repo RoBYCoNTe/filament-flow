@@ -4,8 +4,10 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use RoBYCoNTe\FilamentFlow\Contracts\ResolvesRequestScope;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
+use RoBYCoNTe\FilamentFlow\Support\RequestScopeOverlay;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
 /**
@@ -22,6 +24,17 @@ trait ReadsFieldPermissions
      * When $user is provided, role overrides are applied on top of the base config.
      */
     public function getFieldPermissions(Model $record, ?Model $user = null): array
+    {
+        $permissions = $this->getStateFieldPermissions($record, $user);
+        $scope = $this->requestScopeFor($record, $user);
+
+        return $scope === null ? $permissions : RequestScopeOverlay::applyToMap($permissions, $scope);
+    }
+
+    /**
+     * What the state says, the same for every record in it: the part that is cached.
+     */
+    private function getStateFieldPermissions(Model $record, ?Model $user): array
     {
         $workflow = $this->getWorkflowForRecord($record);
 
@@ -117,11 +130,54 @@ trait ReadsFieldPermissions
         $effectiveRoles = $user ? $this->resolveEffectiveRoles($user, $record) : [];
         $rules = $this->ruleMapForState($workflow, $state, $effectiveRoles);
 
-        if ($rules === []) {
+        $resolved = $rules === [] ? null : $this->resolvePath($rules, $path);
+        $scope = $this->requestScopeFor($record, $user, $effectiveRoles);
+
+        return $scope === null ? $resolved : RequestScopeOverlay::applyToResolved($resolved, $path, $scope);
+    }
+
+    /**
+     * What a state says about a path for a given set of roles, whoever the record is today.
+     *
+     * Nothing is laid over it: it is the state's own answer, for a state the record is not in
+     * yet — what the office reads to offer only what the answering side will see there.
+     *
+     * @param  array<int,string>  $effectiveRoles
+     * @return array{visible:bool,readonly:bool,locked:bool,required:bool,validation:array<int,string>|null}|null
+     */
+    public function permissionForStateRoles(Model $record, string $stateValue, string $path, array $effectiveRoles): ?array
+    {
+        $workflow = $this->getWorkflowForRecord($record);
+        $state = $workflow ? $this->findWorkflowState($workflow, $stateValue) : null;
+
+        if (! $workflow || ! $state) {
             return null;
         }
 
-        return $this->resolvePath($rules, $path);
+        $rules = $this->ruleMapForState($workflow, $state, $effectiveRoles);
+
+        return $rules === [] ? null : $this->resolvePath($rules, $path);
+    }
+
+    /**
+     * The scope an open request puts over this record, laid over the cached rules and never
+     * inside them.
+     *
+     * @return array{mode:string,paths:list<string>,whitelist:list<string>|null,universe:list<string>}|null
+     */
+    protected function requestScopeFor(Model $record, ?Model $user, ?array $effectiveRoles = null): ?array
+    {
+        if ($user === null || ! app()->bound(ResolvesRequestScope::class)) {
+            return null;
+        }
+
+        $resolver = app(ResolvesRequestScope::class);
+
+        if (! $resolver->declaresScope($record)) {
+            return null;
+        }
+
+        return $resolver->scopeFor($record, $user, $effectiveRoles ?? $this->resolveEffectiveRoles($user, $record));
     }
 
     /**

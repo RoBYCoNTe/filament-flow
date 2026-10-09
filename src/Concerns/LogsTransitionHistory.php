@@ -10,6 +10,7 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionMetadata;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionSnapshot;
 use RoBYCoNTe\FilamentFlow\Support\FieldChanges;
+use RoBYCoNTe\FilamentFlow\Support\RequestScopeRecorder;
 use Spatie\ModelStates\State;
 
 /**
@@ -41,6 +42,7 @@ trait LogsTransitionHistory
             // Initialize variables for workflow-related data
             $workflowId = null;
             $transitionId = null;
+            $transitionConfig = null;
             $fromStateLabel = null;
             $toStateLabel = null;
 
@@ -87,7 +89,8 @@ trait LogsTransitionHistory
             // Determine if we have metadata/snapshots to store: the values the transition
             // carried, the fields it moved, or both.
             $fieldChanges = $this->resolveFieldChanges($field);
-            $hasMetadata = ! empty($this->pendingTransitionData) || ! empty($fieldChanges);
+            $requestScope = $this->requestScopeEntry($transitionConfig);
+            $hasMetadata = ! empty($this->pendingTransitionData) || ! empty($fieldChanges) || $requestScope !== null;
             $hasSnapshot = true; // Always capture snapshots for audit trail
 
             // Create transition history record
@@ -118,6 +121,7 @@ trait LogsTransitionHistory
                     'transition_history_id' => $historyRecord->id,
                     'form_data' => $this->pendingTransitionData,
                     'field_changes' => $fieldChanges,
+                    'custom_data' => $requestScope === null ? null : ['request_scope' => $requestScope],
                 ]);
             }
 
@@ -144,6 +148,39 @@ trait LogsTransitionHistory
             // Log but don't fail if logging fails
             report($e);
         }
+    }
+
+    /**
+     * What the office picked for the request this transition opens, as the history keeps it:
+     * the pick, checked against the declaration, with the values the chosen fields hold now.
+     *
+     * @return array<string,mixed>|null
+     */
+    protected function requestScopeEntry(?object $transition): ?array
+    {
+        if ($this->pendingRequestScopePick === null) {
+            return null;
+        }
+
+        $scope = $this->requestScopeOf($transition);
+
+        if ($scope === null) {
+            return null;
+        }
+
+        $values = [];
+
+        foreach ((array) config('filament-flow.field_changes.attribute', 'form_data') as $attribute) {
+            if (is_string($attribute) && $attribute !== '') {
+                $values += $this->decodeFieldAttribute(data_get($this->getAttributes(), $attribute), $attribute);
+            }
+        }
+
+        return RequestScopeRecorder::entry(
+            $scope,
+            [RequestScopeRecorder::PAYLOAD_KEY => $this->pendingRequestScopePick],
+            $values,
+        );
     }
 
     /**

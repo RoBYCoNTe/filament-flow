@@ -6,10 +6,12 @@ use Filament\Infolists\Components\Entry;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use RoBYCoNTe\FilamentFlow\Contracts\StoresRequestAttachments;
 use RoBYCoNTe\FilamentFlow\Support\LocalizedDate;
 use RoBYCoNTe\FilamentFlow\Support\OpenRequest;
 use RoBYCoNTe\FilamentFlow\Support\OpenRequests;
 use RoBYCoNTe\FilamentFlow\Support\RecordOwner;
+use RoBYCoNTe\FilamentFlow\Support\RequestScopeLabels;
 
 /**
  * What the workflow is waiting for on a record: the transitions that asked something and no
@@ -161,6 +163,69 @@ class OpenRequestsEntry extends Entry
             'include_answered' => $this->showAnswered,
             'limit' => $this->limit,
         ]);
+    }
+
+    /**
+     * Every exchange of the record, answered ones included, oldest last: what the recap of the
+     * entry folds away. It is read apart from the open requests, so a host that shows only
+     * what is pending still lets the reader look back.
+     *
+     * @return Collection<int, OpenRequest>
+     */
+    public function getExchangeRecap(): Collection
+    {
+        $record = $this->getRecord();
+
+        if (! $record instanceof Model) {
+            return collect();
+        }
+
+        $exchanges = app(OpenRequests::class)->forRecord($record, [
+            'note_field' => $this->noteField,
+            'deadline_field' => $this->deadlineField,
+            'show_deadline' => $this->showDeadline,
+            'open_transitions' => $this->openTransitions,
+            'answer_transitions' => $this->answerTransitions,
+            'include_answered' => true,
+        ]);
+
+        // A recap is for looking back: it appears once there is something to look back at.
+        return $exchanges->contains(fn (OpenRequest $request): bool => ! $request->isMessage() && ! $request->isOpen())
+            ? $exchanges
+            : collect();
+    }
+
+    /**
+     * The fields a request opened, by the label a person reads.
+     *
+     * @return list<string>
+     */
+    public function scopeLabelsFor(OpenRequest $request): array
+    {
+        $record = $this->getRecord();
+
+        if (! $record instanceof Model || ! $request->hasScope()) {
+            return [];
+        }
+
+        return RequestScopeLabels::for($record, array_map('strval', (array) $request->scope['paths']));
+    }
+
+    /**
+     * The documents the office attached to a request, as the host hands them over. Nothing when
+     * the host keeps no attachments or the request carries none.
+     *
+     * @return list<array{id: int|string, name: string, url: string}>
+     */
+    public function attachmentsFor(OpenRequest $request, ?Model $record = null): array
+    {
+        $record ??= $this->getRecord();
+
+        if (! $record instanceof Model || $request->attachmentIds() === [] || ! app()->bound(StoresRequestAttachments::class)) {
+            return [];
+        }
+
+        return app(StoresRequestAttachments::class)->documents($record, $request->attachmentIds());
     }
 
     /** Whether the reader is the owner of the record: what is expected is theirs to answer. */
