@@ -189,7 +189,7 @@ final class Transition
     }
 
     /**
-     * The transition asks something of the other side of the workflow — the applicant,
+     * The transition asks something of the other side of the workflow — the respondent,
      * usually: a note to read, a document to attach. The request stays open until a
      * transition that answers it runs, and the flow tells whoever opens the record what is
      * expected of them (see `OpenRequests`).
@@ -230,7 +230,7 @@ final class Transition
     }
 
     /**
-     * What the office may add to the request this transition opens: documents, and the fields
+     * What the requester may add to the request this transition opens: documents, and the fields
      * the answering side will be allowed to change. Declared once here, it is carried in the
      * metadata like the rest of the request (see `RequestScope`).
      */

@@ -10,7 +10,7 @@ use RoBYCoNTe\FilamentFlow\Definition\WorkflowDefinition;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
 /**
- * What a request lets the office add — documents and opened fields — declared on the
+ * What a request lets the requester add — documents and opened fields — declared on the
  * transition that opens it and carried with the transition's own metadata.
  */
 class RequestScopeTest extends TestCase

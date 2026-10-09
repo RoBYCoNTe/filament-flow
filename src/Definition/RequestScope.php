@@ -5,10 +5,10 @@ namespace RoBYCoNTe\FilamentFlow\Definition;
 use InvalidArgumentException;
 
 /**
- * What the office may add to a request, declared once on the transition that opens it: the
+ * What the requester may add to a request, declared once on the transition that opens it: the
  * documents it can attach and the fields it can open to the answering side.
  *
- * It is the universe of the choice, not the choice: each request records what the office picked
+ * It is the universe of the choice, not the choice: each request records what the requester picked
  * inside it (see `ResolvesRequestScope`). A declaration travels in the metadata of the
  * transition, so the sync, the plan and the export carry it with no table of its own.
  *
@@ -54,7 +54,7 @@ final class RequestScope
     }
 
     /**
-     * The fields the office can choose from: `only` is the whitelist (everything when omitted),
+     * The fields the requester can choose from: `only` is the whitelist (everything when omitted),
      * `except` takes paths out of it, together with whatever lies beneath them.
      *
      * @param  list<string>|null  $only
@@ -69,7 +69,7 @@ final class RequestScope
     }
 
     /**
-     * The documents the office may attach to the request.
+     * The documents the requester may attach to the request.
      *
      * A `$max` of one makes it a single document: the dialog asks for one file instead of a list.
      *
@@ -98,7 +98,7 @@ final class RequestScope
         return $this;
     }
 
-    /** The office has to pick at least one field. */
+    /** The requester has to pick at least one field. */
     public function requireSelection(bool $require = true): self
     {
         $this->requireSelection = $require;
@@ -197,7 +197,7 @@ final class RequestScope
     }
 
     /**
-     * Whether the office may open a path: inside the whitelist and not under an exception.
+     * Whether the requester may open a path: inside the whitelist and not under an exception.
      */
     public function allows(string $path): bool
     {

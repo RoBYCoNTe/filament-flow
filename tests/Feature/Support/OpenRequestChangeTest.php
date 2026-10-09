@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use RoBYCoNTe\FilamentFlow\Support\OpenRequest;
 
 /**
- * Whether the answer to a request changed what the office opened: the fields as they stand now
+ * Whether the answer to a request changed what the requester opened: the fields as they stand now
  * against what they held when the request was made.
  */
 class OpenRequestChangeTest extends TestCase

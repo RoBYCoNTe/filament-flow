@@ -86,7 +86,7 @@ trait ChecksTransitionGuards
     }
 
     /**
-     * What the office picked for the request this transition opens must be what the call
+     * What the requester picked for the request this transition opens must be what the call
      * declared. It is checked whatever the validation level of the transition: a draft saved
      * for later still cannot open a field the call never offered.
      *
@@ -108,12 +108,12 @@ trait ChecksTransitionGuards
     }
 
     /**
-     * An answer that the office asked to carry a change must carry one: when the transition
+     * An answer that the requester asked to carry a change must carry one: when the transition
      * answers a request that was opened with `requireChange()`, at least one of the fields it
      * unlocked has to differ from what it held when the request was made.
      *
-     * The error sits on the first field the office unlocked, so the recap of the validation
-     * shows it in the step where the applicant has to act and the link leads there. A transition
+     * The error sits on the first field the requester unlocked, so the recap of the validation
+     * shows it in the step where the respondent has to act and the link leads there. A transition
      * that does not ask for the workflow rules (a draft saved for later) is not held to it.
      *
      * @param  array<array-key,mixed>  $payload

@@ -6,7 +6,7 @@ use Illuminate\Support\Arr;
 use RoBYCoNTe\FilamentFlow\Definition\RequestScope;
 
 /**
- * What the office picked for a request, from the payload of the transition that opens it to the
+ * What the requester picked for a request, from the payload of the transition that opens it to the
  * entry the history keeps.
  *
  * The pick travels in the payload under a key of its own, so it never lands among the values of
@@ -70,7 +70,7 @@ final class RequestScopeRecorder
         $messages = [];
 
         if ($scope->requiresSelection() && $pick['paths'] === []) {
-            $messages[] = 'Choose at least one field the applicant may change.';
+            $messages[] = 'Choose at least one field that can be changed.';
         }
 
         foreach ($pick['paths'] as $path) {

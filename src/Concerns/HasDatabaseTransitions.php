@@ -81,7 +81,7 @@ trait HasDatabaseTransitions
     protected ?array $pendingTransitionData = null;
 
     /**
-     * What the office picked for the request the transition opens: set apart from the payload,
+     * What the requester picked for the request the transition opens: set apart from the payload,
      * which it must not join, until the history takes it.
      *
      * @var array{paths: list<string>, attachments: list<int|string>}|null

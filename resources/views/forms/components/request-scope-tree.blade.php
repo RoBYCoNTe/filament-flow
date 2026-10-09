@@ -1,5 +1,5 @@
 {{--
-    The fields of a record as a compact tree the office ticks: the steps fold with a count of what is
+    The fields of a record as a compact tree the requester ticks: the steps fold with a count of what is
     chosen inside, the fields of a section sit in a grid, a search narrows the list and a few commands
     work on the whole. State: the list of the paths ticked (`$statePath`), as a Livewire property.
 --}}

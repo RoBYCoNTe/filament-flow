@@ -140,7 +140,7 @@ trait ReadsFieldPermissions
      * What a state says about a path for a given set of roles, whoever the record is today.
      *
      * Nothing is laid over it: it is the state's own answer, for a state the record is not in
-     * yet — what the office reads to offer only what the answering side will see there.
+     * yet — what the requester reads to offer only what the answering side will see there.
      *
      * @param  array<int,string>  $effectiveRoles
      * @return array{visible:bool,readonly:bool,locked:bool,required:bool,validation:array<int,string>|null}|null

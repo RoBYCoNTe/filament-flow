@@ -257,7 +257,7 @@ Together, the two make a notification that says what happened and opens where it
 
 ```php
 Notification::make('integration_requested', 'Integration requested')
-    ->body('The office asked for an integration: {{ field("review.notes") }}')
+    ->body('An integration was requested: {{ field("review.notes") }}')
     ->action('{{ record_url }}', 'Open the application')
     ->database();
 ```

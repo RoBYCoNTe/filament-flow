@@ -151,7 +151,7 @@ trait LogsTransitionHistory
     }
 
     /**
-     * What the office picked for the request this transition opens, as the history keeps it:
+     * What the requester picked for the request this transition opens, as the history keeps it:
      * the pick, checked against the declaration, with the values the chosen fields hold now.
      *
      * @return array<string,mixed>|null

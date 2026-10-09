@@ -13,7 +13,7 @@ use Throwable;
  * It is a reading of the history, not a row of its own: nothing is stored for it, and it
  * exists only while a component asks.
  *
- * `$scope` is what the office picked when it opened the request — the fields the applicant may
+ * `$scope` is what the requester picked when it opened the request — the fields the respondent may
  * change and the files it attached — as the history kept it (see `RequestScopeRecorder`).
  */
 final readonly class OpenRequest
@@ -48,14 +48,14 @@ final readonly class OpenRequest
         return $this->kind === self::KIND_MESSAGE;
     }
 
-    /** Whether the office opened any field to the answering side. */
+    /** Whether the requester opened any field to the answering side. */
     public function hasScope(): bool
     {
         return ($this->scope['paths'] ?? []) !== [];
     }
 
     /**
-     * The files the office attached to the request, by id.
+     * The files the requester attached to the request, by id.
      *
      * @return list<int|string>
      */
@@ -64,14 +64,14 @@ final readonly class OpenRequest
         return array_values((array) ($this->scope['attachments'] ?? []));
     }
 
-    /** Whether the office wants the answer to carry a change in at least one of the fields it opened. */
+    /** Whether the requester wants the answer to carry a change in at least one of the fields it opened. */
     public function requiresChange(): bool
     {
         return $this->hasScope() && ($this->scope['require_change'] ?? false) === true;
     }
 
     /**
-     * The fields the office opened that still hold what they held when it asked, given the
+     * The fields the requester opened that still hold what they held when it asked, given the
      * values as they stand now. A field never filled and a field cleared are the same value.
      *
      * @param  array<array-key,mixed>  $values  the record's values, by path

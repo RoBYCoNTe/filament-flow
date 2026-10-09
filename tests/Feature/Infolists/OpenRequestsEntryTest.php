@@ -337,7 +337,7 @@ class OpenRequestsEntryTest extends TestCase
     }
 
     /**
-     * The exchange of the call: a request that the office makes and, when asked, the answer it
+     * The exchange of the call: a request that the requester makes and, when asked, the answer it
      * receives.
      *
      * @return array{0: Order, 1: WorkflowStateTransition, 2: WorkflowTransition}

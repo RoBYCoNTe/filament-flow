@@ -6,7 +6,7 @@ use Closure;
 use Filament\Forms\Components\Field;
 
 /**
- * The fields of a record as a tree the office ticks to say what the answering side may change.
+ * The fields of a record as a tree the requester ticks to say what the answering side may change.
  *
  * The state is the list of the paths ticked, the shape the request scope is recorded in: a
  * container ticks every path under it, a field only its own.

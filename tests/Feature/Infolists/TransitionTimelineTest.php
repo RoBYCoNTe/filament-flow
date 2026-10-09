@@ -890,7 +890,7 @@ class TransitionTimelineTest extends TestCase
         $this->assertFalse(TransitionTimeline::make()->collapseGroups(false)->collapsibleGroups());
     }
 
-    public function test_an_entry_that_opened_a_request_reads_the_fields_and_documents_the_office_chose(): void
+    public function test_an_entry_that_opened_a_request_reads_the_fields_and_documents_the_requester_chose(): void
     {
         $this->app->bind(StoresRequestAttachments::class, fn (): StoresRequestAttachments => new class implements StoresRequestAttachments
         {

@@ -1,7 +1,7 @@
 # Open Requests
 
-Some workflows are a conversation: the office asks the applicant for something — a note to read,
-a document to attach, a clarification — the applicant answers, and the exchange repeats until the
+Some workflows are a conversation: one side asks the other for something — a note to read,
+a document to attach, a clarification — the other side answers, and the exchange repeats until the
 file is complete. Other times the workflow just **says something**: a rejection with its reason,
 a decision with a note, and walks away. The engine does not keep these exchanges in a table of
 their own: it reads them from the history it already writes — which transitions asked, which ones
@@ -22,7 +22,7 @@ use RoBYCoNTe\FilamentFlow\Definition\Transition;
 
 $request = Transition::make('request_integration', 'under_review', 'integration_requested')
     ->label('Request an integration')
-    ->opensRequest()                                  // the office asks
+    ->opensRequest()                                  // the requester asks
     ->withRequestFields(
         noteField: 'review.notes',                    // where the note lives
         deadlineField: 'meta.integration_deadline',   // where the term lives
@@ -30,7 +30,7 @@ $request = Transition::make('request_integration', 'under_review', 'integration_
 
 $answer = Transition::make('resubmit', 'integration_requested', 'submitted')
     ->label('Send the integration')
-    ->answersRequest();                               // the applicant answers
+    ->answersRequest();                               // the other side answers
 ```
 
 | Method | Effect |
@@ -105,7 +105,7 @@ foreach ($requests as $request) {
     $request->isOverdue();         // the term has passed
     $request->isDueSoon(days: 3);  // the term is close
     $request->daysRemaining();     // whole days left (negative once past)
-    $request->note;                // the sentence the office wrote
+    $request->note;                // the sentence the requester wrote
     $request->deadline;            // Carbon|null
     $request->requestedBy;         // who asked
     $request->requestedAt;         // when
@@ -160,5 +160,5 @@ is the state's own colour, not a colour declared again for the message.
 
 ## See also
 
-- [Request Scope](./request-scope.md) — let the office pick the fields the applicant may change and attach
+- [Request Scope](./request-scope.md) — let the requester pick the fields the respondent may change and attach
   documents to the request.

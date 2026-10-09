@@ -1,7 +1,7 @@
 @props(['entry', 'exchanges', 'dateTimeFormat'])
 
 {{--
-    The quick look back at every exchange of a record — the request, the fields the office opened,
+    The quick look back at every exchange of a record — the request, the fields the requester opened,
     the documents it attached, the answer — folded away until the reader opens it, so the page
     stays on what is pending and the iterations are one click away.
 --}}

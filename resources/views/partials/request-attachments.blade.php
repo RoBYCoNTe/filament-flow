@@ -1,7 +1,7 @@
 @props(['documents' => []])
 
 {{--
-    The documents the office attached to a request, one link each. The host decides where a link
+    The documents the requester attached to a request, one link each. The host decides where a link
     leads and who may follow it (`StoresRequestAttachments::documents()`); here they are only
     listed, so the banner of a page and the block of a form read them the same way.
 --}}

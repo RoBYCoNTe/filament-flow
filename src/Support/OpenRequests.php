@@ -196,7 +196,7 @@ final class OpenRequests
     }
 
     /**
-     * What the office picked when it opened the request, as the history kept it.
+     * What the requester picked when it opened the request, as the history kept it.
      *
      * @return array<string,mixed>|null
      */

@@ -7,7 +7,7 @@ use RoBYCoNTe\FilamentFlow\Support\RequestScopeRecorder;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
 /**
- * The pick of the office, from the payload of the transition to the entry of the history.
+ * The pick of the requester, from the payload of the transition to the entry of the history.
  */
 class RequestScopeRecorderTest extends TestCase
 {
@@ -44,7 +44,7 @@ class RequestScopeRecorderTest extends TestCase
 
         $this->assertCount(2, $errors[self::KEY]);
         $this->assertSame(
-            [self::KEY => ['Choose at least one field the applicant may change.']],
+            [self::KEY => ['Choose at least one field that can be changed.']],
             RequestScopeRecorder::errors($scope, []),
         );
     }

@@ -6,7 +6,7 @@ use RoBYCoNTe\FilamentFlow\Support\OpenRequest;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
 /**
- * What the office picked, as a request tells it.
+ * What the requester picked, as a request tells it.
  */
 class OpenRequestScopeTest extends TestCase
 {

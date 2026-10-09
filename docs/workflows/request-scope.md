@@ -1,10 +1,10 @@
 # Request Scope
 
-A request that asks the applicant for "an integration" says little: the applicant may change what
-the **state** allows for their role, the same for every request, and the office has no way to say
+A request that asks the respondent for "an integration" says little: the respondent may change what
+the **state** allows for their role, the same for every request, and the requester has no way to say
 *correct only the amount and upload the revised survey*. The request scope closes both gaps. When
-the office opens a request it can **pick the fields** the other side may change and **attach
-documents**; the applicant is then limited to those fields until they answer, and the screen says
+the requester opens a request it can **pick the fields** the other side may change and **attach
+documents**; the respondent is then limited to those fields until they answer, and the screen says
 where to go.
 
 It builds on [Open Requests](./open-requests.md) and stores nothing new: the pick is written in the
@@ -24,8 +24,8 @@ Transition::make('request_integration', 'under_review', 'integration_requested')
         RequestScope::make()
             ->editableFields(only: ['applicant', 'documents'], except: ['applicant.fiscal_code'])
             ->attachments(accepts: ['pdf'], max: 5, maxSizeMb: 10)
-            ->requireSelection()   // the office must pick at least one field
-            ->requireChange()      // the applicant must change at least one before answering
+            ->requireSelection()   // the requester must pick at least one field
+            ->requireChange()      // the respondent must change at least one before answering
             ->answeredBy('@owner') // who receives the override
             ->exclusive()          // default; ->additive() leaves the other fields alone
     );
@@ -37,14 +37,14 @@ SDK export carry it with no code of their own.
 
 | Method | Meaning |
 |---|---|
-| `editableFields(only, except)` | what the office may choose from: the **whitelist**. A path covers everything under it |
-| `attachments(accepts, max, maxSizeMb)` | documents the office may attach; without it the dialog has no upload |
-| `requireSelection()` | the office must pick at least one field. Off by default: a request with no pick is the plain one |
+| `editableFields(only, except)` | what the requester may choose from: the **whitelist**. A path covers everything under it |
+| `attachments(accepts, max, maxSizeMb)` | documents the requester may attach; without it the dialog has no upload |
+| `requireSelection()` | the requester must pick at least one field. Off by default: a request with no pick is the plain one |
 | `requireChange()` | the answer is refused until one of the picked fields differs from its snapshot |
 | `answeredBy(role)` | who receives the override (default `@owner`); the others keep the rules of the state |
 | `exclusive()` / `additive()` | outside the pick, fields are **read-only** (default) or **unchanged** |
 
-## What the office does
+## What the requester does
 
 The dialog of the transition gains two optional fields, both bound by the host:
 
@@ -59,7 +59,7 @@ reserved key `Support\RequestScopeRecorder::PAYLOAD_KEY` (`_request_scope`), is 
 declaration wherever the transition runs from, is removed before anything is written, and is
 recorded in the history together with a **snapshot** of the picked fields.
 
-## What the applicant gets
+## What the respondent gets
 
 While a request is open, **and** the record is still in the state it sent it to,
 `Support\RequestScopeResolver` (the `Contracts\ResolvesRequestScope` binding) answers which paths
@@ -90,7 +90,7 @@ the pick is on fields and columns.
   from `Support\RequestScopeLabels`, which asks the host (`HasFieldPresentation`, `HasFieldLabels`)
   before the generic presenter.
 - **The history.** `Infolists\Components\TransitionTimeline::getRequestScope()` shows, on the entry
-  that opened a request, the fields the office picked and its documents.
+  that opened a request, the fields the requester picked and its documents.
 
 ## Answering
 

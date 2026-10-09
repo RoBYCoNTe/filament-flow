@@ -7,8 +7,8 @@ use RoBYCoNTe\FilamentFlow\Definition\RequestScope;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 
 /**
- * What a host implements so the office can pick the fields of a request: the fields of the record
- * as the tree a person sees them in, already limited to what the call allows the office to choose
+ * What a host implements so the requester can pick the fields of a request: the fields of the record
+ * as the tree a person sees them in, already limited to what the call allows the requester to choose
  * and to what the answering side will see in the state the record goes back to.
  *
  * Optional: when nothing is bound the dialog of a request offers no picker.

@@ -136,7 +136,7 @@ class TransitionFormService
     }
 
     /**
-     * The upload of the documents the office attaches to the request, when the transition takes
+     * The upload of the documents the requester attaches to the request, when the transition takes
      * them and the host can keep them. What the form holds in the end is the identifiers the host
      * gave, the shape the request records.
      */
@@ -158,7 +158,7 @@ class TransitionFormService
         $multiple = $scope->attachmentLimit() > 1;
 
         $upload = FileUpload::make(RequestScopeRecorder::PAYLOAD_KEY.'.attachments')
-            ->label($multiple ? __('Documents for the applicant') : __('Document for the applicant'))
+            ->label($multiple ? __('Documents attached to the request') : __('Document attached to the request'))
             ->helperText($multiple
                 ? __('Up to :max files of :size MB at most.', ['max' => $scope->attachmentLimit(), 'size' => $scope->attachmentMaxSizeMb()])
                 : __('One file of :size MB at most.', ['size' => $scope->attachmentMaxSizeMb()]))
@@ -172,7 +172,7 @@ class TransitionFormService
     }
 
     /**
-     * The picker of the fields the office opens to the answering side, when the transition
+     * The picker of the fields the requester opens to the answering side, when the transition
      * declares a request scope and the host can tell which fields the record has to choose from.
      */
     protected function buildRequestScopePicker(WorkflowTransition $transition, Model $record): ?RequestScopePicker
@@ -190,8 +190,8 @@ class TransitionFormService
         }
 
         return RequestScopePicker::make(RequestScopeRecorder::PAYLOAD_KEY.'.paths')
-            ->label(__('Fields the applicant may change'))
-            ->helperText(__('Everything else stays read-only until the applicant answers.'))
+            ->label(__('Fields that can be changed'))
+            ->helperText(__('Everything else stays read-only until the reply is sent.'))
             ->tree($tree)
             ->required($scope->requiresSelection());
     }

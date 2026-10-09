@@ -464,7 +464,7 @@ class TransitionTimeline extends Entry
     }
 
     /**
-     * What the office asked for when the entry opened a request: the fields it opened to the
+     * What the requester asked for when the entry opened a request: the fields it opened to the
      * answering side, by the label a person reads, and the documents it attached. Nothing for
      * an entry that opened no request, or opened one with no scope.
      *

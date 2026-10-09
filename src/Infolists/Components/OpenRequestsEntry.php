@@ -212,7 +212,7 @@ class OpenRequestsEntry extends Entry
     }
 
     /**
-     * The documents the office attached to a request, as the host hands them over. Nothing when
+     * The documents the requester attached to a request, as the host hands them over. Nothing when
      * the host keeps no attachments or the request carries none.
      *
      * @return list<array{id: int|string, name: string, url: string}>

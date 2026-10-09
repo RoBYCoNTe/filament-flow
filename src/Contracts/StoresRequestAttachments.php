@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 
 /**
- * What a host implements so the office can attach documents to a request: it keeps the files and
+ * What a host implements so the requester can attach documents to a request: it keeps the files and
  * hands back an identifier for each, which is what the history records.
  *
  * The package never touches a disk. Optional: when nothing is bound the dialog of a request takes

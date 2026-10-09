@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-10-09
 
 ### Added
-- **Request scope.** The office that opens a request can pick the fields the other side may
+- **Request scope.** The side that opens a request can pick the fields the other side may
   change and attach documents (`Transition::withRequestScope()`, `Definition\RequestScope`).
   While the request is open and the record sits in the state it led to, the permissions follow
   the pick (`Support\RequestScopeResolver`, `Support\RequestScopeOverlay`, applied after the

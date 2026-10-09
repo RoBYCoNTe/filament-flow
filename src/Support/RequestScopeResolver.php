@@ -14,7 +14,7 @@ use WeakMap;
  * Reads the scope a record has from its history: the requests still open, in the state they
  * sent the record to, whose answering role is one the user acts with.
  *
- * Nothing is stored for it. What the office chose lives in the history row of the transition
+ * Nothing is stored for it. What the requester chose lives in the history row of the transition
  * that opened the request, what the call allowed lives in the transition, and the request stops
  * counting the moment a later transition answers it or the record leaves the state it was sent
  * to. Several requests add up: the fields of all of them are open, and one exclusive request is
@@ -119,7 +119,7 @@ final class RequestScopeResolver implements ResolvesRequestScope
                 $scope = $declarations[$request->transitionName] ?? null;
 
                 // Only the request that sent the record to this very state counts, and only
-                // what the call allows of what the office chose.
+                // what the call allows of what the requester chose.
                 if ($scope === null || ! $request->isOpen() || ! $request->hasScope() || $request->toState !== $state) {
                     continue;
                 }
