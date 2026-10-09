@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-09
+
+Supersedes 0.4.0, which is withdrawn: same code, with the wording of the request scope made
+abstract. Use 0.4.1.
+
+### Added
+- **Request scope** (introduced with 0.4.0). The side that opens a request can pick the fields the
+  other side may change and attach documents (`Transition::withRequestScope()`). While the request
+  is open the permissions follow the pick, the answer can be refused until a picked field has
+  changed (`requireChange()`), and the dialog gains an optional field picker and document upload.
+  The pick is recorded in the history with a snapshot: nothing new is stored. The details are in
+  the 0.4.0 entry below and in `docs/workflows/request-scope.md`.
+
+### Changed
+- The messages, the documentation and the changelog name a **requester** and a **respondent**
+  instead of an office and an applicant: the engine does not know who they are in a given flow.
+  The labels of the upload (`Documents attached to the request`) and the hints of the request
+  (`request_scope_*`, `open_requests_office_hint`) read the same way.
+
 ## [0.4.0] - 2026-10-09
 
 ### Added
