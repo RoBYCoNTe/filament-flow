@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Contracts\FieldRuleSource;
 use RoBYCoNTe\FilamentFlow\Contracts\FormulaConditionProvider;
+use RoBYCoNTe\FilamentFlow\Contracts\NarrowsFieldPermissions;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransitionValidationRule;
@@ -39,6 +40,70 @@ class WorkflowValidationServiceTest extends TestCase
         $result = $this->service()->validate($order, null, [], $transition);
 
         $this->assertFalse($result->has('order_number'), 'A hidden field cannot be missing.');
+    }
+
+    public function test_a_rule_on_a_path_under_a_hidden_field_is_skipped_with_it(): void
+    {
+        $this->assertFalse($this->childRuleReported(hidden: true), 'Under a hidden field: not checked.');
+    }
+
+    public function test_a_rule_on_a_path_under_a_visible_field_is_checked(): void
+    {
+        $this->assertTrue($this->childRuleReported(hidden: false));
+    }
+
+    private function childRuleReported(bool $hidden): bool
+    {
+        [$order, $transition] = $this->workflow(hiddenRequired: $hidden);
+
+        WorkflowTransitionValidationRule::create([
+            'transition_id' => $transition->id,
+            'field_name' => 'order_number.child',
+            'rules' => ['required'],
+            'sort_order' => 0,
+        ]);
+
+        return $this->service()->validate($order, null, ['customer_name' => 'Ada'], $transition)->has('order_number.child');
+    }
+
+    public function test_the_host_can_take_a_field_out_because_of_the_data(): void
+    {
+        [$order, $transition] = $this->workflow();
+        $this->bindNarrower(hides: 'customer_name', whenData: 'skip_customer');
+
+        $withoutIt = $this->service()->validate($order, null, ['order_number' => 'A-1', 'skip_customer' => true], $transition);
+        $withIt = $this->service()->validate($order, null, ['order_number' => 'A-1', 'skip_customer' => false], $transition);
+
+        $this->assertFalse($withoutIt->has('customer_name'), 'The data takes the field out: it cannot be missing.');
+        $this->assertTrue($withIt->has('customer_name'), 'The data leaves it in: it is required as the state says.');
+    }
+
+    public function test_the_host_cannot_bring_back_a_field_the_state_hides(): void
+    {
+        [$order, $transition] = $this->workflow(hiddenRequired: true);
+
+        app()->bind(NarrowsFieldPermissions::class, fn () => new class implements NarrowsFieldPermissions
+        {
+            public function narrow(Model $record, ?Model $user, array $data, array $permissions): array
+            {
+                $permissions['order_number']['visible'] = true;
+
+                return $permissions;
+            }
+        });
+
+        $result = $this->service()->validate($order, null, [], $transition);
+
+        $this->assertFalse($result->has('order_number'), 'The state hides it: the host cannot open it.');
+    }
+
+    public function test_without_a_binding_the_permissions_are_those_of_the_state(): void
+    {
+        [$order, $transition] = $this->workflow();
+
+        $result = $this->service()->validate($order, null, ['order_number' => 'A-1', 'skip_customer' => true], $transition);
+
+        $this->assertTrue($result->has('customer_name'));
     }
 
     public function test_transition_rules_use_their_custom_message(): void
@@ -281,6 +346,24 @@ class WorkflowValidationServiceTest extends TestCase
         ]);
 
         return [$order, $transition];
+    }
+
+    /** A host that takes `$hides` out of the picture while `$whenData` is true in the data. */
+    private function bindNarrower(string $hides, string $whenData): void
+    {
+        app()->bind(NarrowsFieldPermissions::class, fn () => new class($hides, $whenData) implements NarrowsFieldPermissions
+        {
+            public function __construct(private string $hides, private string $whenData) {}
+
+            public function narrow(Model $record, ?Model $user, array $data, array $permissions): array
+            {
+                if (($data[$this->whenData] ?? false) === true) {
+                    $permissions[$this->hides]['visible'] = false;
+                }
+
+                return $permissions;
+            }
+        });
     }
 
     private function service(): WorkflowValidationService

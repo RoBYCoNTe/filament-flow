@@ -4,6 +4,7 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Contracts\FieldRuleSource;
+use RoBYCoNTe\FilamentFlow\Contracts\NarrowsFieldPermissions;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 use RoBYCoNTe\FilamentFlow\Support\ValidationRuleRegistry;
@@ -63,7 +64,7 @@ class WorkflowValidationService
         // already stored on the record when the caller has no form to submit.
         $data = $data === [] ? $this->recordData($record) : $data;
 
-        $permissions = $this->permissions->getFieldPermissions($subject, $user);
+        $permissions = $this->narrowed($subject, $user, $data, $this->permissions->getFieldPermissions($subject, $user));
 
         $errors = [];
         $labels = [];
@@ -77,6 +78,31 @@ class WorkflowValidationService
         $this->applyHostRules($subject, $user, $data, $permissions, $errors, $labels);
 
         return new ValidationResult($errors, $labels);
+    }
+
+    /**
+     * What the host takes away from the permissions of the state because of the data. It can only
+     * take away: a field the state hides stays hidden, whatever the host answers.
+     *
+     * @param  array<string,mixed>  $data
+     * @param  array<string,array<string,mixed>>  $permissions
+     * @return array<string,array<string,mixed>>
+     */
+    private function narrowed(Model $record, ?Model $user, array $data, array $permissions): array
+    {
+        if (! app()->bound(NarrowsFieldPermissions::class)) {
+            return $permissions;
+        }
+
+        $narrowed = app(NarrowsFieldPermissions::class)->narrow($record, $user, $data, $permissions);
+
+        foreach ($permissions as $path => $permission) {
+            if (($permission['visible'] ?? true) === false) {
+                $narrowed[$path] = $permission;
+            }
+        }
+
+        return $narrowed;
     }
 
     /**

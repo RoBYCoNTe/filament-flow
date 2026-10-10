@@ -18,6 +18,31 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowTransition;
 trait AppliesValidationRules
 {
     /**
+     * Whether a path is in the picture: the rule declared for it says, and a path with no rule of
+     * its own follows the closest one above it (the columns of a hidden list, the documents of a
+     * hidden set). The most specific rule wins, so a path made visible again under a hidden one
+     * stays visible.
+     *
+     * @param  array<string,array<string,mixed>>  $permissions
+     */
+    private function isVisible(array $permissions, string $path): bool
+    {
+        $segments = explode('.', $path);
+
+        while ($segments !== []) {
+            $candidate = implode('.', $segments);
+
+            if (isset($permissions[$candidate])) {
+                return ($permissions[$candidate]['visible'] ?? true) !== false;
+            }
+
+            array_pop($segments);
+        }
+
+        return true;
+    }
+
+    /**
      * @param  array<string,array<string,mixed>>  $permissions
      * @param  array<string,list<string>>  $errors
      *
@@ -35,7 +60,7 @@ trait AppliesValidationRules
         array &$labels,
     ): void {
         foreach ($permissions as $path => $permission) {
-            if (($permission['visible'] ?? true) === false) {
+            if (! $this->isVisible($permissions, (string) $path)) {
                 continue;
             }
 
@@ -71,7 +96,7 @@ trait AppliesValidationRules
         foreach ($transition->validationRuleConfigs() as $config) {
             $path = $config['field_name'];
 
-            if (($permissions[$path]['visible'] ?? true) === false) {
+            if (! $this->isVisible($permissions, $path)) {
                 continue;
             }
 
@@ -133,7 +158,7 @@ trait AppliesValidationRules
             foreach ($source->rulesFor($record, $user) as $path => $rules) {
                 $path = (string) $path;
 
-                if (($permissions[$path]['visible'] ?? true) === false) {
+                if (! $this->isVisible($permissions, $path)) {
                     continue;
                 }
 

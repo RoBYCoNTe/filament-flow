@@ -206,6 +206,19 @@ The first two are what makes the completions appear while a person types: see
 [the formula editor](/ui/formula-editor). The third one is how a host keeps the evaluation of its
 own formulas, instead of letting the package guess.
 
+## Implement to narrow permissions by data
+
+| Contract | What it gives the engine |
+|---|---|
+| `NarrowsFieldPermissions` | The fields the data of a record takes out of the picture, asked once per validation pass |
+
+The permissions of a state are the same for every record in it. A host that hides a field
+*because of what another field holds* binds this contract: it receives the values the validation
+runs on and the permissions of the state, and returns them with those fields marked
+`visible => false`. They are then neither required nor validated, from whichever source the rule
+comes. It only narrows — a field the state hides stays hidden — and without a binding nothing
+changes.
+
 ## Contracts of the package itself
 
 `HasStateAction`, `HasStateAttributes` and `HasFieldLabels` are implemented by the package's own
