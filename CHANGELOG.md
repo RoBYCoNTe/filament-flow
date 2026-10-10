@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-10
+
+### Added
+- **`Contracts\NarrowsFieldPermissions`**, optional. The permissions of a state are the same for
+  every record in it, so they cannot say that a field is out of the picture because of what
+  another field holds. A host that binds the contract is asked once per validation pass, with the
+  values the pass runs on, and hands back the permissions with those fields marked
+  `visible => false`: they are then neither required nor validated, whichever source the rule
+  comes from. It can only take away — a field the state hides stays hidden. Without a binding
+  nothing changes.
+
+### Changed
+- A validation rule on a path that has no permission of its own now follows the closest one above
+  it: the columns of a hidden list and the documents of a hidden set are skipped with it, as the
+  field itself is. A path with a rule of its own keeps it, so a path made visible again under a
+  hidden one stays visible.
+
 ## [0.4.1] - 2026-10-09
 
 Supersedes 0.4.0, which is withdrawn: same code, with the wording of the request scope made
