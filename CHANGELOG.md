@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-13
+
+### Added
+- `StateBulkActionGroup::forDatabaseRecord()` takes an optional `$only`: the names of the
+  transitions worth doing in bulk (`null` offers every one, as before; `[]` none).
+- The text `filament-flow.bulk_action.not_available` (English and Italian), for a record the user
+  cannot take a transition on.
+
+### Changed
+- `StateBulkActionGroup::forDatabaseRecord()`: transitions that read the same to the user (same
+  label, same target state) are one action instead of a duplicate each, and each record takes the
+  one that `getAvailableTransitions()` offers to the current user. A record in a state the action
+  does not apply to is skipped; one that applies by state but is not available to the user (access
+  rules, actor, guards) is reported. The docblock no longer promises that a no-op action is hidden:
+  a bulk action cannot be hidden record by record.
+
+### Fixed
+- The planner now sees a change of the `metadata` of a state (`DiffsWorkflowDefinition::stateChanged`):
+  before, a changed value was never applied to a workflow already in the database.
+
 ## [0.4.2] - 2026-10-10
 
 ### Added
