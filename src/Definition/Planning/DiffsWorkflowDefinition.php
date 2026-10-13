@@ -159,7 +159,8 @@ trait DiffsWorkflowDefinition
         return $row->label !== $data['label']
             || $row->color !== $data['color']
             || (bool) $row->is_initial !== (bool) $data['is_initial']
-            || (bool) $row->is_final !== (bool) $data['is_final'];
+            || (bool) $row->is_final !== (bool) $data['is_final']
+            || ($row->metadata ?: null) !== ($data['metadata'] ?: null);
     }
 
     private function stateFieldsChanged(WorkflowState $row, State $state): bool

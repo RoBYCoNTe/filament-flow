@@ -7,6 +7,7 @@
     "filament-flow.bulk_action.notification.title.success": "Transizione completata",
     "filament-flow.bulk_action.notification.title.partial_success": "Transizione parzialmente completata",
     "filament-flow.bulk_action.notification.title.failure": "Transizione fallita",
+    "filament-flow.bulk_action.not_available": "Questa transizione non è disponibile per te su questo record.",
     "filament-flow.bulk_action.notification.body": ":count/:total record aggiornati",
     "filament-flow.assignment.notification.title": "Nuova Assegnazione",
     "filament-flow.assignment.notification.body": "Sei stato assegnato al sinistro :code.",

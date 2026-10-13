@@ -7,6 +7,7 @@
     "filament-flow.bulk_action.notification.title.success": "Transition completed",
     "filament-flow.bulk_action.notification.title.partial_success": "Partial transition completed",
     "filament-flow.bulk_action.notification.title.failure": "Transition failed",
+    "filament-flow.bulk_action.not_available": "This transition is not available to you on this record.",
     "filament-flow.bulk_action.notification.body": ":count/:total record updated",
     "A descriptive name to identify this workflow (e.g., \"Order Processing\", \"Invoice Approval\").": "A descriptive name to identify this workflow (e.g., \"Order Processing\", \"Invoice Approval\").",
     "The Eloquent model this workflow will be attached to.": "The Eloquent model this workflow will be attached to.",
