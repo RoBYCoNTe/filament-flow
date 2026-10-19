@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-19
+
+### Changed
+- The Italian texts of the ownership of an application (panel, explanation, transfer and its
+  history) use the vocabulary of the administration: *titolarità*, *trasferimento*, *titolare*,
+  *consultazione*, *collaborazione*. The keys are the same: hosts that overrode them can drop
+  the override.
+
 ## [0.5.0] - 2026-10-13
 
 ### Added
