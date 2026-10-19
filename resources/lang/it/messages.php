@@ -137,7 +137,7 @@ return [
     'open_requests_answered_on' => 'Risposta inviata il :date',
     'open_requests_reply_hint' => 'Rispondi con l\'azione disponibile nella barra dei comandi qui sotto.',
     'open_requests_documents' => '{1} :count documento allegato|[2,*] :count documenti allegati',
-    'exchange_recap_title' => 'Storico degli scambi',
+    'exchange_recap_title' => 'Storico delle richieste e delle risposte',
     'exchange_recap_fields' => 'Campi richiesti',
     'request_scope_exclusive' => 'Campi aperti per la risposta (il resto è in sola lettura)',
     'request_scope_additive' => 'Campi aperti per la risposta (gli altri seguono le regole abituali)',

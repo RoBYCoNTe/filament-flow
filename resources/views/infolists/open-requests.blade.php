@@ -14,6 +14,10 @@
 @endphp
 
 <x-dynamic-component :component="$getEntryWrapperView()" :entry="$entry">
+    @if ($entry->showsEmptyMessage())
+        <p data-open-requests-empty class="text-sm text-gray-500 dark:text-gray-400">{{ $entry->getEmptyMessage() }}</p>
+    @endif
+
     @if ($requests->isNotEmpty())
         <div class="space-y-3">
             @foreach ($requests as $request)

@@ -61,6 +61,9 @@ class OpenRequestsEntry extends Entry
     /** Whether the term of the request is read beside it. */
     protected bool $showDeadline = true;
 
+    /** What is said under the title while no request is open; `null` leaves the entry silent. */
+    protected ?string $emptyMessage = null;
+
     public static function make(?string $name = 'open-requests'): static
     {
         // A name humanised by the framework ("Flow open requests") says nothing: the label
@@ -81,6 +84,40 @@ class OpenRequestsEntry extends Entry
         $this->deadlineField = $field;
 
         return $this;
+    }
+
+    /**
+     * The line that says there is nothing pending, under the title and above the recap. Without
+     * it the entry draws nothing while no request is open, and leaves its title alone.
+     */
+    public function emptyMessage(?string $message): static
+    {
+        $this->emptyMessage = $message;
+
+        return $this;
+    }
+
+    public function getEmptyMessage(): ?string
+    {
+        return $this->emptyMessage;
+    }
+
+    /** Whether the line of the empty state is due: a message is set and no request is open. */
+    public function showsEmptyMessage(): bool
+    {
+        $record = $this->getRecord();
+
+        return $record instanceof Model && $this->showsEmptyMessageFor($record);
+    }
+
+    /** The same, for a record read outside a rendered entry. */
+    public function showsEmptyMessageFor(Model $record): bool
+    {
+        if (blank($this->emptyMessage)) {
+            return false;
+        }
+
+        return $this->requestsFor($record)->doesntContain(fn (OpenRequest $request): bool => $request->isOpen());
     }
 
     public function hideDeadline(bool $hidden = true): static

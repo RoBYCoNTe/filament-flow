@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `OpenRequestsEntry::emptyMessage()`: the line that says there is nothing pending, drawn under
+  the title while no request is open (`showsEmptyMessage()` tells when it is due). Without it the
+  entry stays silent, as before.
+
+### Changed
+- The recap of the exchanges is no longer a card of its own: it opens as a line under the open
+  requests, in the same block, with a clearer title ("Storico delle richieste e delle risposte").
+
 ## [0.5.1] - 2026-10-19
 
 ### Changed

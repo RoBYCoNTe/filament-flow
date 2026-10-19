@@ -28,6 +28,22 @@ class OpenRequestsEntryTest extends TestCase
         );
     }
 
+    public function test_the_empty_line_is_due_when_the_host_set_it_and_nothing_is_open(): void
+    {
+        [$order] = $this->exchange(answered: true);
+
+        $this->assertFalse($this->entry()->showsEmptyMessageFor($order), 'Without a message the entry stays silent.');
+        $this->assertTrue($this->entry()->emptyMessage('Nothing pending.')->showsEmptyMessageFor($order));
+        $this->assertSame('Nothing pending.', $this->entry()->emptyMessage('Nothing pending.')->getEmptyMessage());
+    }
+
+    public function test_the_empty_line_is_not_due_while_a_request_is_open(): void
+    {
+        [$order] = $this->exchange(answered: false);
+
+        $this->assertFalse($this->entry()->emptyMessage('Nothing pending.')->showsEmptyMessageFor($order));
+    }
+
     public function test_a_transition_flagged_as_a_request_reads_as_an_exchange(): void
     {
         [$order] = $this->exchange(answered: false);

@@ -6,8 +6,10 @@
     stays on what is pending and the iterations are one click away.
 --}}
 @if ($exchanges->isNotEmpty())
-    <details data-exchange-recap class="group mt-3 rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-        <summary class="flex cursor-pointer select-none list-none items-center gap-2 px-4 py-3 text-sm font-semibold text-gray-800 dark:text-gray-100">
+    {{-- Not a card of its own: the exchanges are the same thing as the requests above, in another
+         moment, so they open under them as a line of the same block. --}}
+    <details data-exchange-recap class="group mt-3">
+        <summary class="flex w-fit cursor-pointer select-none list-none items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-950 dark:text-gray-400 dark:hover:text-white">
             <x-filament::icon icon="heroicon-m-chevron-right" class="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-90" aria-hidden="true" />
             {{ __('filament-flow::messages.exchange_recap_title') }}
             <span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
@@ -15,7 +17,7 @@
             </span>
         </summary>
 
-        <ol class="divide-y divide-gray-950/5 border-t border-gray-950/5 dark:divide-white/10 dark:border-white/10">
+        <ol class="mt-2 divide-y divide-gray-950/5 rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:divide-white/10 dark:bg-gray-900 dark:ring-white/10">
             @foreach ($exchanges as $exchange)
                 @php
                     $labels = $exchange->isMessage() ? [] : $entry->scopeLabelsFor($exchange);

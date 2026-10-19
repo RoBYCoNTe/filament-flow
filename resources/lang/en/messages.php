@@ -137,7 +137,7 @@ return [
     'open_requests_answered_on' => 'Replied on :date',
     'open_requests_reply_hint' => 'Reply with the action available in the toolbar below.',
     'open_requests_documents' => '{1} :count document attached|[2,*] :count documents attached',
-    'exchange_recap_title' => 'Exchange history',
+    'exchange_recap_title' => 'History of requests and answers',
     'exchange_recap_fields' => 'Fields requested',
     'request_scope_exclusive' => 'Fields opened for the reply (everything else stays read-only)',
     'request_scope_additive' => 'Fields opened for the reply (the others keep their usual rules)',
