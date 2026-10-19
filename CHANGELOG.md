@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-19
+
 ### Added
 - `OpenRequestsEntry::emptyMessage()`: the line that says there is nothing pending, drawn under
   the title while no request is open (`showsEmptyMessage()` tells when it is due). Without it the
