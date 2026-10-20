@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-20
+
 ### Added
 - `OpenRequestsEntry::withoutRecap()`: leaves out the folded recap of the earlier exchanges, for a host
   that already draws them somewhere else (the timeline of the record).
