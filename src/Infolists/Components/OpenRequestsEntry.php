@@ -61,6 +61,9 @@ class OpenRequestsEntry extends Entry
     /** Whether the term of the request is read beside it. */
     protected bool $showDeadline = true;
 
+    /** Whether the folded recap of the earlier exchanges is drawn under the requests. */
+    protected bool $showRecap = true;
+
     /** What is said under the title while no request is open; `null` leaves the entry silent. */
     protected ?string $emptyMessage = null;
 
@@ -90,6 +93,17 @@ class OpenRequestsEntry extends Entry
      * The line that says there is nothing pending, under the title and above the recap. Without
      * it the entry draws nothing while no request is open, and leaves its title alone.
      */
+    /**
+     * Leave out the folded recap of the earlier exchanges: for a host that already draws them somewhere
+     * else (the timeline of the record), where a second list of the same exchanges is only noise.
+     */
+    public function withoutRecap(bool $without = true): static
+    {
+        $this->showRecap = ! $without;
+
+        return $this;
+    }
+
     public function emptyMessage(?string $message): static
     {
         $this->emptyMessage = $message;
@@ -213,7 +227,7 @@ class OpenRequestsEntry extends Entry
     {
         $record = $this->getRecord();
 
-        if (! $record instanceof Model) {
+        if (! $this->showRecap || ! $record instanceof Model) {
             return collect();
         }
 

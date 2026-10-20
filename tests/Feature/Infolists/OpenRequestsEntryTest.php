@@ -276,6 +276,15 @@ class OpenRequestsEntryTest extends TestCase
         $this->assertCount(0, $this->entry()->model($pending)->getExchangeRecap(), 'Nothing answered yet: nothing to look back at.');
     }
 
+    public function test_a_host_that_draws_the_exchanges_elsewhere_can_leave_the_recap_out(): void
+    {
+        [$order] = $this->exchange(answered: true);
+
+        $this->assertNotEmpty($this->entry()->model($order)->getExchangeRecap(), 'By default the recap is there.');
+        $this->assertCount(0, $this->entry()->withoutRecap()->model($order)->getExchangeRecap());
+        $this->assertNotEmpty($this->entry()->withoutRecap(false)->model($order)->getExchangeRecap());
+    }
+
     public function test_the_recap_is_folded_by_default_and_lists_fields_and_documents(): void
     {
         [$order] = $this->exchange(answered: true);
