@@ -47,10 +47,10 @@ return [
     'expand_all' => 'Apri tutti',
     'collapse_all' => 'Chiudi tutti',
     'access_overrides' => 'Override accesso',
-    'help_select_user' => 'Chi lavorerà questa domanda: le comparirà fra le sue.',
+    'help_select_user' => 'Chi lavorerà questa istanza: le comparirà fra le sue.',
     'help_assignment_type' => 'Il ruolo di questa persona nella lavorazione — responsabile, collaboratore o osservatore. Non cambia quello che può fare.',
     'help_access_overrides' => 'Per ogni permesso scegli: decide il bando (come sempre), permesso comunque, oppure escluso anche dove il bando aprirebbe.',
-    'help_override_view' => 'Permesso: può aprire la domanda anche negli stati che non gliela mostrerebbero. Negato: non può aprirla nemmeno dove il bando gliela aprirebbe.',
+    'help_override_view' => 'Permesso: può aprire l\'istanza anche negli stati che non gliela mostrerebbero. Negato: non può aprirla nemmeno dove il bando gliela aprirebbe.',
     'help_override_edit' => 'Permesso: può modificarla anche dove per il suo ruolo è di sola lettura. Negato: non può modificarla mai.',
     'help_override_transition' => 'Permesso: può farla avanzare anche quando il suo ruolo non è quello previsto. Negato: non può farla avanzare mai.',
 
