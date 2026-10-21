@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-10-21
+
+### Changed
+- The Italian help of the assignment (`help_select_user`, `help_override_view`) says «istanza»
+  where it said «domanda»: the host names what it assigns by that word.
+
 ## [0.5.4] - 2026-10-21
 
 ### Added
