@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-10-21
+
+### Added
+- `annotateTransition($key, $label, $value, $at)`: leaves a labelled value on the row of history
+  the last transition wrote — a protocol number, a reference. The history is logged before the side
+  effects run, so this is what a side effect calls. The value carries its own label and, when
+  given, its date; annotating a key again replaces it.
+- `WorkflowStateTransition::annotations()` reads them back, and `OpenRequest` carries those of the
+  transition that opened the request (`annotations`) and of the one that answered it
+  (`answerAnnotations`).
+- The open requests, the recap of the exchanges and the timeline draw the annotations beside who
+  did the act and when (`partials/annotations`).
+
 ## [0.5.3] - 2026-10-20
 
 ### Added
