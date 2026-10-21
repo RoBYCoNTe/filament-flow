@@ -133,6 +133,8 @@
                                 @endif
                             </p>
 
+                            @include('filament-flow::partials.annotations', ['annotations' => $request->annotations, 'dateTimeFormat' => $dateTimeFormat])
+
                             @if (filled($request->note))
                                 <blockquote class="rounded-r-lg border-l-4 py-3 pl-4 pr-3 text-sm leading-relaxed text-gray-700 dark:text-gray-200 {{ $quoteClasses }}">
                                     {{ $request->note }}

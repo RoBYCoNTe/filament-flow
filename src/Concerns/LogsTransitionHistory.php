@@ -26,6 +26,8 @@ trait LogsTransitionHistory
      */
     protected function logTransition(State|string $fromState, State|string $toState, string $field, ?WorkflowTransition $knownTransition = null): void
     {
+        $this->lastTransitionHistory = null;
+
         if (! config('filament-flow.enabled', true)) {
             return;
         }
@@ -115,6 +117,8 @@ trait LogsTransitionHistory
                 'has_snapshot' => $hasSnapshot,
             ]);
 
+            $this->lastTransitionHistory = $historyRecord;
+
             // Store transition metadata (form data, field changes)
             if ($hasMetadata) {
                 WorkflowTransitionMetadata::create([
@@ -148,6 +152,46 @@ trait LogsTransitionHistory
             // Log but don't fail if logging fails
             report($e);
         }
+    }
+
+    /**
+     * Leave a labelled value on the row of history the last transition wrote: a protocol number,
+     * a reference, anything the reader should find *there*, next to who did it and when, instead
+     * of in a box of its own.
+     *
+     * The history is logged before the side effects of a transition run, so this is what a side
+     * effect calls: the value joins the row already written. It carries its own label, so the
+     * entry keeps reading the same way whatever the host changes later. One value per key on a
+     * row: annotating the same key again replaces it.
+     *
+     * @param  string  $key  what the value is, for the host (`protocol`)
+     * @param  string  $label  what a person reads (`Protocol`)
+     */
+    public function annotateTransition(string $key, string $label, string $value, ?\DateTimeInterface $at = null): void
+    {
+        $history = $this->lastTransitionHistory;
+
+        if ($history === null || $key === '' || trim($value) === '') {
+            return;
+        }
+
+        $metadata = $history->metadata ?? new WorkflowTransitionMetadata(['transition_history_id' => $history->id]);
+        $custom = (array) ($metadata->custom_data ?? []);
+        $custom['annotations'][$key] = array_filter([
+            'label' => $label,
+            'value' => $value,
+            'at' => $at?->format(\DateTimeInterface::ATOM),
+        ], static fn (?string $part): bool => $part !== null);
+
+        $metadata->custom_data = $custom;
+        $metadata->save();
+
+        if (! $history->has_metadata) {
+            $history->has_metadata = true;
+            $history->save();
+        }
+
+        $history->setRelation('metadata', $metadata);
     }
 
     /**

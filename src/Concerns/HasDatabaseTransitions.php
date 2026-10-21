@@ -12,6 +12,7 @@ use RoBYCoNTe\FilamentFlow\Events\TransitionCompleted;
 use RoBYCoNTe\FilamentFlow\Exceptions\InvalidStateException;
 use RoBYCoNTe\FilamentFlow\Exceptions\UnauthorizedTransitionException;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateTransition;
 use RoBYCoNTe\FilamentFlow\Services\SideEffectExecutor;
 use RoBYCoNTe\FilamentFlow\Services\TransitionFormService;
 use RoBYCoNTe\FilamentFlow\Support\RequestScopeRecorder;
@@ -87,6 +88,12 @@ trait HasDatabaseTransitions
      * @var array{paths: list<string>, attachments: list<int|string>}|null
      */
     protected ?array $pendingRequestScopePick = null;
+
+    /**
+     * The row of history the last transition wrote: what a side effect — which runs after the
+     * history is logged — annotates (see `annotateTransition()`).
+     */
+    protected ?WorkflowStateTransition $lastTransitionHistory = null;
 
     /**
      * Temporary storage for transition class instance (used for getting notes)

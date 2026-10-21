@@ -117,6 +117,12 @@
                             @endif
                         </p>
 
+                        @if($item->annotations() !== [])
+                            <div class="mt-1.5">
+                                @include('filament-flow::partials.annotations', ['annotations' => $item->annotations(), 'dateTimeFormat' => $dateFormat])
+                            </div>
+                        @endif
+
                         @if($item->reason)
                             <p class="mt-2 flex items-start gap-1.5 rounded-md bg-warning-50 px-2.5 py-1.5 text-xs leading-relaxed text-warning-800 dark:bg-warning-400/10 dark:text-warning-400">
                                 <x-filament::icon icon="heroicon-m-exclamation-triangle" class="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />

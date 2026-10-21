@@ -50,6 +50,18 @@ class WorkflowStateTransition extends Model
 {
     use ResolvesUserModel;
 
+    /**
+     * The labelled values the transition left on its row (`annotateTransition()`), by key.
+     *
+     * @return array<string, array{label: string, value: string, at?: string}>
+     */
+    public function annotations(): array
+    {
+        $annotations = data_get($this->metadata, 'custom_data.annotations');
+
+        return is_array($annotations) ? $annotations : [];
+    }
+
     const UPDATED_AT = null;
 
     protected $fillable = [

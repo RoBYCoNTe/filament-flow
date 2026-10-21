@@ -192,6 +192,8 @@ final class OpenRequests
             kind: $kind,
             color: $kind === OpenRequest::KIND_MESSAGE ? $this->colorOf($record, $open->to_state, $options) : null,
             scope: $kind === OpenRequest::KIND_REQUEST ? $this->scopeOf($open) : null,
+            annotations: $open->annotations(),
+            answerAnnotations: $answer?->annotations() ?? [],
         );
     }
 

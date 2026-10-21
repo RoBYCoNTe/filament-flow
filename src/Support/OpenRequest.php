@@ -40,6 +40,10 @@ final readonly class OpenRequest
         public string $kind = self::KIND_REQUEST,
         public ?string $color = null,
         public ?array $scope = null,
+        /** What the transition that opened it left on its row of history (`annotateTransition()`). */
+        public array $annotations = [],
+        /** What the transition that answered it left on its row of history. */
+        public array $answerAnnotations = [],
     ) {}
 
     /** Whether the workflow said something and walks away: a decision, a closing note. */

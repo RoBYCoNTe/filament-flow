@@ -43,6 +43,8 @@
                         @endif
                     </p>
 
+                    @include('filament-flow::partials.annotations', ['annotations' => $exchange->annotations, 'dateTimeFormat' => $dateTimeFormat])
+
                     @if (filled($exchange->note))
                         <p class="border-l-2 border-gray-200 pl-3 leading-relaxed text-gray-700 dark:border-gray-600 dark:text-gray-300">{{ $exchange->note }}</p>
                     @endif
@@ -59,6 +61,11 @@
                     @endif
 
                     @include('filament-flow::partials.request-attachments', ['documents' => $documents])
+
+                    @if ($exchange->answerAnnotations !== [])
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('filament-flow::messages.open_requests_answered') }}</p>
+                        @include('filament-flow::partials.annotations', ['annotations' => $exchange->answerAnnotations, 'dateTimeFormat' => $dateTimeFormat])
+                    @endif
                 </li>
             @endforeach
         </ol>
