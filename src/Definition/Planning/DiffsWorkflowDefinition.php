@@ -167,7 +167,7 @@ trait DiffsWorkflowDefinition
     {
         $existing = WorkflowStateField::query()
             ->where('state_id', $row->id)
-            ->with('roleOverrides')
+            ->with(['roleOverrides' => fn ($overrides) => $overrides->orderBy('id')])
             ->get()
             ->map(function (WorkflowStateField $f): array {
                 $row = $this->clean(
@@ -246,8 +246,13 @@ trait DiffsWorkflowDefinition
             return true;
         }
 
+        // Read in the declared order: effects may share a field name, and the order is then the
+        // only thing that tells them apart. Without it the database answers in its physical
+        // order, which moves whenever space is reused, and the transition looks changed forever.
         $existingEffects = WorkflowTransitionSideEffect::query()
             ->where('transition_id', $row->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
             ->get()
             // `toArray()` and not `getAttributes()`: the raw attributes keep a JSON column
             // as the string it is stored in, while the definition holds the decoded value,
@@ -264,8 +269,12 @@ trait DiffsWorkflowDefinition
             return true;
         }
 
+        // Same as the effects: several rules may check the same field, and only their order
+        // distinguishes them.
         $existingRules = WorkflowTransitionValidationRule::query()
             ->where('transition_id', $row->id)
+            ->orderBy('sort_order')
+            ->orderBy('id')
             ->get()
             // The field type belongs to the form, not to the rule: the table of rules does not
             // keep it, and comparing it would be an eternal drift.
