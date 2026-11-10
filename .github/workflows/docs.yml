@@ -35,8 +35,10 @@ jobs:
           node-version: 24
           cache: npm
 
+      # `npm install` and not `npm ci`: the lock is made on macOS and lacks the optional packages
+      # of the other platforms, so `ci` refuses it on the runner.
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build docs
         run: npm run docs:build
