@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# The package supports Laravel 11 and 12 (testbench ^9 and ^10). Packagist now flags every
+# release of Laravel 11 with a security advisory, and Composer refuses to resolve a flagged
+# package: the install fails before a single test runs. The CI only builds the package to
+# test it, it never serves anything, so the blocking is turned off here and nowhere else.
+env:
+  COMPOSER_NO_SECURITY_BLOCKING: 1
+
 jobs:
   lint:
     runs-on: ubuntu-latest
