@@ -6,49 +6,83 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
+  # The tag is released only if what it points at passes the same checks as main.
+  checks:
+    name: Checks
+    uses: ./.github/workflows/run-tests.yml
+    permissions:
+      contents: read
+
   release:
+    needs: checks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    env:
+      TAG: ${{ github.ref_name }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Get changelog for current version
-        id: changelog
+      # A release is a commit of main: a tag on a side branch would publish code nobody reviewed.
+      - name: The tag is on main
         run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          # The section is matched as text, not as a pattern: a version is full of dots.
-          awk -v version="[$VERSION]" 'index($0, version) { found=1; next } /^## / { found=0 } found' CHANGELOG.md > /tmp/changelog.txt
-          {
-            echo 'CONTENT<<EOF'
-            cat /tmp/changelog.txt
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::${TAG} does not point at a commit of main."
+            exit 1
+          fi
+
+      # Fails when the changelog has no notes for this version.
+      - name: Release notes
+        run: bash scripts/release-notes.sh "${TAG#v}" > "$RUNNER_TEMP/release-notes.md"
 
       - name: Create GitHub Release
-        uses: actions/github-script@v7
         env:
-          # The notes travel as data, never inside the script: a changelog is full of backticks.
-          RELEASE_NOTES: ${{ steps.changelog.outputs.CONTENT }}
-        with:
-          script: |
-            const tag = context.ref.replace('refs/tags/', '');
-            await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: tag,
-              name: tag,
-              body: process.env.RELEASE_NOTES,
-            });
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Trigger Packagist update
         env:
           PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
           PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
         run: |
-          curl -sS -X POST \
+          if [[ -z "$PACKAGIST_USERNAME" || -z "$PACKAGIST_TOKEN" ]]; then
+            echo "::warning::No Packagist credentials: the version depends on the GitHub hook."
+            exit 0
+          fi
+
+          # The body is JSON and says so: sent as a form, Packagist answers "Missing payload
+          # parameter" and the step used to go green anyway.
+          curl --fail-with-body -sS -X POST \
+            -H 'Content-Type: application/json' \
             "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}" \
-            -d '{"repository":{"url":"https://github.com/robyconte/filament-flow"}}'
+            -d "{\"repository\":{\"url\":\"https://github.com/${GITHUB_REPOSITORY}\"}}"
+
+      # The release is done when a host can install it.
+      - name: Wait for the version on Packagist
+        run: |
+          package="$(jq -r .name composer.json)"
+
+          for attempt in $(seq 1 24); do
+            if curl -fsS -H 'Cache-Control: no-cache' "https://repo.packagist.org/p2/${package}.json" \
+              | jq -e --arg tag "$TAG" --arg package "$package" '.packages[$package][]? | select(.version == $tag)' > /dev/null; then
+              echo "${package} ${TAG} is on Packagist."
+              exit 0
+            fi
+
+            echo "Attempt ${attempt}: ${TAG} is not on Packagist yet."
+            sleep 15
+          done
+
+          echo "::error::${package} ${TAG} did not reach Packagist in six minutes."
+          exit 1

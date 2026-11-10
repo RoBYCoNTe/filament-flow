@@ -199,6 +199,12 @@ trait AppliesValidationRules
 
         $laravel = [];
 
+        // What the expressions, the named rules and the Laravel rules report, in the order they
+        // are written: collected here and moved to the errors once, so the closure of a named
+        // rule never writes through a reference whose type the analysis cannot follow.
+        /** @var list<string> $messages */
+        $messages = [];
+
         foreach ($rules as $rule) {
             $rule = trim((string) $rule);
 
@@ -219,7 +225,7 @@ trait AppliesValidationRules
                     continue;
                 }
 
-                $errors[$path][] = (string) __('The value of :field is not valid.', [
+                $messages[] = (string) __('The value of :field is not valid.', [
                     'field' => $this->labelOf($permissions, $path, $label),
                 ]);
 
@@ -233,8 +239,8 @@ trait AppliesValidationRules
                     continue;
                 }
 
-                $fail = function (string $message) use (&$errors, $path): void {
-                    $errors[$path][] = $message;
+                $fail = function (string $message) use (&$messages): void {
+                    $messages[] = $message;
                 };
 
                 // Everything after the first `:` travels to the rule as it is
@@ -249,21 +255,26 @@ trait AppliesValidationRules
             $laravel[] = $rule;
         }
 
-        if ($laravel === []) {
-            return;
+        if ($laravel !== []) {
+            $key = str_replace(['.', '*'], ' ', $path);
+
+            $validator = Validator::make(
+                [$key => $value === self::MISSING ? null : $value],
+                [$key => $laravel],
+                $customMessage !== null ? [$key => $customMessage] : [],
+                [$key => $this->labelOf($permissions, $path, $label)],
+            );
+
+            foreach ($validator->errors()->get($key) as $message) {
+                $messages[] = (string) $message;
+            }
         }
 
-        $key = str_replace(['.', '*'], ' ', $path);
-
-        $validator = Validator::make(
-            [$key => $value === self::MISSING ? null : $value],
-            [$key => $laravel],
-            $customMessage !== null ? [$key => $customMessage] : [],
-            [$key => $this->labelOf($permissions, $path, $label)],
-        );
-
-        foreach ($validator->errors()->get($key) as $message) {
-            $errors[$path][] = (string) $message;
+        // The closure of a named rule writes to the list by reference, which is why the analysis
+        // forgets what it holds: it is a list of messages, and it is said again here.
+        /** @var list<string> $messages */
+        foreach ($messages as $message) {
+            $errors[$path][] = $message;
         }
     }
 }

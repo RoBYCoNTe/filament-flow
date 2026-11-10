@@ -5,23 +5,27 @@ on:
     branches: [main, 'feature/**']
   pull_request:
     branches: [main]
+  # The release runs the same checks on the tag and publishes only when they pass.
+  workflow_call:
 
-# The package supports Laravel 11 and 12 (testbench ^9 and ^10). Packagist now flags every
-# release of Laravel 11 with a security advisory, and Composer refuses to resolve a flagged
-# package: the install fails before a single test runs. The CI only builds the package to
-# test it, it never serves anything, so the blocking is turned off here and nowhere else.
-env:
-  COMPOSER_NO_SECURITY_BLOCKING: 1
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the run in progress useless. A release is never cancelled.
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/heads/') }}
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-    name: Lint (Pint) and debug guard
+    name: Lint (Pint) and guards
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -39,6 +43,10 @@ jobs:
       - name: No debugging leftovers
         run: composer check:debug
 
+      # The package is written in English: its comments and its pages carry no Italian.
+      - name: Language
+        run: composer check:language
+
       # Every public class is named by at least one page: a refactoring that adds ten services
       # and documents none of them fails here instead of misleading a host.
       - name: Documentation coverage
@@ -46,12 +54,13 @@ jobs:
 
   phpstan:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     name: Static Analysis (PHPStan)
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -67,20 +76,22 @@ jobs:
 
   docs:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     name: Docs (VitePress build)
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # A missing/broken doc page breaks the PR build, not the release.
       - name: Build docs
@@ -88,17 +99,24 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4']
+        laravel: ['11', '12']
+        include:
+          - laravel: '11'
+            testbench: '^9.0'
+          - laravel: '12'
+            testbench: '^10.0'
 
-    name: Tests (PHP ${{ matrix.php }})
+    name: Tests (PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }})
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -107,8 +125,18 @@ jobs:
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
           coverage: none
 
+      # Laravel 11 is out of security support: Packagist flags every one of its releases and
+      # Composer refuses to resolve a flagged package. The CI only builds the package to test it
+      # against the version it still declares, it serves nothing, so the blocking is turned off
+      # for that leg and for no other.
+      - name: Allow the advisories of Laravel 11
+        if: matrix.laravel == '11'
+        run: echo "COMPOSER_NO_SECURITY_BLOCKING=1" >> "$GITHUB_ENV"
+
       - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: |
+          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-update --no-interaction
+          composer update --prefer-dist --no-interaction --no-progress
 
       - name: Run tests
         run: vendor/bin/phpunit
