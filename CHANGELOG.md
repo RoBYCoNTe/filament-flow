@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-11-10
+
+### Fixed
+- The plan of a workflow no longer reports a transition as changed after every apply when it has
+  several rules or effects on the same field. They were read without an order, so PostgreSQL
+  answered in the physical order of the rows, which moves whenever space is reused, and the
+  comparison — where the order is all that tells such rows apart — failed at random. They are now
+  read by `sort_order` and `id`, and so are the role overrides of a state field. As a consequence,
+  swapping two checks of the same field is now reported as a change, which it is.
+
 ## [0.5.5] - 2026-10-21
 
 ### Changed
