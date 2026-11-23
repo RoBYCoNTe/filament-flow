@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-23
+
+### Fixed
+- The notifications of a transition were picked by the state it leaves alone: the first transition
+  out of that state won, and its notifications were sent for every other act leaving the same
+  state, while the ones declared on those acts were never sent. A workflow where one state has
+  several exits told the wrong thing (an «advance paid» message on a request for more
+  documents) or nothing at all. The transition is now the one that joins the state it leaves and
+  the state it reaches, and the notifications sent are the ones declared on it.
+
+### Changed
+- When the states of a transition are not known to the workflow, or no transition joins them,
+  `findTransitionNotifications()` returns nothing. It used to fall back to every `on_transition`
+  notification of the workflow, which sent messages that belonged to no act. Hosts that relied on
+  that fallback must declare the notification on the transition it is meant for. This is why the
+  release is a minor one: the notifications a host receives can change.
+
 ## [0.5.6] - 2026-11-10
 
 ### Fixed

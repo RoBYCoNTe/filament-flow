@@ -79,38 +79,36 @@ trait FindsNotificationTargets
     }
 
     /**
-     * Find notifications configured for a specific transition.
+     * Find notifications configured for the transition that goes from one state to another.
+     *
+     * The transition is the one that joins both states: with several leaving the same state, the
+     * notifications of the others are not the ones of this move. Where the states are not known
+     * to the workflow, or no transition joins them, nothing is notified.
      */
     protected function findTransitionNotifications(
         Workflow $workflow,
         string $fromState,
         string $toState
     ): Collection {
-        // Resolve from-state to ID first, then find transition
         $fromWs = $this->resolveWorkflowState($workflow, $fromState);
+        $toWs = $this->resolveWorkflowState($workflow, $toState);
 
-        if (! $fromWs) {
-            // No from-state found — return all on_transition notifications as fallback
-            return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-                ->where('trigger_event', 'on_transition')
-                ->where('is_active', true)
-                ->get();
+        if (! $fromWs || ! $toWs) {
+            return collect();
         }
 
-        $transition = $workflow->transitions()
+        $transitionIds = $workflow->transitions()
             ->where('from_state_id', $fromWs->id)
-            ->first();
+            ->where('to_state_id', $toWs->id)
+            ->pluck('id');
 
-        if (! $transition) {
-            return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
-                ->where('trigger_event', 'on_transition')
-                ->where('is_active', true)
-                ->get();
+        if ($transitionIds->isEmpty()) {
+            return collect();
         }
 
         return WorkflowNotificationConfig::where('workflow_id', $workflow->id)
             ->where('trigger_event', 'on_transition')
-            ->where('transition_id', $transition->id)
+            ->whereIn('transition_id', $transitionIds)
             ->where('is_active', true)
             ->get();
     }

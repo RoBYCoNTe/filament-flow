@@ -19,6 +19,7 @@ use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\PendingState;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ProcessingState;
+use RoBYCoNTe\FilamentFlow\Tests\Fixtures\States\ShippedState;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 use Throwable;
 
@@ -519,6 +520,82 @@ class NotificationServiceTest extends TestCase
         );
 
         Notification::assertSentTo($this->user, WorkflowNotification::class);
+    }
+
+    /** A notification on the transition `$transition`, for `$this->user`, whose title is `$title`. */
+    private function notifyOn(WorkflowTransition $transition, string $title): void
+    {
+        $config = WorkflowNotificationConfig::create([
+            'workflow_id' => $this->workflow->id,
+            'transition_id' => $transition->id,
+            'trigger_event' => 'on_transition',
+            'name' => $title,
+            'is_active' => true,
+            'timing' => 'immediate',
+        ]);
+
+        $channel = WorkflowNotificationChannel::create([
+            'notification_id' => $config->id,
+            'channel_type' => 'database',
+            'is_active' => true,
+        ]);
+
+        WorkflowNotificationRecipient::create([
+            'notification_id' => $config->id,
+            'recipient_type' => 'user',
+            'recipient_config' => ['user_ids' => [$this->user->id]],
+        ]);
+
+        WorkflowNotificationTemplate::create([
+            'notification_id' => $config->id,
+            'channel_id' => $channel->id,
+            'title' => $title,
+            'body' => $title,
+        ]);
+    }
+
+    public function test_the_notification_of_a_transition_is_not_sent_for_another_one_leaving_the_same_state(): void
+    {
+        $shipped = $this->createWorkflowState($this->workflow, [
+            'name' => 'shipped',
+            'label' => 'Shipped',
+            'class_name' => ShippedState::class,
+        ]);
+        $toShipped = $this->createWorkflowTransition($this->workflow, $this->pendingState, $shipped);
+
+        // The first transition leaving `pending` is the one to `processing`: only it notifies.
+        $this->notifyOn($this->transition, 'To processing');
+
+        Notification::fake();
+        $service = app(NotificationService::class);
+
+        $service->triggerForTransition($this->createOrder(), PendingState::class, ShippedState::class);
+        Notification::assertNothingSent();
+
+        $service->triggerForTransition($this->createOrder(), PendingState::class, ProcessingState::class);
+        Notification::assertSentToTimes($this->user, WorkflowNotification::class, 1);
+
+        // And the one declared on the second transition is sent for it, not for the first.
+        $this->notifyOn($toShipped, 'To shipped');
+        Notification::fake();
+
+        $service->triggerForTransition($this->createOrder(), PendingState::class, ShippedState::class);
+        Notification::assertSentToTimes($this->user, WorkflowNotification::class, 1);
+    }
+
+    public function test_nothing_is_sent_when_no_transition_joins_the_states(): void
+    {
+        $this->notifyOn($this->transition, 'To processing');
+
+        Notification::fake();
+
+        app(NotificationService::class)->triggerForTransition(
+            $this->createOrder(),
+            ProcessingState::class,
+            PendingState::class
+        );
+
+        Notification::assertNothingSent();
     }
 
     public function test_it_handles_notification_without_workflow(): void
