@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-11-25
+
+### Fixed
+- A scheduled check ran over every record in the state it names, whatever call (tenant) the record belongs to.
+  On a platform with several calls whose workflows share a state name, the check of one call fired for the
+  records of the others: they were told twice, and by a workflow that was not theirs. A check now runs only
+  over the records whose workflow is the one it was declared on — the workflow that applies to a record is
+  worked out as the engine works it out everywhere else (`Workflow::findForModel()` with the tenant of the
+  record).
+
 ## [0.8.1] - 2026-11-25
 
 ### Fixed

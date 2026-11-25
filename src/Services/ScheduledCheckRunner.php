@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Services;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowNotification;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheckLog;
@@ -99,6 +100,14 @@ class ScheduledCheckRunner
 
     protected function processRecord(WorkflowScheduledCheck $check, Model $record, string $modelClass): void
     {
+        // A check belongs to the workflow it was declared on. Records of other tenants (the calls of a
+        // platform, say) may sit in a state of the same name: they follow their own workflow, and its
+        // checks, not this one. The workflow that applies to a record is asked the way the engine asks
+        // it everywhere else.
+        if (! $this->followsTheWorkflowOf($check, $record, $modelClass)) {
+            return;
+        }
+
         $this->processed++;
 
         // Check once_per_record constraint
@@ -128,6 +137,23 @@ class ScheduledCheckRunner
             $this->logExecution($check, $record, 'error', ['error' => $e->getMessage()]);
             report($e);
         }
+    }
+
+    /**
+     * Whether the workflow of the check is the one that applies to the record.
+     */
+    protected function followsTheWorkflowOf(WorkflowScheduledCheck $check, Model $record, string $modelClass): bool
+    {
+        $workflow = $check->workflow;
+
+        if ($workflow === null) {
+            return false;
+        }
+
+        $tenantId = method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null;
+        $applicable = Workflow::findForModel($modelClass, $workflow->state_column ?? 'state', $tenantId);
+
+        return $applicable !== null && $applicable->getKey() === $workflow->getKey();
     }
 
     protected function evaluateCondition(WorkflowScheduledCheck $check, Model $record): bool

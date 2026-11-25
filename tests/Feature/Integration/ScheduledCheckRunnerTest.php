@@ -502,6 +502,41 @@ class ScheduledCheckRunnerTest extends TestCase
             'result' => 'already_executed',
         ]);
     }
+
+    /**
+     * Two calls of a platform have a workflow each and the same state name. The check of a call must not
+     * fire for the records of the other: they would be told twice, and by the wrong workflow.
+     */
+    public function test_a_check_only_runs_over_the_records_of_its_own_workflow(): void
+    {
+        $first = $this->createTestWorkflow(['model_type' => Document::class, 'name' => 'first call', 'tenant_id' => 1]);
+        $second = $this->createTestWorkflow(['model_type' => Document::class, 'name' => 'second call', 'tenant_id' => 2]);
+
+        $checks = collect([$first, $second])->map(fn ($workflow) => WorkflowScheduledCheck::create([
+            'workflow_id' => $workflow->id,
+            'name' => 'big_documents',
+            'condition_type' => 'field_compare',
+            'condition_config' => ['conditions' => [['field' => 'amount', 'operator' => '>=', 'value' => 100]]],
+            'action_type' => 'notification',
+            'action_config' => ['notification_id' => null],
+            'frequency' => 'daily',
+            'once_per_record' => true,
+            'is_active' => true,
+        ]));
+
+        $ofFirst = Document::create(['title' => 'Of the first', 'amount' => 500, 'state' => 'open', 'tenant_id' => 1]);
+        $ofSecond = Document::create(['title' => 'Of the second', 'amount' => 500, 'state' => 'open', 'tenant_id' => 2]);
+
+        $result = $this->runner->runAll();
+
+        $this->assertSame(2, $result['processed'], 'Each record is processed by the check of its own call only.');
+        $this->assertSame(2, $result['triggered']);
+
+        $this->assertDatabaseHas('workflow_scheduled_check_logs', ['check_id' => $checks[0]->id, 'model_id' => (string) $ofFirst->getKey(), 'result' => 'triggered']);
+        $this->assertDatabaseHas('workflow_scheduled_check_logs', ['check_id' => $checks[1]->id, 'model_id' => (string) $ofSecond->getKey(), 'result' => 'triggered']);
+        $this->assertDatabaseMissing('workflow_scheduled_check_logs', ['check_id' => $checks[0]->id, 'model_id' => (string) $ofSecond->getKey()]);
+        $this->assertDatabaseMissing('workflow_scheduled_check_logs', ['check_id' => $checks[1]->id, 'model_id' => (string) $ofFirst->getKey()]);
+    }
 }
 
 class AlwaysTrueCondition

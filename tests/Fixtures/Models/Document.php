@@ -14,6 +14,7 @@ use RoBYCoNTe\FilamentFlow\Concerns\HasDatabaseTransitions;
  * @property string $title
  * @property float|null $amount
  * @property string|null $state
+ * @property int|null $tenant_id
  */
 class Document extends Model
 {
@@ -22,5 +23,11 @@ class Document extends Model
 
     protected $table = 'test_documents';
 
-    protected $fillable = ['title', 'amount', 'state'];
+    protected $fillable = ['title', 'amount', 'state', 'tenant_id'];
+
+    /** The tenant whose workflow the document follows (a call of a platform, say). */
+    public function getWorkflowTenantId(): ?int
+    {
+        return $this->tenant_id;
+    }
 }

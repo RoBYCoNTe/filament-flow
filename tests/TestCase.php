@@ -235,6 +235,7 @@ abstract class TestCase extends BaseTestCase
                 $table->string('title');
                 $table->decimal('amount', 10)->nullable();
                 $table->string('state')->nullable();
+                $table->unsignedBigInteger('tenant_id')->nullable();
                 $table->timestamps();
             });
         }
