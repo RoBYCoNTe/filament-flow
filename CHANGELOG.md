@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-25
+
+### Fixed
+- The validation rules of a transition came back in the order the database kept the rows, which is not
+  the order they were declared in and changes as rows are updated: the fields a transition asks for
+  could appear in a different order from one request to the next. They now come back by `sort_order`
+  — the order they were declared in — and by `id` when two share it.
+
 ## [0.7.1] - 2026-11-25
 
 ### Changed

@@ -91,7 +91,12 @@ class WorkflowTransition extends Model
     /** @return HasMany<WorkflowTransitionValidationRule, $this> */
     public function validationRules(): HasMany
     {
-        return $this->hasMany(WorkflowTransitionValidationRule::class, 'transition_id');
+        // The rules are applied, and asked for in a form, in the order they were declared (`sort_order`,
+        // which the definition writes): without an order the database answers in the order it keeps
+        // the rows, which changes as they are updated.
+        return $this->hasMany(WorkflowTransitionValidationRule::class, 'transition_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     /** @return HasMany<WorkflowNotification, $this> */
