@@ -20,6 +20,13 @@ use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 trait ReadsFieldPermissions
 {
     /**
+     * The request scope already asked for, by record, person and roles (see `requestScopeFor()`).
+     *
+     * @var array<string, array{mode:string,paths:list<string>,whitelist:list<string>|null,universe:list<string>}|null>
+     */
+    private array $requestScopeMemo = [];
+
+    /**
      * Get field permissions for a specific record based on its current state.
      * When $user is provided, role overrides are applied on top of the base config.
      */
@@ -171,13 +178,21 @@ trait ReadsFieldPermissions
             return null;
         }
 
-        $resolver = app(ResolvesRequestScope::class);
+        $effectiveRoles ??= $this->resolveEffectiveRoles($user, $record);
 
-        if (! $resolver->declaresScope($record)) {
-            return null;
+        // The scope is the same for every field of the record, and asking for it is a question to the
+        // host (its open requests): it is asked once for the reading of a form, not once per field.
+        $key = $record::class.':'.$record->getKey().'|'.$user::class.':'.$user->getKey().'|'.md5(implode(',', $effectiveRoles));
+
+        if (! array_key_exists($key, $this->requestScopeMemo)) {
+            $resolver = app(ResolvesRequestScope::class);
+
+            $this->requestScopeMemo[$key] = $resolver->declaresScope($record)
+                ? $resolver->scopeFor($record, $user, $effectiveRoles)
+                : null;
         }
 
-        return $resolver->scopeFor($record, $user, $effectiveRoles ?? $this->resolveEffectiveRoles($user, $record));
+        return $this->requestScopeMemo[$key];
     }
 
     /**

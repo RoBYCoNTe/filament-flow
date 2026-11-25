@@ -17,6 +17,24 @@ use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 trait ResolvesFieldPermissionContext
 {
     /**
+     * The states already read, by workflow and by value.
+     *
+     * A form asks a permission for every field it draws, and each question starts from the same
+     * state: reading it again for each one is a query a field. The answers are kept for the life
+     * of the service — one reading of a form — and a service asked for again starts empty.
+     *
+     * @var array<string, WorkflowState|null>
+     */
+    private array $stateMemo = [];
+
+    /**
+     * The effective roles already worked out, by person, record and owner.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private array $effectiveRolesMemo = [];
+
+    /**
      * Get workflow for a record using getWorkflowTenantId() when available,
      * so that models with N scoped workflows (e.g. Application→scheme_id)
      * resolve the correct one instead of falling back to the Filament tenant.
@@ -56,17 +74,20 @@ trait ResolvesFieldPermissionContext
             $stateValue = get_class($stateValue);
         }
 
-        $state = $workflow->states()
-            ->where('class_name', $stateValue)
-            ->first();
+        $key = $workflow->getKey().'|'.(is_scalar($stateValue) ? (string) $stateValue : '');
 
-        if ($state) {
-            return $state;
+        if (array_key_exists($key, $this->stateMemo)) {
+            return $this->stateMemo[$key];
         }
 
-        return $workflow->states()
-            ->where('name', $stateValue)
-            ->first();
+        $state = $workflow->states()
+            ->where('class_name', $stateValue)
+            ->first()
+            ?? $workflow->states()
+                ->where('name', $stateValue)
+                ->first();
+
+        return $this->stateMemo[$key] = $state;
     }
 
     /**
@@ -75,6 +96,23 @@ trait ResolvesFieldPermissionContext
      * @return array<string>
      */
     protected function resolveEffectiveRoles(Model $user, ?Model $record = null, bool $isCreation = false): array
+    {
+        $ownerField = config('filament-flow.state_access.owner_field', 'user_id');
+        $key = implode('|', [
+            $user::class,
+            $user->getKey(),
+            $record === null ? '-' : $record::class.':'.$record->getKey(),
+            $record !== null && isset($record->{$ownerField}) ? (string) $record->{$ownerField} : '',
+            $isCreation ? 'creation' : 'record',
+        ]);
+
+        return $this->effectiveRolesMemo[$key] ??= $this->workOutEffectiveRoles($user, $record, $isCreation);
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function workOutEffectiveRoles(Model $user, ?Model $record, bool $isCreation): array
     {
         $roles = $this->resolveUserRoles($user);
 

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-25
+
+### Changed
+- Reading the field permissions of a form no longer costs queries a field. A form asks the permission
+  of every field it draws, and each question began by reading the state of the record, the roles of the
+  person on it (their assignments among them) and the scope of its open requests again: on a form of
+  three hundred components, about two hundred and fifty queries a request, each a round trip to a
+  database that is often on another machine. The service now works these out once for the life of the
+  instance — one reading of a form — and a service asked for again starts empty, so an assignment made
+  in between is seen. The answers do not change.
+
 ## [0.7.0] - 2026-11-25
 
 ### Added
