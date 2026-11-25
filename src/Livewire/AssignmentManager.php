@@ -11,18 +11,25 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use RoBYCoNTe\FilamentFlow\Contracts\AccessControlGate;
 use RoBYCoNTe\FilamentFlow\Services\OwnershipTransfer;
+use RoBYCoNTe\FilamentFlow\Support\AccessGate;
 use RoBYCoNTe\FilamentFlow\Support\AssignmentTypeConfig;
 use RoBYCoNTe\FilamentFlow\Support\OwnershipHistory;
 use RoBYCoNTe\FilamentFlow\Support\RecordOwner;
 use RoBYCoNTe\FilamentFlow\Support\RoleLabel;
+use RoBYCoNTe\FilamentFlow\Support\TransferTarget;
+use RoBYCoNTe\FilamentFlow\Support\TransferTargets;
 use RoBYCoNTe\FilamentFlow\Support\UserModel;
 use RoBYCoNTe\FilamentFlow\Support\UserSummary;
 
@@ -43,7 +50,8 @@ use RoBYCoNTe\FilamentFlow\Support\UserSummary;
  * choice of what the previous owner keeps, nothing or a role that lets them still see it.
  *
  * The panel is a thing for administrators; pass `superAdminOnly` to keep it out of the
- * hands of plain admins as well.
+ * hands of plain admins as well, or `gate` — the class of an `AccessControlGate` — to decide
+ * who manages it by any other rule.
  */
 class AssignmentManager extends Component implements HasForms
 {
@@ -55,6 +63,12 @@ class AssignmentManager extends Component implements HasForms
     public const GRANT = 'grant';
 
     public const DENY = 'deny';
+
+    /** The transfer goes to a person the panel lists. */
+    public const TARGET_EXISTING = 'existing';
+
+    /** The transfer goes to a person the host's resolver finds or creates. */
+    public const TARGET_NEW = 'new';
 
     /**
      * The key of the record, which is not always a number: hosts that use ULIDs or UUIDs
@@ -86,6 +100,16 @@ class AssignmentManager extends Component implements HasForms
     public bool $superAdminOnly = false;
 
     /**
+     * The class of the gate that decides who manages the panel, when the call names one. It is
+     * a class and not an object so that it travels with the component and is built again, with
+     * the person and the record of the moment, on every request.
+     *
+     * @var class-string<AccessControlGate>|null
+     */
+    #[Locked]
+    public ?string $gate = null;
+
+    /**
      * Whether the panel opens by saying what it is for: who holds the record, who works on
      * it, and what each permission means. A tool nobody understands is a tool misused.
      */
@@ -108,7 +132,9 @@ class AssignmentManager extends Component implements HasForms
     ];
 
     public ?array $transferFormData = [
+        'targetMode' => self::TARGET_EXISTING,
         'newOwnerId' => null,
+        'newPerson' => [],
         'retention' => 'none',
         'note' => null,
     ];
@@ -125,10 +151,11 @@ class AssignmentManager extends Component implements HasForms
      *
      * @param  Model|array<string,mixed>|int|string|null  $record
      */
-    public function mount(Model|array|int|string|null $record = null, ?string $recordType = null, array $roleLabels = [], bool $superAdminOnly = false, bool $showExplanation = true, bool $showHistory = true): void
+    public function mount(Model|array|int|string|null $record = null, ?string $recordType = null, array $roleLabels = [], bool $superAdminOnly = false, bool $showExplanation = true, bool $showHistory = true, ?string $gate = null): void
     {
         $this->roleLabels = $roleLabels;
         $this->superAdminOnly = $superAdminOnly;
+        $this->gate = $gate;
         $this->showExplanation = $showExplanation;
         $this->showHistory = $showHistory;
 
@@ -240,9 +267,30 @@ class AssignmentManager extends Component implements HasForms
 
     public function transferForm(Schema $form): Schema
     {
+        $resolver = TransferTargets::resolver();
+
         return $form
             ->statePath('transferFormData')
             ->schema([
+                ...($resolver === null ? [] : [
+                    ToggleButtons::make('targetMode')
+                        ->label(__('filament-flow::messages.transfer_target'))
+                        ->options([
+                            self::TARGET_EXISTING => __('filament-flow::messages.transfer_target_existing'),
+                            self::TARGET_NEW => $resolver->label(),
+                        ])
+                        ->inline()
+                        ->default(self::TARGET_EXISTING)
+                        ->required()
+                        ->live(),
+
+                    Group::make($resolver->formSchema())
+                        ->statePath('newPerson')
+                        ->columns(2)
+                        ->columnSpanFull()
+                        ->visible(fn (Get $get): bool => $get('targetMode') === self::TARGET_NEW),
+                ]),
+
                 Select::make('newOwnerId')
                     ->label(__('filament-flow::messages.new_owner'))
                     ->helperText(__('filament-flow::messages.help_new_owner'))
@@ -250,6 +298,7 @@ class AssignmentManager extends Component implements HasForms
                     ->searchable()
                     ->preload()
                     ->required()
+                    ->visible(fn (Get $get): bool => $get('targetMode') !== self::TARGET_NEW)
                     ->live(),
 
                 ToggleButtons::make('retention')
@@ -382,18 +431,8 @@ class AssignmentManager extends Component implements HasForms
 
     public function canManageAssignments(): bool
     {
-        $user = auth()->user();
-
-        if (! $user) {
-            return false;
-        }
-
-        if ($this->superAdminOnly) {
-            return method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
-        }
-
-        return (method_exists($user, 'isAdmin') && $user->isAdmin())
-            || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin());
+        return AccessGate::resolve($this->gate, $this->superAdminOnly)
+            ->canManage(auth()->user(), $this->getRecord());
     }
 
     /**
@@ -426,11 +465,7 @@ class AssignmentManager extends Component implements HasForms
         $this->showTransferForm = ! $this->showTransferForm;
 
         if ($this->showTransferForm) {
-            $this->getSchema('transferForm')?->fill([
-                'newOwnerId' => null,
-                'retention' => 'none',
-                'note' => null,
-            ]);
+            $this->getSchema('transferForm')?->fill(self::transferDefaults());
         }
     }
 
@@ -582,37 +617,61 @@ class AssignmentManager extends Component implements HasForms
 
         $data = $this->getSchema('transferForm')?->getState() ?? [];
 
-        if (empty($data['newOwnerId'])) {
+        $resolver = TransferTargets::resolver();
+        $handsToNewPerson = $resolver !== null && ($data['targetMode'] ?? self::TARGET_EXISTING) === self::TARGET_NEW;
+
+        if (! $handsToNewPerson && empty($data['newOwnerId'])) {
             throw ValidationException::withMessages([
                 'transferFormData.newOwnerId' => [__('filament-flow::messages.new_owner_required')],
             ]);
         }
 
-        $toUserId = (int) $data['newOwnerId'];
+        // Finding or creating the person and handing the record over are one act: if the
+        // handover is refused, the person the resolver made does not stay behind.
+        DB::transaction(function () use ($record, $data, $resolver, $handsToNewPerson): void {
+            $target = $handsToNewPerson
+                ? $resolver->resolve((array) ($data['newPerson'] ?? []), auth()->user(), $record)
+                : new TransferTarget((int) $data['newOwnerId']);
 
-        if ((RecordOwner::id($record) === null ? null : (int) RecordOwner::id($record)) === $toUserId) {
-            throw ValidationException::withMessages([
-                'transferFormData.newOwnerId' => [__('filament-flow::messages.new_owner_is_current')],
-            ]);
-        }
+            $currentOwner = RecordOwner::id($record);
 
-        // The handover itself — the new owner, what the previous one keeps, the record of it,
-        // the event — is the work of the engine, not of this form.
-        app(OwnershipTransfer::class)->transfer(
-            record: $record,
-            toUserId: $toUserId,
-            retention: (string) ($data['retention'] ?? OwnershipTransfer::RETENTION_NONE),
-            note: filled($data['note'] ?? null) ? (string) $data['note'] : null,
-            actor: auth()->user(),
-        );
+            if (($currentOwner === null ? null : (int) $currentOwner) === $target->userId) {
+                throw ValidationException::withMessages([
+                    'transferFormData.newOwnerId' => [__('filament-flow::messages.new_owner_is_current')],
+                ]);
+            }
+
+            // The handover itself — the new owner, what the previous one keeps, the record of
+            // it, the event — is the work of the engine, not of this form.
+            app(OwnershipTransfer::class)->transfer(
+                record: $record,
+                toUserId: $target->userId,
+                retention: (string) ($data['retention'] ?? OwnershipTransfer::RETENTION_NONE),
+                note: filled($data['note'] ?? null) ? (string) $data['note'] : null,
+                actor: auth()->user(),
+                metadata: $target->metadata,
+            );
+        });
 
         $this->showTransferForm = false;
-        $this->transferFormData = ['newOwnerId' => null, 'retention' => 'none', 'note' => null];
+        $this->transferFormData = self::transferDefaults();
 
         Notification::make()
             ->title(__('filament-flow::messages.ownership_transferred'))
             ->success()
             ->send();
+    }
+
+    /** @return array<string, mixed> */
+    private static function transferDefaults(): array
+    {
+        return [
+            'targetMode' => self::TARGET_EXISTING,
+            'newOwnerId' => null,
+            'newPerson' => [],
+            'retention' => 'none',
+            'note' => null,
+        ];
     }
 
     /** The users of the tenant, when there is one; everybody otherwise. */

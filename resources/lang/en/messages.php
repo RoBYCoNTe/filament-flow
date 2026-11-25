@@ -96,6 +96,8 @@ return [
     'no_owner' => 'Nobody',
     'transfer_ownership' => 'Transfer ownership',
     'help_transfer_ownership' => 'The record passes to another person. Choose what the previous owner keeps: nothing (their access ends), the eyes of an observer, or the hands of a collaborator.',
+    'transfer_target' => 'Who takes it over',
+    'transfer_target_existing' => 'Existing person',
     'new_owner' => 'New owner',
     'help_new_owner' => 'The person who will hold the record from now on.',
     'new_owner_required' => 'Choose who takes the record over.',

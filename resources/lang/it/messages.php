@@ -97,6 +97,8 @@ return [
     'no_owner' => 'Nessuno',
     'transfer_ownership' => 'Trasferisci la titolarità',
     'help_transfer_ownership' => 'La pratica è trasferita a un altro utente. Si sceglie l\'accesso che resta al precedente titolare: nessuno (l\'accesso termina), consultazione o collaborazione.',
+    'transfer_target' => 'Chi la prende in carico',
+    'transfer_target_existing' => 'Persona esistente',
     'new_owner' => 'Nuovo titolare',
     'help_new_owner' => 'L\'utente che assume la titolarità della pratica.',
     'new_owner_required' => 'Seleziona il nuovo titolare della pratica.',

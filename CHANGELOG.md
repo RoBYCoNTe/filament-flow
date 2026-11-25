@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-25
+
+### Added
+- `TransferTargetResolver`: a record can be handed to a person the panel does not list yet. The
+  host names a resolver in `state_access.transfer_target_resolver`; the transfer form then offers
+  «an existing person» or the choice the resolver labels, shows the fields the resolver declares,
+  and the resolver finds or creates the person and answers with a `TransferTarget`. Finding the
+  person and handing the record over are one transaction. Without a resolver the form is the one
+  it always was.
+- `OwnershipTransfer::transfer()` takes `metadata`, kept in `workflow_owner_changes.metadata` and
+  carried by `WorkflowOwnerChanged::$metadata` (empty by default, so nothing changes for callers).
+- `AccessControlGate`: who manages the access of a record (the assignment panel and the access
+  control dialog) is now a rule of the host, not a boolean. The panel takes a `gate` (the class of
+  an implementation), the action takes `->gate()`, and `state_access.access_control_gate` sets
+  one for the whole application. The gate is built again on every request, with the person and
+  the record of the moment, so the commands of the panel obey it as well as its buttons.
+  `AdminAccessGate` (the historical rule) and `SuperAdminAccessGate` (behind `superAdminOnly`)
+  are shipped. Nothing changes for whoever names no gate; `superAdminOnly` stays as strict as it
+  asked, whatever the configuration opens.
+
 ## [0.6.0] - 2026-11-23
 
 ### Fixed

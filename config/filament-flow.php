@@ -204,6 +204,22 @@ return [
         'permission_resolver' => null,
 
         /**
+         * The gate that decides who manages the access of a record (the assignment panel and
+         * the access control dialog): the class of an implementation of
+         * RoBYCoNTe\FilamentFlow\Contracts\AccessControlGate.
+         * Set to null to keep the historical rule: administrators and super administrators.
+         * A call that asks for `superAdminOnly` stays restricted whatever this says.
+         */
+        'access_control_gate' => null,
+
+        /**
+         * How a record is handed to a person that is not listed yet: the class of an
+         * implementation of RoBYCoNTe\FilamentFlow\Contracts\TransferTargetResolver.
+         * Null keeps the transfer form to the people the panel already lists.
+         */
+        'transfer_target_resolver' => null,
+
+        /**
          * Field name used to identify record ownership.
          * The @owner token will check if this field matches the user's ID.
          */

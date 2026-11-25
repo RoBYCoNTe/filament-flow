@@ -22,5 +22,7 @@ class WorkflowOwnerChanged
         public readonly string $retention = 'none',
         public readonly ?Model $actor = null,
         public readonly ?string $note = null,
+        /** @var array<string, mixed> What the host kept beside the handover. */
+        public readonly array $metadata = [],
     ) {}
 }

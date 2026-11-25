@@ -140,4 +140,27 @@ class OwnershipTransferTest extends TestCase
 
         $this->transfers->transfer($this->order, $this->second->id, retention: 'whatever', actor: $this->first);
     }
+
+    public function test_the_metadata_of_the_host_is_kept_with_the_change_and_the_event(): void
+    {
+        Event::fake([WorkflowOwnerChanged::class]);
+
+        $change = $this->transfers->transfer(
+            record: $this->order,
+            toUserId: $this->second->id,
+            actor: $this->first,
+            metadata: ['act' => 'Delibera 219/2025'],
+        );
+
+        $this->assertSame(['act' => 'Delibera 219/2025'], $change->fresh()->metadata);
+
+        Event::assertDispatched(WorkflowOwnerChanged::class, fn (WorkflowOwnerChanged $event): bool => $event->metadata === ['act' => 'Delibera 219/2025']);
+    }
+
+    public function test_without_metadata_nothing_is_written(): void
+    {
+        $change = $this->transfers->transfer($this->order, $this->second->id, actor: $this->first);
+
+        $this->assertNull($change->fresh()->metadata);
+    }
 }

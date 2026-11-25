@@ -218,13 +218,15 @@ app(OwnershipTransfer::class)->transfer(
     retention: OwnershipTransfer::RETENTION_VIEWER, // none | viewer | secondary
     note: 'Handover to another officer',
     actor: auth()->user(),
+    metadata: ['act' => 'Delibera 219/2025'], // whatever the host wants kept beside the change
 );
 ```
 
 The handover moves the owner column (as configured by `state_access.owner_field`), gives the
 previous holder a row of their own when a retention asks for it (`viewer` = still sees it,
 `secondary` = stays on the work), records the change in `workflow_owner_changes` and raises
-`WorkflowOwnerChanged`. Handing a record to the person who already holds it — or naming a retention
+`WorkflowOwnerChanged`. The `metadata` array is kept in the `metadata` column of the change and
+travels with the event; the package reads nothing of it. Handing a record to the person who already holds it — or naming a retention
 nobody knows — throws `InvalidArgumentException`.
 
 ## Behind these doors

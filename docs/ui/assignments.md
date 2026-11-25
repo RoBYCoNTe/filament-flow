@@ -369,9 +369,23 @@ The "add" and "remove" controls are only visible when `canManageAssignments()` r
 Livewire::make(AssignmentManager::class, ['superAdminOnly' => true])
 ```
 
+Any other rule is an **access control gate**: a class that implements `AccessControlGate` and answers `canManage($user, $record)`. The panel names it by class and builds it again on every request, so what it answers follows the person and the record of the moment — and the commands of the panel, not only its buttons, obey it:
+
+```php
+Livewire::make(AssignmentManager::class, ['gate' => ReviewOperatorsGate::class])
+```
+
+The gate that answers is the first of these: the one the call names (`gate`), the one of `superAdminOnly`, the one of `state_access.access_control_gate` in the configuration, and the historical one (administrators and super administrators). A call that asks for `superAdminOnly` stays as strict as it asked, whatever the configuration opens to others. A class that is not a gate is refused with a clear message. See [`AccessControlGate`](/reference/contracts#accesscontrolgate).
+
 ### Ownership Transfer
 
 When the record has the configured owner column (`state_access.owner_field`, `user_id` by default), the panel shows a section with who holds the record and a **Transfer ownership** form. The handover asks who takes over, what the previous owner keeps — *nothing* (their access ends), *observer* (a `viewer` assignment with the view override granted) or *collaborator* (a `secondary` assignment, no overrides) — and an optional note, written into the assignment metadata. The change fires the `WorkflowOwnerChanged` event, with the previous and next owner, the retention and the note.
+
+#### A person who is not listed yet
+
+The form hands the record to people the panel lists. When the new owner may not exist yet — an officer who never signed in — name a [`TransferTargetResolver`](/reference/contracts#transfertargetresolver) in `state_access.transfer_target_resolver`. The form then asks **who takes it over**: an existing person, or the choice the resolver labels. The second shows the fields the resolver declares; on submit the resolver finds or creates the person and answers with a `TransferTarget` (the id of the user, and the metadata to keep beside the change). Finding the person and handing the record over are one transaction: if the handover is refused, the person the resolver made does not stay behind. The same gate that guards the panel guards this choice, and without a resolver the form is the one above — nothing new appears.
+
+The metadata is saved on the change (`workflow_owner_changes.metadata`) and carried by `WorkflowOwnerChanged::$metadata`. `TransferTargets::resolver()` reads the configuration and refuses a class that is not a resolver.
 
 ### Access Overrides UI
 
@@ -423,7 +437,7 @@ AccessControlAction::make()
     ->superAdminOnly(),
 ```
 
-The action hides itself from whoever may not manage assignments (or, with `superAdminOnly()`, from everyone but super administrators); the panel inside the dialog keeps its own protection either way.
+The action hides itself from whoever may not manage assignments (or, with `superAdminOnly()`, from everyone but super administrators); the panel inside the dialog keeps its own protection either way. For any other rule, name a gate with `->gate(ReviewOperatorsGate::class)`: the same gate answers for the door and for the panel behind it. It is a class, not a closure, because the panel asks again on every request and has to build the gate by itself.
 
 The component inside the dialog gets a **key of its own** (`{action}.assignment-manager`), so it never shares the identity of another instance of the same class on the page. Remember it when embedding the panel twice — two sections of the same component on one page must each carry a distinct `->key()`, or Livewire answers the second one with an empty placeholder (the dialog opens, and it is empty).
 

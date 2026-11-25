@@ -6,7 +6,9 @@ use Closure;
 use Filament\Actions\Action;
 use Filament\Schemas\Components\Livewire;
 use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Contracts\AccessControlGate;
 use RoBYCoNTe\FilamentFlow\Livewire\AssignmentManager;
+use RoBYCoNTe\FilamentFlow\Support\AccessGate;
 
 /**
  * The key to the room where the work is handed out: one button that opens the assignment
@@ -21,10 +23,16 @@ use RoBYCoNTe\FilamentFlow\Livewire\AssignmentManager;
  *     ->roleLabels(RoleLabels::map())
  *     ->superAdminOnly(),
  * ```
+ *
+ * Who may use it is a rule of the host: `superAdminOnly()` for the simplest one, `gate()` for
+ * any other.
  */
 class AccessControlAction extends Action
 {
     protected bool $restrictToSuperAdmins = false;
+
+    /** @var class-string<AccessControlGate>|null */
+    protected ?string $gate = null;
 
     /**
      * @var array<string, string>|Closure
@@ -43,6 +51,20 @@ class AccessControlAction extends Action
     public function superAdminOnly(bool $condition = true): static
     {
         $this->restrictToSuperAdmins = $condition;
+
+        return $this;
+    }
+
+    /**
+     * Who may use the door and the panel behind it, by a rule of the host: the class of an
+     * `AccessControlGate`. It is a class, not a closure, because the panel asks again on every
+     * request and has to build the gate by itself; a closure could not travel with it.
+     *
+     * @param  class-string<AccessControlGate>  $gate
+     */
+    public function gate(string $gate): static
+    {
+        $this->gate = $gate;
 
         return $this;
     }
@@ -93,20 +115,8 @@ class AccessControlAction extends Action
 
         // The panel manages itself: it shows its own buttons to whoever may use it, and
         // answers for the record it was given. The action is only the door.
-        $this->visible(function (): bool {
-            $user = auth()->user();
-
-            if ($user === null) {
-                return false;
-            }
-
-            if ($this->restrictToSuperAdmins) {
-                return method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin();
-            }
-
-            return (method_exists($user, 'isAdmin') && $user->isAdmin())
-                || (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin());
-        });
+        $this->visible(fn (): bool => AccessGate::resolve($this->gate, $this->restrictToSuperAdmins)
+            ->canManage(auth()->user(), $this->resolvePanelRecord($this->getRecord())));
 
         $this->schema(function (?Model $record): array {
             $panelRecord = $this->resolvePanelRecord($record);
@@ -119,6 +129,7 @@ class AccessControlAction extends Action
                     'recordType' => $panelRecord !== null ? $panelRecord::class : null,
                     'roleLabels' => $this->evaluate($this->roleLabels) ?? [],
                     'superAdminOnly' => $this->restrictToSuperAdmins,
+                    'gate' => $this->gate,
                     // A key of its own: a page may already carry an assignment panel of its
                     // own (the same component embedded as a section), and Livewire keys a
                     // child by the parent — the second instance with the same key comes back

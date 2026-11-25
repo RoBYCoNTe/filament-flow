@@ -272,6 +272,85 @@ class MyRoleResolver implements RoleResolver
 
 See [Access Control](/workflows/access-control) for more details on registering resolvers.
 
+### AccessControlGate
+
+Decide who manages the access of a record: adding and removing the people who work on it, changing what each one may do, handing it over. The assignment panel and the access control dialog ask it on every request; the class is built by the container each time, so the answer follows the person and the record of the moment.
+
+Register in config (or name it per call, with `gate` on the panel and `->gate()` on the action):
+
+```php
+// config/filament-flow.php
+'state_access' => [
+    'access_control_gate' => \App\Support\ReviewOperatorsGate::class,
+],
+```
+
+Full interface:
+
+```php
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Contracts\AccessControlGate;
+
+class ReviewOperatorsGate implements AccessControlGate
+{
+    public function canManage(?Authenticatable $user, ?Model $record): bool
+    {
+        return $user?->hasAnyRole(['super_admin', 'review_operator']) ?? false;
+    }
+}
+```
+
+The package ships two: `AdminAccessGate` (administrators and super administrators, the default) and `SuperAdminAccessGate` (the one behind `superAdminOnly`). A call that asks for `superAdminOnly` stays restricted whatever the configuration opens to others.
+
+`AccessGate::resolve($gate, $superAdminOnly)` picks the gate that answers — the call's, then `superAdminOnly`'s, then the configuration's, then the historical one — and refuses a class that is not an `AccessControlGate`. Use it when a screen of your own has to ask the same question the panel asks.
+
+### TransferTargetResolver
+
+Say how a record is handed to a person the panel does not list yet. The package knows nothing of what a person is made of — a tax code, an address, an identity provider — so the host declares the fields of the form and finds or creates the person.
+
+Register in config:
+
+```php
+// config/filament-flow.php
+'state_access' => [
+    'transfer_target_resolver' => \App\Support\NewReferentResolver::class,
+],
+```
+
+Full interface:
+
+```php
+use Filament\Forms\Components\TextInput;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Database\Eloquent\Model;
+use RoBYCoNTe\FilamentFlow\Contracts\TransferTargetResolver;
+use RoBYCoNTe\FilamentFlow\Support\TransferTarget;
+
+class NewReferentResolver implements TransferTargetResolver
+{
+    public function label(): string
+    {
+        return 'New referent from tax code';
+    }
+
+    public function formSchema(): array
+    {
+        return [TextInput::make('fiscal_code')->required()];
+    }
+
+    public function resolve(array $payload, ?Authenticatable $actor, Model $record): TransferTarget
+    {
+        return new TransferTarget(
+            userId: Referents::findOrCreate($payload['fiscal_code'])->id,
+            metadata: ['provisioned_by' => $actor?->getKey()],
+        );
+    }
+}
+```
+
+`resolve()` runs inside the transaction of the handover: whatever it throws rolls both back. To refuse a value, throw a `ValidationException` keyed `transferFormData.newPerson.<field>`. A `TransferTarget` carries the id of the user and the metadata kept beside the change; with no resolver in the configuration the transfer form only offers the people the panel lists.
+
 ### PermissionResolver
 
 Customize how permissions are checked against users. Supports optional record context for policies that depend on the record being accessed.

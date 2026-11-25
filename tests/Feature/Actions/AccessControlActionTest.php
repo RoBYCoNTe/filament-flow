@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Actions;
 use Livewire\Livewire;
 use RoBYCoNTe\FilamentFlow\Actions\AccessControlAction;
 use RoBYCoNTe\FilamentFlow\Livewire\AssignmentManager;
+use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Gates\ReviewerAccessGate;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
@@ -49,6 +50,28 @@ class AccessControlActionTest extends TestCase
         $this->actingAs($this->createTestUser(['email' => 'super@test.com', 'role' => 'super_admin']));
 
         $this->assertTrue(AccessControlAction::make()->superAdminOnly()->isVisible());
+    }
+
+    public function test_a_gate_of_the_host_decides_who_sees_it(): void
+    {
+        $reviewer = $this->createTestUser(['email' => 'reviewer@test.com', 'role' => 'reviewer']);
+        $admin = $this->createTestUser(['email' => 'admin@test.com', 'role' => 'admin']);
+        $action = AccessControlAction::make()->gate(ReviewerAccessGate::class);
+
+        $this->actingAs($reviewer);
+        $this->assertTrue($action->isVisible());
+
+        $this->actingAs($admin);
+        $this->assertFalse($action->isVisible());
+    }
+
+    public function test_the_gate_reaches_the_panel_inside_the_door(): void
+    {
+        $action = AccessControlAction::make()->gate(ReviewerAccessGate::class);
+
+        $property = new \ReflectionProperty($action, 'gate');
+
+        $this->assertSame(ReviewerAccessGate::class, $property->getValue($action));
     }
 
     public function test_the_record_beside_it_reaches_the_panel(): void

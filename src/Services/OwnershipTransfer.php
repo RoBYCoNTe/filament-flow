@@ -36,6 +36,7 @@ final class OwnershipTransfer
      * @param  string  $retention  what the previous holder keeps (see the RETENTION_* constants)
      * @param  string|null  $note  why the record changed hands, kept beside the change
      * @param  Model|null  $actor  who made the handover
+     * @param  array<string, mixed>  $metadata  what the host wants kept beside the change
      */
     public function transfer(
         Model $record,
@@ -43,6 +44,7 @@ final class OwnershipTransfer
         string $retention = self::RETENTION_NONE,
         ?string $note = null,
         ?Model $actor = null,
+        array $metadata = [],
     ): WorkflowOwnerChange {
         $field = RecordOwner::field();
         $from = RecordOwner::id($record);
@@ -56,7 +58,7 @@ final class OwnershipTransfer
             throw new InvalidArgumentException("Unknown retention [{$retention}].");
         }
 
-        return DB::transaction(function () use ($record, $field, $fromUserId, $toUserId, $retention, $note, $actor): WorkflowOwnerChange {
+        return DB::transaction(function () use ($record, $field, $fromUserId, $toUserId, $retention, $note, $actor, $metadata): WorkflowOwnerChange {
             // The owner column may sit outside the fillable of the model: handing the record
             // over is an administrative act, and the save still goes through the events.
             $record->forceFill([$field => $toUserId])->save();
@@ -76,10 +78,11 @@ final class OwnershipTransfer
                 'owner_field' => $field,
                 'retention' => $retention,
                 'note' => $note,
+                'metadata' => $metadata === [] ? null : $metadata,
                 'changed_at' => now(),
             ]);
 
-            WorkflowOwnerChanged::dispatch($record, $fromUserId, $toUserId, $retention, $actor, $note);
+            WorkflowOwnerChanged::dispatch($record, $fromUserId, $toUserId, $retention, $actor, $note, $metadata);
 
             return $change;
         });
