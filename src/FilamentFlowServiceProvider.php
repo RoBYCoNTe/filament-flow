@@ -7,6 +7,8 @@ use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
@@ -30,6 +32,7 @@ use RoBYCoNTe\FilamentFlow\Observers\WorkflowCacheObserver;
 use RoBYCoNTe\FilamentFlow\Services\RecipientResolver;
 use RoBYCoNTe\FilamentFlow\Support\FormulaCompletionRegistry;
 use RoBYCoNTe\FilamentFlow\Support\FormulaConditionRegistry;
+use RoBYCoNTe\FilamentFlow\Support\Memo;
 use RoBYCoNTe\FilamentFlow\Support\NotificationChannelDriverRegistry;
 use RoBYCoNTe\FilamentFlow\Support\NotificationTemplateRegistry;
 use RoBYCoNTe\FilamentFlow\Support\RequestScopeResolver;
@@ -129,6 +132,9 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
         // its own.
         $this->app->scoped(ResolvesRequestScope::class, RequestScopeResolver::class);
 
+        // What a request has already worked out is forgotten when the request ends (or the job).
+        $this->app->scoped(Memo::class);
+
         // Named validation rules: shared by every rule declaration (state field
         // rules, transition rules, host field rules).
         $this->app->singleton(ValidationRuleRegistry::class, fn () => new ValidationRuleRegistry);
@@ -171,6 +177,19 @@ class FilamentFlowServiceProvider extends PackageServiceProvider
         Livewire::component('assignment-manager', AssignmentManager::class);
 
         Testable::mixin(new TestsFilamentFlow);
+
+        // What a request has worked out about a model is forgotten when the model changes through
+        // Eloquent: the memory is told, and drops the entries that depend on its class.
+        Event::listen(
+            ['eloquent.saved: *', 'eloquent.deleted: *', 'eloquent.restored: *', 'eloquent.forceDeleted: *'],
+            static function (string $event, array $payload): void {
+                $model = $payload[0] ?? null;
+
+                if ($model instanceof Model) {
+                    Memo::instance()->invalidate($model);
+                }
+            },
+        );
 
         // Register cache observer for automatic invalidation
         if (config('filament-flow.cache.enabled', true)) {

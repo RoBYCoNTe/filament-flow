@@ -8,6 +8,7 @@ use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowStateFieldRole;
 use RoBYCoNTe\FilamentFlow\Services\WorkflowFieldPermissionsService;
+use RoBYCoNTe\FilamentFlow\Support\Memo;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\User;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
@@ -149,5 +150,49 @@ class WorkflowFieldPermissionsMemoTest extends TestCase
         $this->order->forceFill(['state' => 'draft'])->save();
 
         $this->assertNull($service->permissionFor($this->order, 'review_notes', $this->admin), 'The draft has no rule for the field.');
+    }
+
+    public function test_a_rule_changed_while_the_request_goes_on_is_seen_by_the_same_person(): void
+    {
+        // The cache that outlives the request has its own invalidation: what is under test here is
+        // the memory of the request, so the cache is out of the way.
+        config(['filament-flow.cache.enabled' => false]);
+
+        $service = new WorkflowFieldPermissionsService;
+        $this->order->assignTo($this->admin, 'primary', $this->editor);
+
+        $before = $service->permissionFor($this->order, 'review_notes', $this->admin);
+        $this->assertFalse($before['readonly']);
+
+        WorkflowStateField::query()->where('field_name', 'review_notes')->firstOrFail()
+            ->update(['mutability' => 'readonly']);
+
+        $after = $service->permissionFor($this->order, 'review_notes', $this->admin);
+
+        $this->assertTrue($after['readonly'], 'The rule changed through Eloquent: the same person sees it at the next question.');
+    }
+
+    public function test_a_state_that_is_renamed_while_the_request_goes_on_is_seen(): void
+    {
+        $service = new WorkflowFieldPermissionsService;
+        $service->permissionFor($this->order, 'review_notes', $this->admin);
+
+        $this->review->update(['name' => 'under_review']);
+        $this->order->forceFill(['state' => 'under_review'])->save();
+
+        $this->assertNotNull($service->permissionFor($this->order, 'review_notes', $this->admin), 'The state kept its rules under its new name.');
+    }
+
+    public function test_the_questions_are_answered_from_the_memo(): void
+    {
+        $memo = app(Memo::class);
+        $memo->flush();
+        $service = new WorkflowFieldPermissionsService;
+
+        foreach (range(1, 20) as $i) {
+            $service->permissionFor($this->order, "field_{$i}", $this->admin);
+        }
+
+        $this->assertGreaterThan(30, $memo->stats()['hits'], 'The questions every field asks are answered from memory.');
     }
 }

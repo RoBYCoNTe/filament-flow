@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Cache;
 use RoBYCoNTe\FilamentFlow\Contracts\ResolvesRequestScope;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateField;
+use RoBYCoNTe\FilamentFlow\Models\WorkflowStateFieldRole;
+use RoBYCoNTe\FilamentFlow\Support\Memo;
 use RoBYCoNTe\FilamentFlow\Support\RequestScopeOverlay;
 use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
 
@@ -19,13 +22,6 @@ use RoBYCoNTe\FilamentFlow\Support\WorkflowCacheManager;
  */
 trait ReadsFieldPermissions
 {
-    /**
-     * The request scope already asked for, by record, person and roles (see `requestScopeFor()`).
-     *
-     * @var array<string, array{mode:string,paths:list<string>,whitelist:list<string>|null,universe:list<string>}|null>
-     */
-    private array $requestScopeMemo = [];
-
     /**
      * Get field permissions for a specific record based on its current state.
      * When $user is provided, role overrides are applied on top of the base config.
@@ -181,18 +177,20 @@ trait ReadsFieldPermissions
         $effectiveRoles ??= $this->resolveEffectiveRoles($user, $record);
 
         // The scope is the same for every field of the record, and asking for it is a question to the
-        // host (its open requests): it is asked once for the reading of a form, not once per field.
-        $key = $record::class.':'.$record->getKey().'|'.$user::class.':'.$user->getKey().'|'.md5(implode(',', $effectiveRoles));
+        // host (its open requests): it is asked once for the reading of a form, not once per field. What
+        // the host looks at is its own, so the answer lives with this service and not with the request.
+        return Memo::instance()->remember(
+            Memo::key('scope', $record, $user, md5(implode(',', $effectiveRoles))),
+            [],
+            static function () use ($record, $user, $effectiveRoles): ?array {
+                $resolver = app(ResolvesRequestScope::class);
 
-        if (! array_key_exists($key, $this->requestScopeMemo)) {
-            $resolver = app(ResolvesRequestScope::class);
-
-            $this->requestScopeMemo[$key] = $resolver->declaresScope($record)
-                ? $resolver->scopeFor($record, $user, $effectiveRoles)
-                : null;
-        }
-
-        return $this->requestScopeMemo[$key];
+                return $resolver->declaresScope($record)
+                    ? $resolver->scopeFor($record, $user, $effectiveRoles)
+                    : null;
+            },
+            owner: $this,
+        );
     }
 
     /**
@@ -253,10 +251,14 @@ trait ReadsFieldPermissions
      */
     protected function ruleMapForState(Workflow $workflow, WorkflowState $state, array $effectiveRoles): array
     {
-        return $this->rememberForWorkflow(
-            "rules:{$workflow->id}:{$state->id}:".md5(implode(',', $effectiveRoles)),
-            $workflow->id,
-            fn (): array => $this->buildRuleMap($state, $effectiveRoles),
+        $key = "rules:{$workflow->id}:{$state->id}:".md5(implode(',', $effectiveRoles));
+
+        // The rules of a state are asked for every field: they are worked out once, and the cache
+        // (which outlives the request) is asked once as well.
+        return Memo::instance()->remember(
+            Memo::key('rule-map', $key),
+            [Workflow::class, WorkflowState::class, WorkflowStateField::class, WorkflowStateFieldRole::class],
+            fn (): array => $this->rememberForWorkflow($key, $workflow->id, fn (): array => $this->buildRuleMap($state, $effectiveRoles)),
         );
     }
 

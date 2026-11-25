@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-25
+
+### Added
+- `Memo`: what a request has already worked out is kept for the rest of the request. An entry says what
+  it depends on — the models whose change through Eloquent makes it stale, or an owner object it lives
+  with — so nothing is kept without a way to be forgotten. It is a service of the container that is
+  forgotten at the end of a request or of a job, it is not a cache, and `filament-flow.memo.enabled`
+  turns it off. Hosts can use it for what they ask over and over while a form is drawn.
+
+### Changed
+- The permissions service uses it: the workflow a record follows, the state it is in and the rules of
+  that state are worked out once per request — and dropped when a workflow, a state, a rule or a role
+  override changes through Eloquent — instead of once per field. The roles of the person and the scope
+  of the open requests, which Eloquent cannot see changing, are kept for the life of the service, as in
+  0.7.1. The answers do not change.
+
 ## [0.7.2] - 2026-11-25
 
 ### Fixed

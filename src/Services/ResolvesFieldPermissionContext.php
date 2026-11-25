@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use RoBYCoNTe\FilamentFlow\Models\Workflow;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowState;
 use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
+use RoBYCoNTe\FilamentFlow\Support\Memo;
 
 /**
  * The context a field permission needs before it can be answered.
@@ -17,24 +18,6 @@ use RoBYCoNTe\FilamentFlow\Support\AccessRuleEvaluator;
 trait ResolvesFieldPermissionContext
 {
     /**
-     * The states already read, by workflow and by value.
-     *
-     * A form asks a permission for every field it draws, and each question starts from the same
-     * state: reading it again for each one is a query a field. The answers are kept for the life
-     * of the service — one reading of a form — and a service asked for again starts empty.
-     *
-     * @var array<string, WorkflowState|null>
-     */
-    private array $stateMemo = [];
-
-    /**
-     * The effective roles already worked out, by person, record and owner.
-     *
-     * @var array<string, array<int, string>>
-     */
-    private array $effectiveRolesMemo = [];
-
-    /**
      * Get workflow for a record using getWorkflowTenantId() when available,
      * so that models with N scoped workflows (e.g. Application→scheme_id)
      * resolve the correct one instead of falling back to the Filament tenant.
@@ -43,7 +26,12 @@ trait ResolvesFieldPermissionContext
     {
         $tenantId = method_exists($record, 'getWorkflowTenantId') ? $record->getWorkflowTenantId() : null;
 
-        return Workflow::findForModel(get_class($record), 'state', $tenantId);
+        // Which workflow a class of records follows is asked by every field: it is worked out once.
+        return Memo::instance()->remember(
+            Memo::key('workflow', get_class($record), $tenantId),
+            [Workflow::class],
+            static fn (): ?Workflow => Workflow::findForModel(get_class($record), 'state', $tenantId),
+        );
     }
 
     /**
@@ -74,20 +62,14 @@ trait ResolvesFieldPermissionContext
             $stateValue = get_class($stateValue);
         }
 
-        $key = $workflow->getKey().'|'.(is_scalar($stateValue) ? (string) $stateValue : '');
+        $workflowId = $workflow->getKey();
 
-        if (array_key_exists($key, $this->stateMemo)) {
-            return $this->stateMemo[$key];
-        }
-
-        $state = $workflow->states()
-            ->where('class_name', $stateValue)
-            ->first()
-            ?? $workflow->states()
-                ->where('name', $stateValue)
-                ->first();
-
-        return $this->stateMemo[$key] = $state;
+        return Memo::instance()->remember(
+            Memo::key('state', $workflowId, is_scalar($stateValue) ? (string) $stateValue : ''),
+            [Workflow::class, WorkflowState::class],
+            static fn (): ?WorkflowState => $workflow->states()->where('class_name', $stateValue)->first()
+                ?? $workflow->states()->where('name', $stateValue)->first(),
+        );
     }
 
     /**
@@ -98,15 +80,15 @@ trait ResolvesFieldPermissionContext
     protected function resolveEffectiveRoles(Model $user, ?Model $record = null, bool $isCreation = false): array
     {
         $ownerField = config('filament-flow.state_access.owner_field', 'user_id');
-        $key = implode('|', [
-            $user::class,
-            $user->getKey(),
-            $record === null ? '-' : $record::class.':'.$record->getKey(),
-            $record !== null && isset($record->{$ownerField}) ? (string) $record->{$ownerField} : '',
-            $isCreation ? 'creation' : 'record',
-        ]);
 
-        return $this->effectiveRolesMemo[$key] ??= $this->workOutEffectiveRoles($user, $record, $isCreation);
+        // The roles of a person sit where Eloquent cannot see them (a pivot table, a role package): the
+        // answer lives with this service — one reading of a form — and not for the rest of the request.
+        return Memo::instance()->remember(
+            Memo::key('roles', $user, $record, $record !== null && isset($record->{$ownerField}) ? (string) $record->{$ownerField} : '', $isCreation),
+            [],
+            fn (): array => $this->workOutEffectiveRoles($user, $record, $isCreation),
+            owner: $this,
+        );
     }
 
     /**

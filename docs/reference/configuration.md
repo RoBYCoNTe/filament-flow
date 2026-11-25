@@ -47,6 +47,21 @@ This creates `config/filament-flow.php`.
 
 **Use Case:** Specify a custom user model if you're not using Laravel's default `App\Models\User`.
 
+## Memo
+
+What a request has already worked out (the state of a record, what a state allows) is kept for the
+rest of the request and forgotten when a model it depends on changes. It is not the cache below: it
+never outlives the request. See [Memo](/reference/services#memo).
+
+```php
+'memo' => [
+    'enabled' => true,
+],
+```
+
+Turn it off and every question is worked out again, as it was before: for the day an answer looks
+stale in production.
+
 ## Cache
 
 ```php

@@ -25,6 +25,19 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Memo
+    |--------------------------------------------------------------------------
+    |
+    | What a request has already worked out (the state of a record, what a state allows) is kept
+    | for the rest of the request, and forgotten when a model it depends on changes. Turn it off
+    | and every question is worked out again, as it was: for the day an answer looks stale.
+    */
+    'memo' => [
+        'enabled' => true,
+    ],
+
     'cache' => [
         'enabled' => true,
         'store' => null, // null = default cache store (set to 'redis' for Redis, null for Memcached/File/Database based on CACHE_STORE env)

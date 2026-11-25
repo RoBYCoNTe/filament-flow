@@ -229,6 +229,50 @@ previous holder a row of their own when a retention asks for it (`viewer` = stil
 travels with the event; the package reads nothing of it. Handing a record to the person who already holds it — or naming a retention
 nobody knows — throws `InvalidArgumentException`.
 
+## Memo
+
+`RoBYCoNTe\FilamentFlow\Support\Memo`
+
+What a request has already worked out, kept for the rest of the request. A form is drawn field by
+field, and each field asks the same questions again — which workflow the record follows, which state it
+is in, what the state allows. Each answer is a query, a round trip to a database that is often on
+another machine, and the same query asked three hundred times is most of what a request costs.
+
+It is **not a cache**: nothing outlives the request and nothing is stored anywhere. The container
+forgets it (`scoped`) at the end of a request or of a job.
+
+```php
+use RoBYCoNTe\FilamentFlow\Support\Memo;
+
+$state = Memo::instance()->remember(
+    Memo::key('state', $workflow, $value),                // what the question is about
+    [Workflow::class, WorkflowState::class],              // what makes the answer stale
+    fn () => $workflow->states()->where('name', $value)->first(),
+);
+```
+
+An entry must say **what it depends on**:
+
+- A request-wide entry lists the models whose change makes it stale. When one of them is saved,
+  deleted or restored **through Eloquent**, the entry is dropped and worked out again at the next
+  question. An entry with no dependency and no owner is refused.
+- An entry that depends on something Eloquent cannot see — the roles of a person, which sit in a pivot
+  table or a role package — lives with an **owner** (`owner: $this`): it is kept while that object
+  lives and forgotten with it. The permissions service keeps the roles of the person this way.
+
+`Memo::key()` builds the key from what the question is about: a model counts by its class and its key,
+a list by its content. `forget()` drops one entry, `flush()` all of them, and `stats()` says how many
+questions it answered from memory (`hits`), how many it had to work out (`misses`) and how many entries
+it holds.
+
+**What it does not see.** A write that does not go through a model — `DB::table()->update()`, a pivot
+`attach` — does not drop anything. Whoever writes that way and asks again in the same request calls
+`flush()`.
+
+**Turning it off.** `filament-flow.memo.enabled` (see [configuration](/reference/configuration#memo)):
+with it off every question is worked out again, as it was before — for the day an answer looks stale
+in production.
+
 ## Behind these doors
 
 The services above are what a host calls. Underneath, the work is split into pieces that answer one
