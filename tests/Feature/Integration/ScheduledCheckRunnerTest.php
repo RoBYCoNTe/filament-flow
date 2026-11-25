@@ -4,6 +4,7 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\Integration;
 
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 use RoBYCoNTe\FilamentFlow\Services\ScheduledCheckRunner;
+use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Document;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
@@ -448,6 +449,58 @@ class ScheduledCheckRunnerTest extends TestCase
             'customer_name' => 'Test Customer',
             'total_amount' => 100.00,
         ], $data));
+    }
+
+    /**
+     * A host whose records have an ULID for key: the run used to stop at the first record with
+     * «Argument #2 ($modelId) must be of type int, string given», every time it was scheduled.
+     */
+    public function test_the_checks_run_over_records_whose_key_is_an_ulid(): void
+    {
+        $workflow = $this->createTestWorkflow(['model_type' => Document::class]);
+
+        $check = WorkflowScheduledCheck::create([
+            'workflow_id' => $workflow->id,
+            'name' => 'big_documents',
+            'condition_type' => 'field_compare',
+            'condition_config' => [
+                'conditions' => [
+                    ['field' => 'amount', 'operator' => '>=', 'value' => 100],
+                ],
+            ],
+            'action_type' => 'notification',
+            'action_config' => ['notification_id' => null],
+            'frequency' => 'daily',
+            'once_per_record' => true,
+            'is_active' => true,
+        ]);
+
+        $big = Document::create(['title' => 'Big', 'amount' => 500, 'state' => 'open']);
+        Document::create(['title' => 'Small', 'amount' => 5, 'state' => 'open']);
+
+        $first = $this->runner->runAll();
+
+        $this->assertSame(2, $first['processed']);
+        $this->assertSame(1, $first['triggered']);
+        $this->assertSame(0, $first['errors']);
+        $this->assertDatabaseHas('workflow_scheduled_check_logs', [
+            'check_id' => $check->id,
+            'model_id' => (string) $big->getKey(),
+            'result' => 'triggered',
+        ]);
+
+        // Due again: the one that fired is not fired twice, whatever the shape of its key.
+        $check->update(['last_checked_at' => null]);
+
+        $second = $this->runner->runAll();
+
+        $this->assertSame(2, $second['processed']);
+        $this->assertSame(0, $second['triggered']);
+        $this->assertDatabaseHas('workflow_scheduled_check_logs', [
+            'check_id' => $check->id,
+            'model_id' => (string) $big->getKey(),
+            'result' => 'already_executed',
+        ]);
     }
 }
 

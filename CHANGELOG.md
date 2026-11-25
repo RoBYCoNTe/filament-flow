@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-25
+
+### Fixed
+- The scheduled checks stopped at the first record of a host whose keys are not numbers (an ULID, a UUID):
+  `WorkflowScheduledCheck::hasAlreadyExecutedFor()` took the key as an `int`, so `workflow:process-schedules`
+  failed with «Argument #2 ($modelId) must be of type int, string given» every time it was scheduled, and no
+  check ever ran. The key may be a number or a string; the log already kept it as text.
+
 ## [0.8.0] - 2026-11-25
 
 ### Added

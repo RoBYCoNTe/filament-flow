@@ -229,6 +229,16 @@ abstract class TestCase extends BaseTestCase
             });
         }
 
+        if (! Schema::hasTable('test_documents')) {
+            Schema::create('test_documents', function (Blueprint $table) {
+                $table->ulid('id')->primary();
+                $table->string('title');
+                $table->decimal('amount', 10)->nullable();
+                $table->string('state')->nullable();
+                $table->timestamps();
+            });
+        }
+
         if (! Schema::hasTable('test_orders')) {
             Schema::create('test_orders', function (Blueprint $table) {
                 $table->id();

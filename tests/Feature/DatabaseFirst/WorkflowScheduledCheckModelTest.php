@@ -5,6 +5,7 @@ namespace RoBYCoNTe\FilamentFlow\Tests\Feature\DatabaseFirst;
 use Carbon\Carbon;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheck;
 use RoBYCoNTe\FilamentFlow\Models\WorkflowScheduledCheckLog;
+use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Document;
 use RoBYCoNTe\FilamentFlow\Tests\Fixtures\Models\Order;
 use RoBYCoNTe\FilamentFlow\Tests\TestCase;
 
@@ -240,5 +241,37 @@ class WorkflowScheduledCheckModelTest extends TestCase
         $this->assertIsArray($check->condition_config);
         $this->assertIsArray($check->action_config);
         $this->assertEquals('total', $check->condition_config['conditions'][0]['field']);
+    }
+
+    public function test_an_ulid_is_a_key_like_any_other_when_asking_whether_the_check_ran(): void
+    {
+        $workflow = $this->createTestWorkflow();
+
+        $check = WorkflowScheduledCheck::create([
+            'workflow_id' => $workflow->id,
+            'name' => 'once_for_ulids',
+            'condition_type' => 'field_compare',
+            'condition_config' => ['conditions' => []],
+            'action_type' => 'notification',
+            'action_config' => [],
+            'frequency' => 'daily',
+            'once_per_record' => true,
+            'is_active' => true,
+        ]);
+
+        $ulid = '01m5q2a65cybv3vjh5nytrh1xn';
+
+        $this->assertFalse($check->hasAlreadyExecutedFor(Document::class, $ulid));
+
+        WorkflowScheduledCheckLog::create([
+            'check_id' => $check->id,
+            'model_type' => Document::class,
+            'model_id' => $ulid,
+            'result' => 'triggered',
+        ]);
+
+        $this->assertTrue($check->hasAlreadyExecutedFor(Document::class, $ulid));
+        $this->assertFalse($check->hasAlreadyExecutedFor(Document::class, '01m5q2a65cybv3vjh5nytrh1xz'), 'Another ULID is another record.');
+        $this->assertFalse($check->hasAlreadyExecutedFor(Order::class, $ulid), 'The same key of another class is another record.');
     }
 }

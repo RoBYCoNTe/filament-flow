@@ -85,7 +85,11 @@ class WorkflowScheduledCheck extends Model
         };
     }
 
-    public function hasAlreadyExecutedFor(string $modelType, int $modelId): bool
+    /**
+     * Whether this check already fired for the record. A key is a number or a string (an ULID, a UUID):
+     * the log keeps it as text, so the question is asked as text.
+     */
+    public function hasAlreadyExecutedFor(string $modelType, int|string $modelId): bool
     {
         if (! $this->once_per_record) {
             return false;
@@ -93,7 +97,7 @@ class WorkflowScheduledCheck extends Model
 
         return $this->logs()
             ->where('model_type', $modelType)
-            ->where('model_id', $modelId)
+            ->where('model_id', (string) $modelId)
             ->where('result', 'triggered')
             ->exists();
     }
